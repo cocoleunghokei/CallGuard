@@ -47,16 +47,19 @@ def transcribe_chunk(samples: ndarray) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Check local Whisper transcription for 10 seconds")
+    parser = argparse.ArgumentParser(description="Check local Whisper transcription from both inputs")
     parser.add_argument("--check", action="store_true", help="capture both sources and print timing plus an 80-character transcript tail")
+    parser.add_argument("--seconds", type=int, default=10, metavar="N", help="capture duration in seconds (default: 10)")
     args = parser.parse_args()
+    if args.seconds <= 0:
+        parser.error("--seconds must be positive")
     if not args.check:
         parser.print_help()
         return 0
 
     try:
         get_model()  # warm the model before the timed audio check
-        for chunk in capture_chunks(duration=10):
+        for chunk in capture_chunks(duration=args.seconds):
             started = monotonic()
             text = transcribe_chunk(chunk.samples)
             elapsed_ms = (monotonic() - started) * 1_000

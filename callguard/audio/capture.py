@@ -105,14 +105,17 @@ def rms(samples: ndarray) -> float:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Callguard audio capture routing check")
-    parser.add_argument("--rms", action="store_true", help="print each source's RMS for 10 seconds")
+    parser.add_argument("--rms", action="store_true", help="print each source's RMS")
+    parser.add_argument("--seconds", type=int, default=10, metavar="N", help="capture duration in seconds (default: 10)")
     args = parser.parse_args()
+    if args.seconds <= 0:
+        parser.error("--seconds must be positive")
     if not args.rms:
         parser.print_help()
         return 0
 
     try:
-        for chunk in capture_chunks(duration=10):
+        for chunk in capture_chunks(duration=args.seconds):
             print(f"{chunk.speaker}: rms={rms(chunk.samples):.4f}", flush=True)
     except (ImportError, RuntimeError) as exc:
         parser.exit(1, f"Capture unavailable: {exc}\n")
