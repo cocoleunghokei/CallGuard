@@ -139,7 +139,7 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 | 2 | DET-1, DET-2, DET-3, DET-7 | Detection | The local model reads the script. This *is* "you can't tell the voice, you can tell the script," and the edge over every voice-based competitor |
 | 3 | DET-4 (5 P0 rules) | Detection | Firm rules: the one thing no competitor does, and the hook for the business buyer |
 | 4 | DET-6, SRV-7 | Detection, Server | Confidence score, guards and sticky danger. Without them, real calls false-alarm and the warning flickers on stage |
-| 5 | SRV-1, SRV-2 | Server | Pipeline and WebSocket that put the result on screen |
+| 5 | SRV-1, SRV-2, SRV-11 | Server | Pipeline and WebSocket that put the result on screen, in a native Mac window (no browser) that stays on top and comes to the front on danger (no full-screen) |
 | 6 | UI-2, UI-3, UI-4 | UI | Meter, watch note and danger overlay that explain themselves (tactic, the caller's words, rule, next step). The edge over Google's beep |
 | 7 | SRV-3, UI-6, SRV-12 | Server, UI | Egress log and privacy tests. Strategy #1 and the main track's "can you prove it" |
 | 8 | LEAD-4, SRV-6 (online) | Lead, Server | Wi-Fi-off run from a cold start, with models pre-downloaded. The live privacy proof |
@@ -157,17 +157,16 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 
 | Rank | IDs | Lane | Why it is a stretch, not must-ship |
 |---|---|---|---|
-| 1 | SRV-11 | Server | Always-on-top side panel window that comes to the front on danger (no full-screen). Keeps the meter visible beside Zoom; P0 is the browser tab plus the danger notification ([9.5](#95-the-danger-notification)) |
-| 2 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
-| 3 | UI-13, UI-14, SRV-14, DET-13 | UI, Server, Detection | Firm rules panel, then the editor that lets a company write its own rules. Strengthens the "firm rules" differentiator ([2.4](#24-competitive-position-and-what-it-protects-in-scope)); the P0 rules already appear in the warnings |
-| 4 | UI-15 | UI | "Say this" lines: one fixed sentence per tactic that the user can say to the caller ([18.3](#183-say-this-lines)). Cheap, fixed copy, works offline; turns a warning into something the user can act on under pressure |
-| 5 | SRV-15, UI-16 (C17) | Server, UI | Scam-report search: one more search per claimed organization for recent impersonation reports, shown as one line on the overlay. A second real-time use of search for the Surge pitch |
-| 6 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
-| 7 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
-| 8 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
-| 9 | AUD-8 | Audio | iPhone calls answered on the Mac, only if the Continuity test passed. Strategy #4: one platform, no phone workarounds |
-| 10 | SRV-13 (real message) | Server | Sending to an actual contact instead of a local notification |
-| 11 | LEAD-8 | Lead | Contract tests |
+| 1 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
+| 2 | UI-13, UI-14, SRV-14, DET-13 | UI, Server, Detection | Firm rules panel, then the editor that lets a company write its own rules. Strengthens the "firm rules" differentiator ([2.4](#24-competitive-position-and-what-it-protects-in-scope)); the P0 rules already appear in the warnings |
+| 3 | UI-15 | UI | "Say this" lines: one fixed sentence per tactic that the user can say to the caller ([18.3](#183-say-this-lines)). Cheap, fixed copy, works offline; turns a warning into something the user can act on under pressure |
+| 4 | SRV-15, UI-16 (C17) | Server, UI | Scam-report search: one more search per claimed organization for recent impersonation reports, shown as one line on the overlay. A second real-time use of search for the Surge pitch |
+| 5 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
+| 6 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
+| 7 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
+| 8 | AUD-8 | Audio | iPhone calls answered on the Mac, only if the Continuity test passed. Strategy #4: one platform, no phone workarounds |
+| 9 | SRV-13 (real message) | Server | Sending to an actual contact instead of a local notification |
+| 10 | LEAD-8 | Lead | Contract tests |
 
 #### P2, scoped out
 
@@ -448,8 +447,8 @@ When the pause opens:
 | | Safe-path pause (P0) |
 |---|---|
 | Owner | UI (overlay and the three exits) + Server (state, `gate.py`) |
-| Mechanism | Danger notification + sound; clicking it opens the danger overlay in the Callguard window; Enter/Esc do not dismiss the overlay; typed `SAFE` + 3 s hold for mark-safe. Other apps and the keyboard are never touched |
-| Needs | Notification permission for the Callguard page, granted once during setup (UI-11 `DEMO.md`) |
+| Mechanism | Danger notification + sound; clicking it brings the Callguard window to the front with the danger overlay (no full-screen); Enter/Esc do not dismiss the overlay; typed `SAFE` + 3 s hold for mark-safe. Other apps and the keyboard are never touched |
+| Needs | The native Callguard window (`SRV-11`; `--browser` is a dev fallback only); notification permission, granted once during setup (UI-11 `DEMO.md`) |
 | If unavailable | Permission denied: the tab title flashes, the sound plays and the overlay is already open in the Callguard window |
 
 ### 7.4 State machine
@@ -780,7 +779,7 @@ flowchart LR
     loop <--> t5
 ```
 
-pywebview needs the main thread on macOS, so `python -m callguard.server --window` starts uvicorn in a background thread and the window on the main thread. Without `--window` it runs uvicorn normally and you open `http://localhost:8000` in a browser.
+pywebview needs the main thread on macOS, so `python -m callguard.server` starts uvicorn in a background thread and the window on the main thread. The app never opens in a browser for users or the demo. For development only, `--browser` runs uvicorn normally so you can open `http://localhost:8000` (and `ui/dev/replay.html`) in a browser.
 
 ### 10.8 Branch and merge flow
 
@@ -937,8 +936,8 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 |---|---|---|---|
 | LEAD-1 | P0 | Apply contracts v2 ([12](#12-contract-changes-v2)) to `contracts.py` and AGENTS.md §3 | Merged to `main` before lanes build on new fields; lanes rebase |
 | LEAD-2 | P0 | Sign off `prompt.md` v1, `rules.json` wording, scenario scripts | Approved in review of DET-1, DET-4, DET-8 |
-| LEAD-3 | P0 | Collect deps from lanes' **Needs** into `requirements.txt` with pins (expected: `fastapi`, `uvicorn`, `sounddevice`, `numpy`, `faster-whisper`, `httpx` (egress only), `python-dotenv`, `pytest`; P1: `pywebview`) | `pip install -r requirements.txt` works on the demo Mac |
-| LEAD-4 | P0 | `hack1984/setup.md`: one-time setup (BlackHole, Ollama pull, Whisper model download to a local path, notification permission for the Callguard page) | A cold Mac reaches a Wi-Fi-off run by following it |
+| LEAD-3 | P0 | Collect deps from lanes' **Needs** into `requirements.txt` with pins (expected: `fastapi`, `uvicorn`, `sounddevice`, `numpy`, `faster-whisper`, `httpx` (egress only), `python-dotenv`, `pytest`; `pywebview`, `pyobjc-framework-Cocoa`) | `pip install -r requirements.txt` works on the demo Mac |
+| LEAD-4 | P0 | `hack1984/setup.md`: one-time setup (BlackHole, Ollama pull, Whisper model download to a local path, notification permission for the Callguard window) | A cold Mac reaches a Wi-Fi-off run by following it |
 | LEAD-5 | P0 | Organizer questions (pre-existing code, demo format), Tavily/Exa keys, friend's consent to use the story | Answers written in `background.md` |
 | LEAD-6 | P0 | Merge lanes at checkpoints, run the integration checklist ([14.3](#143-integration-checklist-per-checkpoint)) | Each checkpoint ticked in the plan |
 | LEAD-7 | P0 | `hack1984/demo-script.md`: final 3-minute script with exact lines for the teammate playing the caller (S1, S2, gate beat) | Rehearsed 3 times |
@@ -983,7 +982,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 
 | ID | P | Requirement | Done when | Depends on |
 |---|---|---|---|---|
-| SRV-1 | P0 | `app.py` / `__main__.py`: FastAPI, serves `ui/` statically, `/ws` broadcasts `{type, data}` to all clients, accepts client messages | `python -m callguard.server` opens the page | — |
+| SRV-1 | P0 | `app.py` / `__main__.py`: FastAPI, serves `ui/` statically, `/ws` broadcasts `{type, data}` to all clients, accepts client messages | `python -m callguard.server --browser` serves the page | — |
 | SRV-2 | P0 | `pipeline.py`: consumes `stream_chunks()`; keeps the speaker-labelled rolling 30 s window; per caller chunk runs `check()` in a worker (and `quick_check` immediately once DET-5 lands, P1) (skip if busy, run once more after it finishes if new chunks arrived); pushes `transcript` and `check`; logs latency (no text) | Fake S1 replay pushes the expected sequence | Fakes of AUD/DET |
 | SRV-3 | P0 | `egress.py`: the only network module. `search(org)` stub, `online()` probe, `EgressEntry` recorded **before** each call and pushed as `egress`; `offline` status without raising. Plus `local_ollama_post()` for Detection (localhost only, asserts host) | Unit tests with a fake transport | — |
 | SRV-4 | P0 | `--fake SCRIPT` flag (and `--fake-speed`) using `audio.fake_stream()` | Full demo flow without a call | AUD-5 (or own fake) |
@@ -992,13 +991,13 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-7 | P0 | Call-risk smoothing (C10, [6.7](#67-call-level-smoothing-server-c10)) | Unit tests for rise, sticky danger, decay | DET-6 constants |
 | SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only, and only after `egress.safe_org(org, caller_lines, never_search)` passes ([11.1](#111-searching-without-exposing-the-user-or-the-firm)), otherwise log `refused` and send nothing; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
 | SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. No OS hooks | Unit tests for every transition | SRV-7 |
-| SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; comes to the front on danger (no full-screen). The danger notification must still work in this window (fall back to `osascript` with the same fixed copy if the web Notification API is unavailable) | Window stays on top beside Zoom; danger brings it forward | SRV-1 |
+| SRV-11 | P0 | `window.py`: pywebview native window is the **default** (no browser, no address bar), titled "Callguard", always on top, narrow; comes to the front on danger (no full-screen). The danger notification must still work in this window (fall back to `osascript` with the same fixed copy if the web Notification API is unavailable). `--browser` skips the window (dev and tests only) | `python -m callguard.server` opens the Callguard window, never a browser tab; window stays on top beside Zoom; danger brings it forward | SRV-1 |
 | SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines; (d) `safe_org()` refuses each of: `"Agent John Miller, DOJ"`, `"DOJ case 4471-22"`, `"Chase, acct ending 8812"`, a name on the never-search list, a name the caller never said, a name only the user said; and accepts `"Department of Justice"` said by the caller | Green in `pytest` | — |
 | SRV-14 | P1 | Rules editing ([8.1](#81-customizing-the-rules-p1)): handle `save_rules` (validate with `validate_rules`, write the custom file atomically, reload, broadcast `rules` and `rules_saved`) and `reset_rules` (delete the custom file, reload defaults); refuse both while a call is active (`rules_saved` with an error); never log rule edits as egress | Unit tests with a temp directory: save, invalid save, reset, refused during a call | DET-13, SRV-5 |
 | SRV-15 | P1 | Scam-report search (C17): with the SRV-8 verify, a second `egress.search` with the fixed template `"{org}" impersonation scam` (its own `EgressEntry`); keep the most recent result from the last 12 months; one-line summary ≤ 120 chars from the result title/snippet, never model-generated from the transcript; add `report` to the `verify` message; same cache, offline and error handling as SRV-8 | Fake transport tests: report found, none recent, offline; egress log shows the full query | SRV-8 |
 | SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
 
-**Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned; P1 `pywebview`; Tavily/Exa keys in `.env` on the demo Mac.
+**Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned, plus `pywebview` and `pyobjc-framework-Cocoa` (P0); Tavily/Exa keys in `.env` on the demo Mac.
 
 ### 13.5 UI · `ui/`, `tests/ui/`
 
@@ -1061,6 +1060,8 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 ---
 
 ## 15. Testing and evaluation
+
+The eval behind DET-9 and DET-11 (dataset, pass/fail rules, metrics, merge gates) is specified in [eval-suite.md](eval-suite.md).
 
 ### 15.1 Test layers
 

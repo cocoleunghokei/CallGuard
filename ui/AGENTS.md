@@ -7,6 +7,7 @@ A local web page (`ui/index.html` plus plain JS and CSS, no build step) served b
 
 ## Tasks
 Full list with IDs and "done when": [prd.md §13.5](../hack1984/prd.md#135-ui--ui-testsui).
+Full flows and copy-paste task prompts (T1–T11, design brief): [hack1984/ui-flows.md](../hack1984/ui-flows.md), [hack1984/ui-tasks.md](../hack1984/ui-tasks.md). Work them in order.
 
 **P0**
 - [ ] "Listening locally" badge, and an online/offline indicator from `status`

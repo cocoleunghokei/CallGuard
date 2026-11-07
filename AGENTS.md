@@ -115,7 +115,8 @@ UI → Server:
 ```bash
 pip install -r requirements.txt     # once
 ollama pull qwen2.5:7b              # once (fallback: qwen2.5:3b)
-python -m callguard.server          # runs the app, then open http://localhost:8000
+python -m callguard.server          # runs the app in its own Mac window (never a browser)
+python -m callguard.server --browser  # dev only: serve http://localhost:8000 for the browser
 pytest                              # all tests, offline
 ```
 Whoever first makes one of these work, or changes one, updates this section.
