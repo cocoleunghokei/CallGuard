@@ -18,6 +18,10 @@ DOJ_PAGE = {"url": "https://www.justice.gov/contact-us", "title": "Contact the D
             "content": "Department of Justice main switchboard: (202) 514-2000."}
 
 
+def lookup(org):
+    return egress.search(org, [org])
+
+
 @pytest.fixture
 def net(monkeypatch):
     """Online with a fake transport; returns the list of requests that left."""
@@ -40,16 +44,44 @@ def net(monkeypatch):
 def test_tavily_phone_and_source(net):
     sent = net(tavily=lambda r: httpx.Response(200, json={"results": [
         {"url": "https://scamwatch.example.com", "content": "call 1-800-555-0199 now"}, DOJ_PAGE]}))
-    v = egress.search("Department of Justice")
+    v = lookup("Department of Justice")
     assert v == {"org": "Department of Justice", "status": "ok", "phone": "202-514-2000",
                  "source_url": "https://www.justice.gov/contact-us"}  # .gov preferred
     assert sent == [("api.tavily.com", {"query": "Department of Justice", "max_results": 5,
                                         "search_depth": "basic"})]
 
 
+@pytest.mark.parametrize(("org", "phone", "url"), [
+    ("Department of Justice", "202-514-2000", "https://www.justice.gov/contact-us"),
+    ("Internal Revenue Service", "800-829-1040", "https://www.irs.gov/help"),
+    ("Federal Trade Commission", "877-382-4357", "https://www.ftc.gov/contact"),
+    ("Chase Bank", "800-935-9935", "https://www.chase.com/customer-service"),
+    ("Microsoft Support", "800-642-7676", "https://support.microsoft.com/contactus"),
+])
+def test_five_org_result_shapes(net, org, phone, url):
+    sent = net(tavily=lambda r: httpx.Response(200, json={"results": [
+        {"url": url, "content": f"Public line {phone}"}]}))
+    assert lookup(org) == {"org": org, "status": "ok", "phone": phone, "source_url": url}
+    assert sent[0][1]["query"] == org
+
+
+def test_search_without_caller_lines_refuses_before_http(net):
+    sent = net(tavily=lambda r: httpx.Response(200, json={"results": [DOJ_PAGE]}))
+    assert egress.search("Department of Justice")["status"] == "error"
+    assert sent == [] and egress.entries[-1]["status"] == "refused"
+    assert egress.entries[-1]["sent"] == ""
+
+
+def test_search_enforces_env_never_search_before_http(net, monkeypatch):
+    sent = net(tavily=lambda r: httpx.Response(200, json={"results": [DOJ_PAGE]}))
+    monkeypatch.setenv("CALLGUARD_NEVER_SEARCH", "Department of Justice")
+    assert lookup("Department of Justice")["status"] == "error"
+    assert sent == [] and egress.entries[-1]["status"] == "refused"
+
+
 def test_no_phone_is_not_found_with_source(net):
     net(tavily=lambda r: httpx.Response(200, json={"results": [{"url": "https://irs.gov", "content": "no number"}]}))
-    assert egress.search("IRS") == {"org": "IRS", "status": "not_found", "source_url": "https://irs.gov"}
+    assert lookup("IRS") == {"org": "IRS", "status": "not_found", "source_url": "https://irs.gov"}
 
 
 def test_exa_fallback_when_tavily_fails(net):
@@ -57,7 +89,7 @@ def test_exa_fallback_when_tavily_fails(net):
                exa=lambda r: httpx.Response(200, json={"results": [
                    {"url": "https://www.ssa.gov", "title": "SSA", "text": "Call 800-772-1213"}]}),
                exa_key="e")
-    v = egress.search("Social Security Administration")
+    v = lookup("Social Security Administration")
     assert v["status"] == "ok" and v["phone"] == "800-772-1213"
     assert [h for h, _ in sent] == ["api.tavily.com", "api.exa.ai"]
     assert sent[1][1]["query"] == "Social Security Administration"
@@ -65,22 +97,45 @@ def test_exa_fallback_when_tavily_fails(net):
         [("api.tavily.com", "error"), ("api.exa.ai", "ok")]
 
 
+def test_exa_fallback_when_tavily_has_no_phone(net):
+    sent = net(tavily=lambda r: httpx.Response(200, json={"results": [
+        {"url": "https://www.justice.gov/about", "content": "About DOJ"}]}),
+        exa=lambda r: httpx.Response(200, json={"results": [
+            {"url": "https://www.justice.gov/contact-us", "text": "Call 202-514-2000"}]}),
+        exa_key="e")
+    assert lookup("Department of Justice")["status"] == "ok"
+    assert [host for host, _ in sent] == [egress.TAVILY_HOST, egress.EXA_HOST]
+
+
+def test_exa_works_when_tavily_probe_is_down(net, monkeypatch):
+    sent = net(exa=lambda r: httpx.Response(200, json={"results": [
+        {"url": "https://www.justice.gov/contact-us", "text": "Call 202-514-2000"}]}), exa_key="e")
+    monkeypatch.setattr(egress, "_probe", lambda host=egress.TAVILY_HOST, **k: host == egress.EXA_HOST)
+    assert lookup("Department of Justice")["status"] == "ok"
+    assert [host for host, _ in sent] == [egress.EXA_HOST]
+
+
+def test_bad_provider_json_never_raises(net):
+    net(tavily=lambda r: httpx.Response(200, json=["unexpected response"]))
+    assert lookup("Department of Justice")["status"] == "error"
+
+
 def test_no_exa_key_means_tavily_only(net):
     sent = net(tavily=lambda r: httpx.Response(500))
-    assert egress.search("IRS")["status"] == "error"
+    assert lookup("IRS")["status"] == "error"
     assert [h for h, _ in sent] == ["api.tavily.com"]
 
 
 def test_exa_only_if_no_tavily_key(net):
     sent = net(exa=lambda r: httpx.Response(200, json={"results": []}), tavily_key="", exa_key="e")
-    assert egress.search("IRS")["status"] == "not_found"
+    assert lookup("IRS")["status"] == "not_found"
     assert [h for h, _ in sent] == ["api.exa.ai"]
 
 
 def test_offline_tries_nothing(net, monkeypatch):
     sent = net(tavily=lambda r: httpx.Response(200, json={}))
     monkeypatch.setattr(egress, "_probe", lambda *a, **k: False)
-    assert egress.search("IRS")["status"] == "offline" and sent == []
+    assert lookup("IRS")["status"] == "offline" and sent == []
 
 
 @pytest.mark.parametrize("text,phone", [
@@ -182,6 +237,27 @@ def test_s1_online_egress_log_is_exactly_one_entry(net):
     final = [d for t, d in msgs if t == "verify" and d.get("status")]
     assert final == [{"org": "Department of Justice", "status": "ok", "phone": "202-514-2000",
                       "source_url": "https://www.justice.gov/contact-us"}]
+
+
+def test_instant_fake_replay_finishes_verify_before_call_end(net):
+    net(tavily=lambda r: httpx.Response(200, json={"results": [DOJ_PAGE]}))
+    messages = []
+
+    async def go():
+        hub = Hub()
+
+        async def capture(msg_type, data, **extra):
+            messages.append((msg_type, data))
+
+        hub.broadcast = capture
+        rt = Runtime(hub, Pipeline(capture, check_fn=fakes.fake_check, rules=[]))
+        await rt.pipeline.run_fake(S1, speed=0)
+        rt.close()
+
+    asyncio.run(go())
+    assert any(t == "verify" and d.get("status") == "ok" for t, d in messages)
+    assert max(i for i, (t, d) in enumerate(messages) if t == "verify" and d.get("status") == "ok") < \
+        max(i for i, (t, d) in enumerate(messages) if t == "call" and d["state"] == "ended")
 
 
 def test_call_end_clears_cache_so_next_call_looks_up_again(net):

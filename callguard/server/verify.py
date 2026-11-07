@@ -61,12 +61,14 @@ class Verifier:
             await self.broadcast("verify", self.cache[key])
             return
         await self.broadcast("verify", {"org": org})  # "Looking up…"
-        task = asyncio.get_running_loop().create_task(self._lookup(org, key, self.call_id()))
+        task = asyncio.get_running_loop().create_task(self._lookup(org, key, self.call_id(), self.caller_lines()))
         self.tasks.add(task)
         task.add_done_callback(self.tasks.discard)
 
-    async def _lookup(self, org: str, key: str, call_id: int) -> None:
-        result = await asyncio.to_thread(egress.search, org)
+    async def _lookup(self, org: str, key: str, call_id: int, caller_lines: list[str]) -> None:
+        if call_id != self.call_id():
+            return
+        result = await asyncio.to_thread(egress.search, org, caller_lines)
         if call_id != self.call_id():
             return  # the call ended meanwhile
         self.cache[key] = dict(result)

@@ -29,6 +29,7 @@ class Runtime:
         p = self.pipeline
         self.verifier = Verifier(hub.broadcast, p.caller_lines, lambda: p.call_id)
         p.on_check.append(self.verifier)
+        p.on_stream_end.append(self.verifier.drain)
         p.on_call_end.append(self.verifier.reset)
         self.listening = False
         self.online = False
