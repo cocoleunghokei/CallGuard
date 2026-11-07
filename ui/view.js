@@ -7,6 +7,8 @@ import { send } from "./ws.js";
 /** How long the verify line says "Checking…" before it gives up and hides. */
 export const VERIFY_WAIT_MS = 5000;
 
+const NEXT_STEP_FALLBACK = "Verify first: hang up and call back on a number you already have.";
+
 const $ = (id) => document.getElementById(id);
 
 // Level: colour + icon + one word (colour is never alone).
@@ -266,7 +268,8 @@ function renderTodo(state, lv) {
   $("verify-note").hidden = !vi.note;
   $("verify-note").textContent = vi.note;
 
-  $("next-step").textContent = c.next_step || "";
+  // Every warning ends with a concrete next step (prd 9.3), even if the model sent none.
+  $("next-step").textContent = c.next_step || NEXT_STEP_FALLBACK;
 }
 
 // ---------------------------------------------------------------- flagged lines ("See what they said")
@@ -501,8 +504,7 @@ function renderOverlay(state, lv) {
   const wasOpen = !$("overlay").hidden;
   $("overlay").hidden = !open;
   $("panel").inert = open;
-  $("actions").hidden = !(lv === "danger" && !open && state.inCall);
-  $("show-warning").hidden = $("actions").hidden;
+  $("show-warning").hidden = !(lv === "danger" && !open && state.inCall);
   if (!o || o.opens < lastOpens) lastOpens = 0; // new call
   if (!open) return;
 
@@ -557,7 +559,7 @@ function renderOverlay(state, lv) {
   const say = sayThis(c.tactics);
   $("ov-say").hidden = !say;
   $("ov-say-text").textContent = say || "";
-  $("ov-next").textContent = c.next_step || "Hang up and call back on a number you already have.";
+  $("ov-next").textContent = c.next_step || NEXT_STEP_FALLBACK;
 
   // One-line egress summary at the foot (T5 item 5): the privacy proof stays visible.
   $("ov-egress").replaceChildren(privIcon(sentCount(state) === 0), egressSummary(state));

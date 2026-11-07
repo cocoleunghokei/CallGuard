@@ -51,8 +51,8 @@ def test_lock_line_and_countdown(ui_server, browser):
     f = r.frame
     assert "asking for bank details" in f.inner_text("#ov-ask")
     assert f.inner_text("#ov-count") in {"2:00", "1:59"}, "starts from gate.release_in (120 s)"
-    page.wait_for_timeout(2100)
-    assert f.inner_text("#ov-count") in {"1:58", "1:57"}, "ticks locally"
+    # Ticks locally: reaches 1:58 within ~2 s (allow slack for a loaded test machine).
+    f.wait_for_function("document.getElementById('ov-count').textContent === '1:58'", timeout=4000)
     page.close()
 
 

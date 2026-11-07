@@ -230,7 +230,7 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 @media (min-width: 701px) {
   .overlay { background: color-mix(in srgb, var(--bg) 70%, #000); align-items: flex-start; padding: var(--s5) var(--s4); }
   .ov-card { max-width: 720px; background: var(--bg); border-radius: var(--r-hero); box-shadow: 0 12px 40px rgba(0, 0, 0, .25); padding: var(--s5); }
-  .ov-foot { position: static; margin: 0; padding: var(--s3) 0 0; }
+  .ov-foot { margin: auto calc(-1 * var(--s5)) calc(-1 * var(--s5)); padding: var(--s3) var(--s5); border-radius: 0 0 var(--r-hero) var(--r-hero); }
   .ov-exits { flex-direction: row; flex-wrap: wrap; }
   .ov-exits .btn { flex: 1; }
   .ov-exits .safe { flex-basis: 100%; }
@@ -238,10 +238,9 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 
 /* T7: exits */
 .toast { margin: 0; padding: var(--s2) var(--s3); border-radius: var(--r-card); background: var(--sunken); font-size: var(--t-meta); text-align: center; }
-.safe { display: grid; grid-template-columns: 1fr auto; gap: 6px var(--s2); align-items: center; margin-top: var(--s1); font-size: var(--t-meta); color: var(--muted); }
-.safe label { grid-column: 1 / -1; }
+.safe { display: grid; grid-template-columns: auto 1fr auto; gap: var(--s2); align-items: center; margin-top: 2px; font-size: var(--t-meta); color: var(--muted); }
+.safe input { width: 100%; }
 .safe input { min-width: 0; font-size: var(--t-body); padding: 6px var(--s2); border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); text-transform: uppercase; letter-spacing: .08em; }
-.safe-hint { grid-column: 1 / -1; }
 .hold {
   --p: 0;
   font-size: var(--t-meta); font-weight: 600; padding: 6px 14px; min-height: 32px; border-radius: var(--r-pill); cursor: pointer;
@@ -256,6 +255,23 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .cb-card b { font-size: 26px; font-variant-numeric: tabular-nums; }
 .cb-card b.none { font-size: var(--t-key); }
 @media (min-width: 701px) {
-  .safe { grid-template-columns: auto 120px auto; }
-  .safe label { grid-column: auto; }
+  .safe { grid-template-columns: auto 140px auto; justify-content: center; }
+}
+
+/* T8 polish */
+.hero-btn { margin-top: var(--s3); font-size: var(--t-body); font-weight: 600; min-height: 36px; padding: 6px var(--s4); border-radius: var(--r-pill); border: 0; background: var(--on-strong); color: var(--danger-hero); cursor: pointer; }
+.lv-danger .hero-btn:focus-visible { outline-color: var(--on-strong); }
+.ov-exits .btn:not(.primary) { min-height: 36px; font-size: var(--t-body); }
+/* Narrow window: a tighter red top so the signs and the way out both fit. */
+@media (max-width: 700px) {
+  .ov-card { gap: var(--s3); }
+  .ov-hero { padding: var(--s4) var(--s3); }
+  .ov-hero .ic { width: 40px; height: 40px; margin-bottom: var(--s2); }
+  .ov-hero .ic svg { width: 22px; height: 22px; }
+  .ov-hero h1 { font-size: 22px; }
+  .ov-ask { font-size: var(--t-body); }
+}
+/* Wide window (pywebview full screen): keep the panel at a readable width. */
+@media (min-width: 701px) {
+  .panel { max-width: 560px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 }

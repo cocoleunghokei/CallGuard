@@ -21,7 +21,7 @@
     <!-- A: header -->
     <header class="top">
       <span id="badge" class="badge"><span class="dot"></span><span id="badge-text">Listening locally · nothing stored</span></span>
-      <span id="net" class="net"><span class="dot"></span><span id="net-text">Online</span><span id="pause" class="pause" hidden> · Pause on</span></span>
+      <span id="net" class="net"><span class="dot"></span><span id="net-text">Online</span><span id="pause" class="pause" hidden> · Safe pause on</span></span>
     </header>
 
     <div id="consent" class="consent">
@@ -45,6 +45,7 @@
         <div class="ic"><svg width="26" height="26"><use id="hero-icon" href="#i-idle"/></svg></div>
         <h1 id="hero-word">Not on a call</h1>
         <p id="hero-sub" class="sub"><span id="hero-words">Callguard starts when a call does.</span><span id="hero-bar" class="bar" aria-hidden="true"></span></p>
+        <button id="show-warning" class="hero-btn" type="button" hidden>Show the warning</button>
       </section>
 
       <!-- D: why -->
@@ -86,7 +87,6 @@
 
     <!-- G: actions (T7/T10) -->
     <div id="actions" class="actions" hidden>
-      <button id="show-warning" class="btn primary" type="button" hidden>Show the warning</button>
     </div>
 
     <!-- F: what left this device (T5). The empty state is the feature. -->
@@ -147,10 +147,10 @@
           <button id="ov-hangup" class="btn primary" type="button" data-exit="hang_up">Hang up and call back</button>
           <button id="ov-colleague" class="btn" type="button" data-exit="colleague">Check with a colleague</button>
           <div class="safe">
-            <label for="safe-input">I've verified, it's safe. Type SAFE</label>
+            <label for="safe-input">Verified it's safe? Type SAFE</label>
             <input id="safe-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="8" aria-describedby="safe-hint">
             <button id="safe-hold" class="hold" type="button" data-exit="mark_safe" disabled aria-describedby="safe-hint"><span id="safe-hold-text">Hold 3 s</span></button>
-            <small id="safe-hint" class="safe-hint">Press and hold the button, or hold Space on it, for 3 seconds.</small>
+            <small id="safe-hint" class="sr-only">Then press and hold the button, or hold Space on it, for 3 seconds.</small>
           </div>
         </div>
         <div id="ov-cb-actions" class="ov-exits" hidden>
