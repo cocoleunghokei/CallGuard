@@ -1,7 +1,7 @@
 """python -m callguard.server [--browser] [--fake SCRIPT [--fake-speed N]] [--port 8000]
 
-SRV-11 (native pywebview window as the default) is not built yet, so for now
-both modes serve http://localhost:8000; --browser is the dev path.
+Default: the native Callguard window (pywebview, SRV-11), never a browser tab.
+--browser (dev/tests only): serve http://localhost:8000 for a browser.
 Keys (TAVILY_API_KEY, EXA_API_KEY, CALLGUARD_*) are read from .env at the repo root.
 """
 from __future__ import annotations
@@ -60,11 +60,12 @@ def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     load_env()
     app, runtime = build_app(args)
-    if not args.browser:
-        logging.getLogger("callguard.server").info(
-            "native window not built yet (SRV-11); serving for the browser")
     try:
-        uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+        if args.browser:
+            uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+        else:
+            from callguard.server.window import run_window
+            run_window(app, runtime, args.host, args.port)
     finally:
         runtime.close()  # app stops: transcript cleared
 
