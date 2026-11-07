@@ -1,0 +1,28 @@
+# Lane: Audio + transcription
+
+Read the root [AGENTS.md](../../AGENTS.md) first. You own `callguard/audio/` and `tests/audio/` only.
+
+## Delivers
+`stream_chunks()`: a generator that yields a `TranscriptChunk` (see `callguard/shared/contracts.py`) about every 3 s, for both the caller and you.
+
+## Tasks
+**P0**
+- [ ] Continuity test, Sat 12:30 ([plan section 5](../../hack1984/project-plan.md)). Record the results in the plan's table
+- [ ] `capture.py`: read the caller from BlackHole 2ch and you from the mic with `sounddevice`, at 16 kHz mono, in 3 s chunks. Start from [test_capture.py](../../hack1984/continuity-audio-test/test_capture.py)
+- [ ] `transcribe.py`: faster-whisper `small`, int8. Load the model once, transcribe each chunk, skip silent chunks
+- [ ] `stream_chunks()` combining both, plus `fake_stream(script_path)` that replays a written script, for the other lanes and for tests
+
+**P1**
+- [ ] Mandarin: let Whisper detect the language and set `language`
+- [ ] Continuity calls, only if the test passed
+
+## Rules for this lane
+- Audio stays in memory. Never call `sf.write` or save a WAV outside the standalone test script
+- Never print full transcripts
+- Target: words appear within ~3 s of being spoken
+
+## Requests from other lanes
+- (none yet)
+
+## Status
+- (none yet)
