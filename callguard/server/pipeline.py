@@ -71,6 +71,7 @@ class Pipeline:
         self.call_risk = CallRisk()
         # Called with (raw window check, smoothed call check): gate, verify.
         self.on_check: list[Callable[[ScamCheck, ScamCheck], Any]] = []
+        self.on_stream_end: list[Callable[[], Any]] = []  # finish async verify before a replay clears the call
         self.on_call_end: list[Callable[[], Any]] = []  # verify cache, gate, ...
         self.call_id = 0
         self.active = False
@@ -176,6 +177,11 @@ class Pipeline:
                     break
                 await self.feed(chunk)  # type: ignore[arg-type]
             await self.drain()
+            if self.active:
+                for fn in self.on_stream_end:
+                    result = fn()
+                    if asyncio.iscoroutine(result):
+                        await result
         finally:
             await self.end_call()
 

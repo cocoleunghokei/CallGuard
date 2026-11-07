@@ -1,6 +1,7 @@
 """SRV-5 via the WebSocket: end_call and mark_safe from the UI."""
 import threading
 
+import pytest
 from fastapi.testclient import TestClient
 
 from callguard.server.app import Hub, create_app
@@ -55,6 +56,39 @@ def test_mark_safe_from_ui_lowers_risk(tmp_path):
         ws.send_json({"type": "mark_safe"})
         assert next_of(ws, "check")["data"]["risk"] == "low"
         gate.set()
+
+
+def test_mark_safe_releases_gate_and_lowers_risk(tmp_path):
+    client, rt, hold = make(tmp_path, [ch("send the bank details", 0)])
+    with client, client.websocket_connect("/ws") as ws:
+        gate_state = next_of(ws, "gate")["data"]["state"]
+        if gate_state != "locked":
+            assert gate_state == "off"
+            assert next_of(ws, "gate")["data"]["state"] == "locked"
+        ws.send_json({"type": "mark_safe"})
+        assert next_of(ws, "gate")["data"]["state"] == "off"
+        assert next_of(ws, "check")["data"]["risk"] == "low"
+        assert rt.pipeline.call_risk.risk == "low"
+        hold.set()
+
+
+@pytest.mark.parametrize("message", [{"type": "colleague"},
+                                      {"type": "gate_release", "how": "colleague"}])
+def test_colleague_button_releases_gate_and_posts_local_notification(tmp_path, monkeypatch, message):
+    notifications = []
+    monkeypatch.setattr("callguard.server.runtime.notify_colleague_macos", lambda: notifications.append(True))
+    client, rt, hold = make(tmp_path, [ch("send the bank details", 0)])
+    with client, client.websocket_connect("/ws") as ws:
+        gate_state = next_of(ws, "gate")["data"]["state"]
+        if gate_state != "locked":
+            assert gate_state == "off"
+            assert next_of(ws, "gate")["data"]["state"] == "locked"
+        ws.send_json(message)
+        assert next_of(ws, "gate")["data"]["state"] == "off"
+        assert notifications == [True]
+        assert rt.pipeline.call_risk.risk == "danger"
+        assert rt.pipeline.call_risk.acted == ["colleague"]
+        hold.set()
 
 
 def test_reconnecting_ui_gets_call_state(tmp_path):

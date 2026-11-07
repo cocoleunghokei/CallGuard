@@ -1,16 +1,17 @@
 """SRV-3: the ONLY module in Callguard that touches the network (guardrail 2).
 
-- search(org): the one cloud call. An EgressEntry is recorded in memory BEFORE
-  the request goes out, then given its final status and pushed to listeners
-  (the WebSocket `egress` message). Offline or failing searches return a status,
-  they never raise. SRV-8 adds safe_org(), Exa fallback, phone extraction, cache.
+- search(org): the one cloud call (Tavily, Exa fallback). An EgressEntry is
+  recorded in memory BEFORE each request goes out, then given its final status
+  and pushed to listeners (the WebSocket `egress` message). Offline or failing
+  searches return a status, they never raise.
+- search() itself enforces safe_org() with caller lines (prd §11.1).
 - online(): reachability probe for status.online (C16). It opens a TCP
   connection to the search host and closes it without sending a byte, so it is
   not an egress entry (nothing leaves the device). Cached for 15 s.
 - local_ollama_post(): Detection's path to Ollama. Only localhost; not logged
   as egress because nothing leaves the device.
 
-Nothing from a transcript is ever passed in here except a claimed org name.
+Caller lines are checked locally; only an approved org enters a provider request.
 """
 from __future__ import annotations
 
@@ -32,6 +33,8 @@ log = logging.getLogger("callguard.server.egress")
 
 TAVILY_HOST = "api.tavily.com"
 TAVILY_URL = f"https://{TAVILY_HOST}/search"
+EXA_HOST = "api.exa.ai"
+EXA_URL = f"https://{EXA_HOST}/search"
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
 MAX_QUERY_CHARS = 80
 SEARCH_TIMEOUT_S = 6.0
@@ -177,52 +180,127 @@ def _query_ok(org: Any) -> bool:
     )
 
 
-def search(org: str) -> tuple[Verify, dict | None]:
-    """Look up `org` (the exact query). Returns (verify, raw provider JSON or None).
-
-    Never raises. Status: ok | offline | error | not_found. Input that is too
-    long or multi-line is refused before anything is sent.
-    """
-    if not _query_ok(org):
-        record_refused()
-        return {"org": org if isinstance(org, str) else "", "status": "error"}, None
-    query = org.strip()
-
-    if not online():
-        entry = _new_entry(TAVILY_HOST, query, "offline")
-        _publish(entry)
-        return {"org": query, "status": "offline"}, None
-
-    key = os.environ.get("TAVILY_API_KEY", "")
-    if not key:
-        log.warning("search skipped: TAVILY_API_KEY not set")
-        entry = _new_entry(TAVILY_HOST, "", "error")
-        _publish(entry)
-        return {"org": query, "status": "error"}, None
-
-    # Recorded BEFORE the request leaves; provisional status until we know.
-    entry = _new_entry(TAVILY_HOST, query, "error")
+def _post(destination: str, url: str, query: str, body: dict, headers: dict) -> tuple[str, dict | None]:
+    """One logged request. The entry is recorded BEFORE the request leaves."""
+    entry = _new_entry(destination, query, "error")  # provisional until we know
     started = time.monotonic()
     raw: dict | None = None
     try:
         with httpx.Client(transport=_transport, timeout=SEARCH_TIMEOUT_S) as client:
-            r = client.post(TAVILY_URL, json={"query": query, "max_results": 5},
-                            headers={"Authorization": f"Bearer {key}"})
+            r = client.post(url, json=body, headers=headers)
         r.raise_for_status()
-        raw = r.json()
+        value = r.json()
+        if not isinstance(value, dict):
+            raise ValueError("search response is not an object")
+        raw = value
         entry["status"] = "ok"
     except (httpx.ConnectError, httpx.ConnectTimeout):
         entry["status"] = "offline"
     except Exception as e:  # never raise to the pipeline
-        log.warning("search failed: %s", type(e).__name__)
-        entry["status"] = "error"
-    log.info("search %s in %.2fs", entry["status"], time.monotonic() - started)
+        log.warning("%s search failed: %s", destination, type(e).__name__)
+    log.info("%s search %s in %.2fs", destination, entry["status"], time.monotonic() - started)
     _publish(entry)
+    return entry["status"], raw
 
-    status = entry["status"]
-    if status == "ok" and not (raw or {}).get("results"):
-        status = "not_found"
-    return {"org": query, "status": status}, raw  # type: ignore[typeddict-item]
+
+def _tavily(query: str, key: str) -> tuple[str, list[dict]]:
+    status, raw = _post(TAVILY_HOST, TAVILY_URL, query,
+                        {"query": query, "max_results": 5, "search_depth": "basic"},
+                        {"Authorization": f"Bearer {key}"})
+    values = (raw or {}).get("results", [])
+    results = [{"url": r.get("url", ""), "title": r.get("title", ""), "text": r.get("content", "")}
+               for r in values if isinstance(r, dict)] if isinstance(values, list) else []
+    return status, results
+
+
+def _exa(query: str, key: str) -> tuple[str, list[dict]]:
+    status, raw = _post(EXA_HOST, EXA_URL, query,
+                        {"query": query, "numResults": 5, "contents": {"text": {"maxCharacters": 2000}}},
+                        {"x-api-key": key})
+    values = (raw or {}).get("results", [])
+    results = [{"url": r.get("url", ""), "title": r.get("title", ""), "text": r.get("text", "") or ""}
+               for r in values if isinstance(r, dict)] if isinstance(values, list) else []
+    return status, results
+
+
+_PHONE = re.compile(r"(?<![\w-])(?:\+?1[\s.-]?)?\(?([2-9]\d{2})\)?[\s.-]?(\d{3})[\s.-]?(\d{4})(?![\w-])")
+
+
+def _official_rank(url: str) -> int:
+    try:
+        host = (urlsplit(url).hostname or "").lower()
+    except (TypeError, ValueError):
+        return 3
+    if host.endswith(".gov") or host.endswith(".mil"):
+        return 0
+    if host.endswith(".org") or host.endswith(".edu"):
+        return 1
+    return 2
+
+
+def _public_url(url: object) -> bool:
+    if not isinstance(url, str):
+        return False
+    try:
+        parts = urlsplit(url)
+        return parts.scheme == "https" and bool(parts.hostname) and parts.hostname not in LOCAL_HOSTS
+    except ValueError:
+        return False
+
+
+def extract_phone(results: list[dict]) -> tuple[str, str]:
+    """(phone, source_url) from the most official result that lists a phone; ("", first url) if none."""
+    public = [r for r in results if _public_url(r.get("url"))]
+    for r in sorted(public, key=lambda r: _official_rank(r["url"])):  # stable: keeps provider order
+        m = _PHONE.search(f"{r.get('title', '')} {r.get('text', '')}")
+        if m:
+            return f"{m.group(1)}-{m.group(2)}-{m.group(3)}", r.get("url", "")
+    return "", (public[0]["url"] if public else "")
+
+
+def search(org: str, caller_lines: list[str] | None = None,
+           never_search: list[str] | None = None) -> Verify:
+    """Look up a caller-said org (sent alone). Never raises.
+
+    Tavily first; Exa only if Tavily fails and EXA_API_KEY is set (its own
+    egress entry). Returns a Verify: status ok (phone found) | not_found |
+    offline | error. Input that is too long or multi-line is refused before
+    anything is sent. Caller lines stay local and are required for safe_org().
+    """
+    if not _query_ok(org) or not safe_org(org, caller_lines or [],
+                                          [*never_search_from_env(), *(never_search or [])]):
+        record_refused()
+        return {"org": org if isinstance(org, str) else "", "status": "error"}
+    query = " ".join(org.split())
+
+    tavily_key = os.environ.get("TAVILY_API_KEY", "").strip()
+    exa_key = os.environ.get("EXA_API_KEY", "").strip()
+    tavily_reachable = online()
+    exa_reachable = bool(exa_key) and (tavily_reachable or (
+        os.environ.get("CALLGUARD_OFFLINE") != "1" and _probe(EXA_HOST)))
+    if not tavily_reachable and not exa_reachable:
+        _publish(_new_entry(TAVILY_HOST, query, "offline"))
+        return {"org": query, "status": "offline"}
+
+    status, results = "error", []
+    if tavily_key and tavily_reachable:
+        status, results = _tavily(query, tavily_key)
+    phone, source_url = extract_phone(results) if status == "ok" else ("", "")
+    if not phone and exa_key and exa_reachable:
+        status, results = _exa(query, exa_key)
+        phone, source_url = extract_phone(results) if status == "ok" else ("", "")
+    if not tavily_key and not exa_key:
+        _publish(_new_entry(TAVILY_HOST, "", "error"))  # nothing sent: no key
+        return {"org": query, "status": "error"}
+    if status != "ok":
+        return {"org": query, "status": status}  # type: ignore[typeddict-item]
+
+    verify: Verify = {"org": query, "status": "ok" if phone else "not_found"}
+    if phone:
+        verify["phone"] = phone
+    if source_url:
+        verify["source_url"] = source_url
+    return verify
 
 
 # ---------------------------------------------------------------- local model

@@ -10,7 +10,10 @@ from fastapi import WebSocket
 
 from callguard.server import egress
 from callguard.server.app import Hub
+from callguard.server.gate import SoftGate
 from callguard.server.pipeline import Pipeline
+from callguard.server.verify import Verifier
+from callguard.server.window import notify_colleague_macos
 from callguard.shared.contracts import Status
 
 STATUS_EVERY_S = 15.0  # C16
@@ -24,7 +27,17 @@ class Runtime:
         self.pipeline = pipeline or Pipeline(hub.broadcast)
         hub.handle("end_call", self._on_end_call)
         hub.handle("mark_safe", self._on_mark_safe)
+        hub.handle("colleague", self._on_colleague)
+        hub.handle("gate_release", self._on_gate_release)
         hub.on_connect.append(self._hello)
+        p = self.pipeline
+        self.verifier = Verifier(hub.broadcast, p.caller_lines, lambda: p.call_id)
+        p.on_check.append(self.verifier)
+        p.on_stream_end.append(self.verifier.drain)
+        p.on_call_end.append(self.verifier.reset)
+        self.gate = SoftGate(hub.broadcast)
+        p.on_check.append(self.gate.on_check)
+        p.on_call_end.append(self.gate.reset)
         self.listening = False
         self.online = False
 
@@ -65,6 +78,9 @@ class Runtime:
             await self.hub.send(ws, "call", {"state": "started"})
             if self.pipeline.call_risk.shown:
                 await self.hub.send(ws, "check", self.pipeline.call_risk.shown)
+            for v in list(self.verifier.cache.values()):
+                await self.hub.send(ws, "verify", v)
+        await self.hub.send(ws, "gate", self.gate.snapshot())
 
     async def _on_end_call(self, msg: dict) -> None:
         await self.pipeline.end_call()
@@ -72,9 +88,29 @@ class Runtime:
     async def _on_mark_safe(self, msg: dict) -> None:
         if not self.pipeline.active:
             return
+        await self.gate.release("mark_safe")
         shown = self.pipeline.call_risk.act("mark_safe")
         if shown:
             await self.hub.broadcast("check", shown)
+
+    async def _on_colleague(self, msg: dict) -> None:
+        if not self.pipeline.active:
+            return
+        await self.gate.release("colleague")
+        self.pipeline.call_risk.act("colleague")
+        notify_colleague_macos()
+
+    async def _on_gate_release(self, msg: dict) -> None:
+        how = msg.get("how")
+        if not self.pipeline.active or how not in {"hang_up", "colleague", "mark_safe"}:
+            return
+        if how == "mark_safe":
+            await self._on_mark_safe(msg)
+        elif how == "colleague":
+            await self._on_colleague(msg)
+        else:
+            await self.gate.release(how)
+            self.pipeline.call_risk.act(how)
 
     async def run_fake(self, script: str | Path, speed: float = 1.0) -> None:
         await self.hub.wait_for_client()  # don't play the call to an empty room
@@ -85,4 +121,5 @@ class Runtime:
             await self.set_listening(False)
 
     def close(self) -> None:
+        self.gate.close()
         self.pipeline.close()
