@@ -1009,6 +1009,8 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 
 ## 15. Testing and evaluation
 
+The eval behind DET-9 and DET-11 (dataset, pass/fail rules, metrics, merge gates) is specified in [eval-suite.md](eval-suite.md).
+
 ### 15.1 Test layers
 
 | Layer | What | Where | Needs |
