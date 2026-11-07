@@ -22,7 +22,7 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 | 7 | New sign, updated in place | 15 (32.9 s) | 4th sign "Asks for client or personal data" + second firm rule, no second tone |
 | 8 | Pause, F4 | 16 (33.6 s) | Red top adds "This call is asking for bank details…", "🔒 Pause ends in 2:00" counting down, "Callguard is keeping focus…". Enter and Esc do nothing |
 | 9a | Exit: Hang up and call back, F5 | at step 16, press Space or click | "Hang up now", "(202) 514-2000 · Department of Justice · justice.gov", "Copy number". UI → Server log: `gate_release how="hang_up"` |
-| 9b | Exit: Check with a colleague | at step 16, click | Toast "Heads-up sent…". Log: `colleague`, `gate_release how="colleague"` |
+| 9b | Exit: Check with a colleague | at step 16, click | Toast "Heads-up for IT and your manager", the fixed message, "Demo: not sent…"; nothing added to "What left this device". Log: `colleague`, `gate_release how="colleague"` |
 | 9c | Exit: it's safe | at step 16, type SAFE, hold "Hold 3 s" | Warning closes, "Low · Marked safe". Log: `mark_safe`, `gate_release how="mark_safe"` |
 | 10 | Pause runs out (no exit taken) | 17 (48.6 s) | Back to the red panel "Danger", "Show the warning" button reopens it (no tone) |
 | 11 | Call ended, F9 | 18 (49.1 s) | Grey idle again, no transcript anywhere; the egress entry stays under "Earlier today" |

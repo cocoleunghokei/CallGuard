@@ -111,3 +111,13 @@ export function mmss(sec) {
   const s = Math.max(0, Math.ceil(sec));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
+
+/** "Check with a colleague" heads-up (Coco, Sat): goes to the firm's IT team and
+ *  the user's line manager, fixed wording only, never anything from the call.
+ *  The hackathon build shows it here and sends nothing, so it says so: the
+ *  "What left this device" log must stay true. */
+export const HEADS_UP = {
+  title: "Heads-up for IT and your manager",
+  message: "Callguard heads-up: a call on this laptop looks suspicious. Please check in.",
+  note: "Demo: not sent. In the full version this goes to your IT team and your manager. Stay on the line or hang up, your choice.",
+};

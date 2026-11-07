@@ -74,7 +74,7 @@ Then open `http://localhost:8080/dev/replay.html?clean=1&f=s1_government,offline
 | 2:00 | **Turn Wi-Fi off.** Rerun (B: close the window and run the command again) | Header "Offline". Same call is still caught; verify line "Offline, search skipped. Use the number on file."; footer "Nothing has left this device · 1 skipped" |
 | 2:15 | Click the footer: "Even the name didn't go out." | Entry "Offline, not sent" |
 
-Other exits, if a judge asks: **Check with a colleague** (toast "Heads-up sent…") and **Verified it's safe?** (type SAFE, then hold the button for 3 s; a single click never does it).
+Other exits, if a judge asks: **Check with a colleague** (shows the fixed heads-up IT and the manager would get, marked "Demo: not sent") and **Verified it's safe?** (type SAFE, then hold the button for 3 s; a single click never does it).
 
 ## 5. If something breaks on stage
 

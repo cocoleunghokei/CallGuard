@@ -1,7 +1,7 @@
 // Draws `state` (see app.js) into ui/index.html. Never logs, never stores.
 // The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
 
-import { plainWords, shortWords, sayThis, signsWords, askLine, mmss } from "./copy.js";
+import { plainWords, shortWords, sayThis, signsWords, askLine, mmss, HEADS_UP } from "./copy.js";
 import { send } from "./ws.js";
 
 /** How long the verify line says "Checking…" before it gives up and hides. */
@@ -597,14 +597,14 @@ function isSafe() {
   return $("safe-input").value.trim().toLowerCase() === "safe";
 }
 
-function toast(text) {
-  $("ov-toast").textContent = text;
+function toast(...lines) {
+  $("ov-toast").replaceChildren(...lines);
   $("ov-toast").hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     $("ov-toast").hidden = true;
-    $("ov-toast").textContent = "";
-  }, 6000);
+    $("ov-toast").replaceChildren();
+  }, 12000);
 }
 
 function setHold(p) {
@@ -658,7 +658,7 @@ function bindExits(state) {
     send("gate_release", { how: "colleague" });
     state.gate = null;
     rerender();
-    toast("Heads-up sent. Stay on the line or hang up, your choice.");
+    toast(h("b", { text: HEADS_UP.title }), h("q", { text: HEADS_UP.message }), h("small", { text: HEADS_UP.note }));
   });
   $("cb-copy").addEventListener("click", async () => {
     const phone = state.verify && state.verify.phone;

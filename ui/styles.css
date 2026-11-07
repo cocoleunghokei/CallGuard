@@ -237,7 +237,10 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 }
 
 /* T7: exits */
-.toast { margin: 0; padding: var(--s2) var(--s3); border-radius: var(--r-card); background: var(--sunken); font-size: var(--t-meta); text-align: center; }
+.toast { margin: 0; padding: var(--s2) var(--s3); border-radius: var(--r-card); background: var(--sunken); font-size: var(--t-meta); display: flex; flex-direction: column; gap: 2px; }
+.toast b { font-size: var(--t-body); }
+.toast q { color: var(--text); }
+.toast small { color: var(--muted); }
 .safe { display: grid; grid-template-columns: auto 1fr auto; gap: var(--s2); align-items: center; margin-top: 2px; font-size: var(--t-meta); color: var(--muted); }
 .safe input { width: 100%; }
 .safe input { min-width: 0; font-size: var(--t-body); padding: 6px var(--s2); border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); text-transform: uppercase; letter-spacing: .08em; }
