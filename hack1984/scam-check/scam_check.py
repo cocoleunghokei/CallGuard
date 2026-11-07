@@ -45,7 +45,7 @@ def load_rules():
     return rules, "\n".join(f'- {r["id"]}: {r["text"]}' for r in rules)
 
 
-def check(transcript, model, rules_text, rule_ids=(), timeout=180):
+def check(transcript, model, rules_text, rules=(), timeout=180):
     body = {
         "model": model,
         "stream": False,
@@ -64,7 +64,11 @@ def check(transcript, model, rules_text, rule_ids=(), timeout=180):
     # Normalise so the screen never gets junk
     out["risk"] = out.get("risk") if out.get("risk") in ("low", "watch", "danger") else "watch"
     out["tactics"] = [t for t in out.get("tactics") or [] if t in TACTICS]
-    out["rules_broken"] = [r for r in out.get("rules_broken") or [] if r in rule_ids]
+    # A rule only counts if a tactic that triggers it was actually detected.
+    # Stops the model blaming "bank changes" on a call that never mentioned a bank.
+    triggers = {r["id"]: set(r.get("tactics", [])) for r in rules}
+    out["rules_broken"] = [r for r in out.get("rules_broken") or []
+                           if r in triggers and triggers[r] & set(out["tactics"])]
     if out["rules_broken"] and out["risk"] != "danger":
         out["risk"] = "danger"  # breaking a firm rule is always danger
     return out
@@ -76,7 +80,6 @@ def main():
     ap.add_argument("--text", help="check one transcript instead of the test set")
     args = ap.parse_args()
     rules, rules_text = load_rules()
-    ids = {r["id"] for r in rules}
 
     try:
         urllib.request.urlopen("http://localhost:11434/api/tags", timeout=3)
@@ -84,7 +87,7 @@ def main():
         sys.exit("Ollama is not running. Start the Ollama app, or run `ollama serve` in another terminal.")
 
     if args.text:
-        print(json.dumps(check(args.text, args.model, rules_text, ids), indent=2, ensure_ascii=False))
+        print(json.dumps(check(args.text, args.model, rules_text, rules), indent=2, ensure_ascii=False))
         return
 
     cases = json.loads((HERE / "test_scripts.json").read_text())
@@ -92,7 +95,7 @@ def main():
     for c in cases:
         t0 = time.time()
         try:
-            out = check(c["transcript"], args.model, rules_text, ids)
+            out = check(c["transcript"], args.model, rules_text, rules)
         except urllib.error.HTTPError as e:
             sys.exit(f"Ollama error {e.code}: {e.read().decode()[:200]}\nDid you `ollama pull {args.model}`?")
         ok = out["risk"] in c["expected"]
