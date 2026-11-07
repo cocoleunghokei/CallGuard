@@ -95,7 +95,7 @@ Note: she was called on her **mobile**. Our laptop app would catch the same scri
 
 ### Solution
 1. **Listens locally:** captures call audio on the Mac (Zoom, Teams, RingCentral, and iPhone calls answered on the Mac if the test passes)
-2. **Transcribes locally:** Whisper, on the laptop. English and Mandarin
+2. **Transcribes locally:** Whisper, on the laptop. English only
 3. **Checks the script locally:** a small model (via Ollama) looks for scam tactics: posing as an authority, urgency, secrecy, threats, asking for credentials or bank changes, skipping approval
 4. **Checks the firm's rules:** the firm sets rules once, e.g. "We never change vendor bank details by phone." "IT never asks for your code."
 5. **Warns in plain words:** "This breaks your firm's rule: bank changes need a callback. Vendor's number on file: …" For high risk, a full-screen warning that a bank or login window can't hide.
