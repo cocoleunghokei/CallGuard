@@ -62,6 +62,7 @@ export function bindView(state, redraw) {
   });
   $("end-call").addEventListener("click", () => send("end_call"));
   bindExits(state);
+  bindSideButtons(state);
   $("show-warning").addEventListener("click", () => {
     state.overlay.open = true; // not a new open: no tone
     rerender();
@@ -102,6 +103,8 @@ export function render(state) {
   renderTail(state, lv);
   renderPrivacy(state);
   renderOverlay(state, lv);
+  renderActions(state, lv);
+  renderFirmRules(state);
 
   if (focusKey) {
     const el = document.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
@@ -591,20 +594,28 @@ function privIcon(ok) {
 
 const HOLD_MS = 3000;
 let hold = null; // {t0, raf}
-let toastTimer = 0;
 
 function isSafe() {
   return $("safe-input").value.trim().toLowerCase() === "safe";
 }
 
 function toast(...lines) {
-  $("ov-toast").replaceChildren(...lines);
-  $("ov-toast").hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    $("ov-toast").hidden = true;
-    $("ov-toast").replaceChildren();
+  showToast("ov-toast", lines);
+}
+
+const toastTimers = {};
+function showToast(id, lines) {
+  $(id).replaceChildren(...lines);
+  $(id).hidden = false;
+  clearTimeout(toastTimers[id]);
+  toastTimers[id] = setTimeout(() => {
+    $(id).hidden = true;
+    $(id).replaceChildren();
   }, 12000);
+}
+
+function headsUpLines() {
+  return [h("b", { text: HEADS_UP.title }), h("q", { text: HEADS_UP.message }), h("small", { text: HEADS_UP.note })];
 }
 
 function setHold(p) {
@@ -658,7 +669,7 @@ function bindExits(state) {
     send("gate_release", { how: "colleague" });
     state.gate = null;
     rerender();
-    toast(h("b", { text: HEADS_UP.title }), h("q", { text: HEADS_UP.message }), h("small", { text: HEADS_UP.note }));
+    toast(...headsUpLines());
   });
   $("cb-copy").addEventListener("click", async () => {
     const phone = state.verify && state.verify.phone;
@@ -695,4 +706,55 @@ function bindExits(state) {
       stopHold();
     }
   });
+}
+
+// ---------------------------------------------------------------- side buttons at Watch (T10 / UI-9)
+
+function bindSideButtons(state) {
+  $("side-colleague").addEventListener("click", () => {
+    send("colleague"); // no pause outside danger, so no gate_release
+    showToast("panel-toast", headsUpLines());
+  });
+  $("side-safe").addEventListener("click", () => {
+    // One click is enough here: there is no pause to get past (F10).
+    send("mark_safe");
+    state.markedSafe = true;
+    $("panel-toast").hidden = true;
+    rerender();
+    $("hero-word").scrollIntoView?.({ block: "nearest" });
+  });
+}
+
+function renderActions(state, lv) {
+  const show = state.inCall && state.ui.view === "panel" && lv === "watch";
+  $("actions").hidden = !show;
+  if (!state.inCall) {
+    $("panel-toast").hidden = true;
+    $("panel-toast").replaceChildren();
+  }
+}
+
+// ---------------------------------------------------------------- firm rules (T10 / UI-13)
+
+function renderFirmRules(state) {
+  const rules = state.rules || [];
+  $("firm-rules").hidden = rules.length === 0 || state.ui.view !== "panel";
+  $("firm-rules-h").textContent = `Your firm's rules (${rules.length})`;
+  const hits = Object.values(state.ruleHits).filter(Boolean).length;
+  $("firm-rules-hits").textContent = hits ? `${hits} came up this call` : "";
+  $("firm-rules-list").replaceChildren(
+    ...rules.map((r) => {
+      const n = state.ruleHits[r.id] || 0;
+      const off = r.enabled === false;
+      return h(
+        "li",
+        { class: [n ? "hit" : "", off ? "off" : ""].filter(Boolean).join(" ") || null },
+        h("span", { text: r.text || String(r.id).replace(/_/g, " ") }),
+        n ? h("span", { class: "rule-badge", text: `came up ${n}×` }) : null,
+        off ? h("span", { class: "rule-badge muted", text: "Off" }) : null,
+      );
+    }),
+  );
+  const src = state.rulesSource === "custom" ? "Set by your firm." : state.rulesSource === "default" ? "Callguard's default rules." : "";
+  $("firm-rules-src").textContent = src ? `${src} Kept on this laptop, never sent.` : "Kept on this laptop, never sent.";
 }

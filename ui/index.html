@@ -69,6 +69,15 @@
         <p id="next-step" class="next"></p>
       </section>
 
+      <!-- G: actions at Watch (T10 / UI-9). Outside danger, one click is enough. -->
+      <div id="actions" class="actions" hidden>
+        <div class="side-btns">
+          <button id="side-colleague" class="btn quiet" type="button">Check with a colleague</button>
+          <button id="side-safe" class="btn quiet" type="button">Mark as safe</button>
+        </div>
+        <p id="panel-toast" class="toast" role="status" hidden></p>
+      </div>
+
       <!-- "See what they said": flagged lines for this call -->
       <section id="said-view" class="sec" hidden aria-labelledby="said-h">
         <h2 id="said-h"><button id="close-said" class="link back" type="button">‹ Back</button><span>Flagged lines this call</span></h2>
@@ -83,11 +92,13 @@
         <h2>Latest</h2>
         <ol id="tail" class="said"></ol>
       </section>
+      <!-- Firm rules (T10 / UI-13): read only; editing is UI-14 -->
+      <details id="firm-rules" class="sec firm-rules">
+        <summary><span id="firm-rules-h">Your firm's rules</span><span id="firm-rules-hits" class="hits-sum"></span></summary>
+        <ul id="firm-rules-list" class="firm-list"></ul>
+        <p id="firm-rules-src" class="note"></p>
+      </details>
     </main>
-
-    <!-- G: actions (T7/T10) -->
-    <div id="actions" class="actions" hidden>
-    </div>
 
     <!-- F: what left this device (T5). The empty state is the feature. -->
     <footer id="priv" class="priv">

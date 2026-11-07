@@ -15,7 +15,7 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 |---|---|---|---|
 | 1 | Idle, F0 | 2 (0.5 s) | Grey ○ "Not on a call", "Listening locally · nothing stored", "Online · Safe pause on", consent line, "Nothing has left this device" |
 | 2 | Call started, low, F1 | 3–7 (1.0–12 s) | Green ✓ "Low · No clear signs" + 3/10 bar, "Latest" shows the last 3 lines, "End call" in the footer |
-| 3 | Watch, F2 | 8 (15.0 s) | Amber ◐ "Watch · Some signs" 7/10, Why: reason + "Claims authority", "Threatens you" (click to see the quote), Say line, "Checking Department of Justice's public number…", next step |
+| 3 | Watch, F2 | 8 (15.0 s) | Amber ◐ "Watch · Some signs" 7/10, Why: reason + "Claims authority", "Threatens you" (click to see the quote), Say line, "Checking Department of Justice's public number…", next step, then two buttons "Check with a colleague" (shows the demo-only IT + manager heads-up) and "Mark as safe" (one click, panel goes "Low · Marked safe") |
 | 4 | Egress entry, F6 | 9 (16.0 s) | Footer flashes once, "1 item left: "Department of Justice"". Click it: panel "What left this device (1)", entry 19:02:11 · api.tavily.com · Sent |
 | 5 | Verified number | 10 (17.4 s) | "Public number · justice.gov (202) 514-2000" with Copy |
 | 6 | Danger, F3 | 13 (25.9 s) | Warning opens over the panel with one tone, focus on "Hang up and call back": claimed identity, 3 signs with quotes, firm rule, "Real public number…", Say, next step, egress line at the foot |
@@ -45,4 +45,5 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 | Code request | `s3_it_code` | 8, then wait 5 s | "Checking…" line, hidden after 5 s with no lookup answer |
 | Partner wire | `s4_partner_wire` | 8, 10 | "Asks you to send money", "Wants you to skip the usual approval", two-approvals rule |
 | Connecting | any | press "Drop connection" | Banner "Connecting to Callguard…", recovers in 2 s |
+| Firm rules panel | `s2_vendor_bank` | 14 | "Your firm's rules (5)" at the bottom of the panel, collapsed; open it: the bank-details rule has a red "came up 1×", summary "1 came up this call". Badges clear when the call ends |
 | Wide window | `s1_government` | 13 | Window > 700 px: the panel stays 560 px wide and centred; the warning is a centred 720 px card |

@@ -44,7 +44,8 @@ export async function connect(onMessage, onState = () => {}) {
       } catch {
         return; // ignore garbage, never crash
       }
-      if (msg && typeof msg.type === "string") onMessage({ type: msg.type, data: msg.data });
+      // `source` is the optional top-level field on `rules` (default | custom).
+      if (msg && typeof msg.type === "string") onMessage({ type: msg.type, data: msg.data, source: msg.source });
     };
     socket.onclose = () => {
       socket = null;

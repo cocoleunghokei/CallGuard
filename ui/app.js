@@ -17,6 +17,11 @@ export const state = {
   consentDismissed: false, // memory only, for this session
   status: null, // {listening, online, model?, gate?}
   rules: [],
+  rulesSource: null, // "default" | "custom" | null
+  // Firm rules that came up this call: id -> times it newly appeared in check.rules_broken.
+  // Call metadata only (no transcript); reset on call start and end.
+  ruleHits: {},
+  brokenNow: [], // rules_broken of the latest check, to count only new appearances
   inCall: false,
   tail: [], // last TAIL_LINES TranscriptChunks, current call only
   check: null, // latest ScamCheck
@@ -42,8 +47,9 @@ const handlers = {
   status(data) {
     state.status = data || null;
   },
-  rules(data) {
+  rules(data, msg) {
     state.rules = Array.isArray(data) ? data : [];
+    state.rulesSource = (msg && msg.source) || null;
   },
   call(data) {
     const s = data && data.state;
@@ -60,6 +66,9 @@ const handlers = {
   check(data) {
     state.check = data || null;
     state.markedSafe = false;
+    const broken = (data && data.rules_broken) || [];
+    for (const id of broken) if (!state.brokenNow.includes(id)) state.ruleHits[id] = (state.ruleHits[id] || 0) + 1;
+    state.brokenNow = [...broken];
     const org = data && data.claimed_identity;
     const shown = data && (data.risk === "watch" || data.risk === "danger"); // the verify line is on screen
     if (org && shown && (!state.verifyWait || state.verifyWait.org !== org)) {
@@ -90,9 +99,9 @@ const handlers = {
 };
 
 /** The single dispatch point for Server -> UI messages. */
-export function onMessage({ type, data }) {
+export function onMessage({ type, data, source }) {
   const handle = handlers[type];
-  if (handle) handle(data);
+  if (handle) handle(data, { source });
   render(state);
 }
 
@@ -118,6 +127,8 @@ function wipeCall() {
   state.ui.view = "panel";
   state.overlay = { open: false, opens: 0, seen: [], mode: "warning" };
   state.markedSafe = false;
+  state.ruleHits = {};
+  state.brokenNow = [];
 }
 
 // The pause countdown ticks here, re-synced by every `gate` message. At 0:00
