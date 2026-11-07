@@ -9,6 +9,11 @@
       cd ui && python3 -m http.server 8080
       open http://localhost:8080/dev/replay.html
   Optional query: ?f=s1_government&speed=4&autoplay=0
+  Recording mode (backup video, ui/DEMO.md):
+      ?clean=1&f=s1_government,offline&exit=hang_up
+  clean=1 hides these controls; f= plays a comma list back to back (gap=4 s,
+  with a title card); exit=hang_up|colleague clicks that exit exit_after=4 s
+  after the pause locks.
   No Server, no Ollama, no network.
 -->
 <style>
@@ -33,11 +38,19 @@
   .log li.drop { opacity: .5; text-decoration: line-through; }
   .log li.sys { opacity: .6; font-style: italic; }
   .sent li { font-weight: 600; }
+  .stage { position: relative; }
+  .card { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); margin: 0; padding: 12px 20px; border-radius: 12px; background: rgba(0,0,0,.82); color: #fff; font-size: 17px; font-weight: 600; white-space: nowrap; }
+  body.clean { background: #e9e9ec; }
+  body.clean .side { display: none; }
+  body.clean .stage { flex: 1; background: transparent; align-items: flex-start; padding-top: 24px; }
+  body.clean iframe { height: 760px; max-height: calc(100vh - 48px); }
+  @media (prefers-color-scheme: dark) { body.clean { background: #0e0e10; } }
 </style>
 </head>
 <body>
   <div class="stage">
     <iframe id="ui" title="Callguard UI under replay"></iframe>
+    <p id="card" class="card" role="status" hidden></p>
   </div>
   <div class="side">
     <h1>Callguard replay</h1>
