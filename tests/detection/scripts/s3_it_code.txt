@@ -1,0 +1,12 @@
+# id: s3_it_code
+# set: p0
+# kind: scam
+# twin_of: -
+# expect: low|watch, danger
+# giveaway: 2
+# gate: 2
+# tactics: authority, urgency, credential_request
+# rules: it_never_asks_for_codes
+caller: This is Jake from IT, we've seen suspicious logins on your account.
+you: Oh no, what do I need to do?
+caller: I've just sent a code to your phone. Read it to me so I can lock the attacker out, quickly.

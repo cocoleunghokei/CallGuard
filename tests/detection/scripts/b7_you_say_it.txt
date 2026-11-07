@@ -1,0 +1,13 @@
+# id: b7_you_say_it
+# set: p0
+# kind: twin
+# twin_of: s1
+# expect: low, low, low
+# tactics: -
+# rules: -
+# claimed: -
+caller: Hey, it's Priya. Did you get my email about Friday?
+you: Yes! Don't tell anyone, it's a surprise party for Sam. Keep it secret, okay?
+caller: Ha, of course. I'll bring the cake, can you book the conference room?
+you: Done. And please don't mention it to Sam, he has no idea.
+caller: Got it. See you Friday at four.

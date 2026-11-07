@@ -1,0 +1,14 @@
+# id: s4_partner_wire
+# set: p0
+# kind: scam
+# twin_of: -
+# expect: low, danger, danger
+# giveaway: 2
+# gate: 3
+# tactics: payment_request, urgency, bypass_approval, secrecy
+# rules: wires_need_two_approvals, never_keep_calls_secret
+caller: Hey, it's David. I'm about to board, I've got two minutes.
+you: Hi David, sure, what's up?
+caller: I need you to wire the Pearson escrow funds before five. Skip the second sign-off, I'll approve it when I land.
+you: Um, okay, normally Lisa has to sign off on that.
+caller: Keep this between us until it closes. I'll text you the account.

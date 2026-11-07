@@ -1,0 +1,13 @@
+# id: b3_real_bank
+# set: p0
+# kind: twin
+# twin_of: s5
+# expect: low|watch, low|watch, low|watch
+# tactics: authority
+# rules: -
+# claimed: Chase
+caller: Hello, this is the fraud department at Chase, calling about the firm's card ending 2290.
+you: Okay, what's going on?
+caller: We saw a $2,400 charge at an electronics store yesterday. Do you recognize it?
+you: I'm not sure, I'd have to check.
+caller: No problem. Please don't share any details with me. If you don't recognize it, hang up and call the number on the back of your card.

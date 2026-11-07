@@ -1,0 +1,13 @@
+# id: b2_colleague_deadline
+# set: p0
+# kind: twin
+# twin_of: s4
+# expect: low, low, low
+# tactics: urgency
+# rules: -
+# claimed: -
+caller: Hey, it's Sam from the tax team. Can we push the 3pm?
+you: Sure, what works for you?
+caller: How about four? But I really need the draft by five, the Henderson filing is due Monday.
+you: Okay, I'll get it to you before five.
+caller: Perfect, I'll move the invite. Thanks, talk soon.
