@@ -47,7 +47,7 @@ def load_env() -> None:
 def build_app(args: argparse.Namespace):
     hub = Hub()
     runtime = Runtime(hub)
-    tasks = []
+    tasks = [runtime.status_loop]
     if args.fake:
         async def fake_call(_hub: Hub) -> None:
             await runtime.run_fake(args.fake, speed=args.fake_speed)

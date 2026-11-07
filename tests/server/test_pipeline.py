@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 
 from callguard.server import fakes
 from callguard.server.__main__ import build_app, parse_args
-from callguard.server.app import Hub, create_app
 from callguard.server.pipeline import Pipeline, window_text
 
 S1 = Path(__file__).parent / "fixtures" / "s1_government.txt"
@@ -135,8 +134,8 @@ def test_fake_call_over_websocket(tmp_path):
     app, runtime = build_app(parse_args(["--fake", str(S1), "--fake-speed", "0"]))
     client = TestClient(app)
     with client, client.websocket_connect("/ws") as ws:
-        assert ws.receive_json()["type"] == "rules"
-        got = [ws.receive_json() for _ in range(6)]
+        got = [m for m in (ws.receive_json() for _ in range(10))
+               if m["type"] in ("call", "transcript", "check")][:6]
     assert got.pop(0) == {"type": "call", "data": {"state": "started"}}
     assert got[0] == {"type": "transcript", "data": {"speaker": "caller", "start": 0.0, "end": 3.0,
                       "language": "en", "text": "Hi, this is Officer Chen from the Department of Justice."}}
