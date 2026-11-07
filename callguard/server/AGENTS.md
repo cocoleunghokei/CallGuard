@@ -13,7 +13,7 @@ audio.stream_chunks() → rolling 30 s transcript → detection.check() → WebS
 Full list with IDs and "done when": [prd.md §13.4](../../hack1984/prd.md#134-server--callguardserver-testsserver).
 
 **P0**
-- [ ] `__main__.py` / `app.py`: FastAPI, static `ui/`, `/ws`
+- [x] `__main__.py` / `app.py`: FastAPI, static `ui/`, `/ws`
 - [ ] `pipeline.py`: keep the rolling 30 s transcript in memory, run `check()` every new chunk (skip if one is still running), push `transcript` and `check` messages
 - [ ] `egress.py`: **the only file that makes network calls.** Every call adds an `EgressEntry` and pushes an `egress` message. Detect offline and return `status: "offline"`
 - [ ] `--fake` flag: use `audio.fake_stream()` so the UI and demo work without a call
@@ -33,4 +33,4 @@ Full list with IDs and "done when": [prd.md §13.4](../../hack1984/prd.md#134-se
 - No keyboard or mouse hooks, event taps or Accessibility permission (the hard gate is cut)
 
 ## Status
-- (none yet)
+- [Sat 16:48] Done: SRV-1 `app.py` (FastAPI, serves `ui/` or a placeholder page if `ui/index.html` is missing, `/ws` with `Hub` broadcast + client dispatch by type, on-connect hooks, thread-safe broadcast) and `__main__.py` (`--browser`, `--host`, `--port`); 8 tests in `tests/server/test_app.py`, `python -m callguard.server --browser` serves 200 + WS | Next: SRV-3 egress.py | Needs (Coco): `fastapi==0.162.2`, `uvicorn[standard]==0.54.0` (websockets for /ws), `httpx==0.28.1`, `python-dotenv==1.2.3`, `pytest==9.2.0` in requirements.txt; bare `pytest` at repo root currently errors collecting `hack1984/continuity-audio-test/test_capture.py` (needs `sounddevice`), suggest a root `pytest.ini` with `testpaths = tests`
