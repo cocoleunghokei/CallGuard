@@ -8,9 +8,9 @@ Hacking: **Sat 11:00 → Sun 11:00 (code freeze)**. Judging Sun 12:00.
 ## 1. What we ship
 
 ### P0: must work for the demo
-- [ ] Capture call audio on the Mac (caller via BlackHole, you via mic)
-- [ ] Live local transcription (faster-whisper), English
-- [ ] Local scam check (Ollama + Qwen 2.5 7B, or 3B if slow), returning risk level, tactic and reason
+- [x] Capture call audio on the Mac (caller via BlackHole, you via mic). Tested on Google Meet
+- [ ] Live local transcription (faster-whisper), English. One-shot transcription works; live 3s loop not built yet
+- [ ] Local scam check (Ollama + Qwen 2.5 7B; 3B tested and too inaccurate), returning risk level, tactic and reason
 - [ ] Firm rules check (3–5 rules from a JSON file)
 - [ ] Warning screen: risk meter, plain-language reason, full-screen warning on danger
 - [ ] "What left this device" log
@@ -19,7 +19,6 @@ Hacking: **Sat 11:00 → Sun 11:00 (code freeze)**. Judging Sun 12:00.
 ### P1: makes it win
 - [ ] Surge: search the claimed company or agency name with Tavily or Exa and show its real public number
 - [ ] "Check with a colleague" button (sends a message to one preset contact; a local notification is fine for the demo)
-- [ ] Mandarin support (Whisper detects the language, and Qwen handles Chinese)
 - [ ] Gradium-cloned "managing partner" voice clip for the demo opener (pre-recorded)
 - [ ] iPhone calls answered on the Mac, **only if the Continuity test passes**
 
@@ -38,8 +37,8 @@ iPhone app, Android app, browser extension, saving audio or transcripts.
 | Part | Choice | Why |
 |---|---|---|
 | Audio capture | BlackHole 2ch + Multi-Output Device, read with `sounddevice` | Fastest working route on a Mac |
-| Speech-to-text | `faster-whisper` (`small`, int8) | Local, fast enough, handles Mandarin |
-| Scam check | Ollama + `qwen2.5:7b` (fallback `qwen2.5:3b`) | Local, good in English and Chinese, returns JSON |
+| Speech-to-text | `faster-whisper` (`small`, int8) | Local, fast enough |
+| Scam check | Ollama + `qwen2.5:7b`  | Local, returns JSON. 7b: 6/6 on test scripts, ~3s per check; 3b failed (3/6) |
 | Backend | Python + FastAPI + WebSocket | One process, pushes alerts to the screen |
 | Screen | Simple local web page (`localhost`), kept on top next to Zoom | Easiest to build and style |
 | Search | Tavily or Exa API | Surge track |
@@ -94,7 +93,7 @@ Solo or 3 people: merge Model + backend with Lead.
 | 19:00 | Dinner. Check-in: what's broken? | |
 | 19:30–22:00 | Rules check, full-screen warning, "what left" log, Wi-Fi-off run | P0 complete |
 | 22:00 | **Decision point:** if P0 works, start P1. If not, fix P0 only | |
-| 22:00–02:00 | P1: Surge lookup, check with a colleague, Mandarin, Continuity (if the test passed) | |
+| 22:00–02:00 | P1: Surge lookup, check with a colleague, Continuity (if the test passed) | |
 
 ### Sunday
 | Time | Goal |
@@ -161,6 +160,8 @@ Write the results here:
 
 | Route | Caller heard? | You heard? | Transcript OK? | Notes |
 |---|---|---|---|---|
+| `say` on the Mac (solo check, no call) | ✅ level 0.046 | ✅ level 0.004 (low) | Caller word-perfect. Mic side: Whisper made up "Thank you" on silence (fixed with `vad_filter`) and picked up speaker echo | Sat 15:50, Python 3.14, Whisper base |
+| Google Meet in Chrome (Mac speakers) | ✅ level 0.071 | ✅ level 0.004 | Both sides clean and separate, no echo, no made-up words (VAD on) | Sat ~16:00, real call, Whisper base |
 | Continuity (Mac speakers) | | | | |
 | Zoom (Mac speakers) | | | | |
 | Speakerphone next to laptop | | | | |
@@ -180,7 +181,6 @@ Write these out and use them for prompt tuning and the demo.
 | 4 | Real vendor: invoice question, no money moves | low |
 | 5 | Real colleague: schedule a meeting, mentions a deadline | low (urgency alone isn't a scam) |
 | 6 | Real bank: confirms a recent charge, asks you to call the number on your card | low or watch |
-| 7 | Script 1 in Mandarin | danger |
 
 ---
 

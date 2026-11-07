@@ -1,0 +1,6 @@
+[
+  {"id": "no_bank_changes_by_phone", "text": "We never change vendor or client bank details based on a phone call. Bank changes need a callback to the number on file.", "tactics": ["bank_change"]},
+  {"id": "it_never_asks_for_codes", "text": "Our IT team never asks for passwords, one-time codes or MFA codes.", "tactics": ["credential_request"]},
+  {"id": "wires_need_two_approvals", "text": "Every wire or escrow transfer needs two approvals, even if a partner asks.", "tactics": ["bypass_approval"]},
+  {"id": "no_personal_bank_details", "text": "Staff never give their own or a client's bank details to callers.", "tactics": ["bank_change", "credential_request"]}
+]
