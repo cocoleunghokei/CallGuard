@@ -29,7 +29,7 @@ Each lane folder has its own `AGENTS.md` with its tasks, its rules and a **Statu
 **Privacy (this is the product, so breaking a rule here is a bug)**
 1. No audio or transcript is ever written to disk, logged, or sent over the network. Debug output may print only the last 80 characters of a transcript.
 2. All network calls go through `callguard/server/egress.py`. Every call records an entry in the egress log. No other file may import `requests`, `httpx`, `urllib` or a search SDK.
-3. The only thing allowed to leave the device is the **claimed organization name**, sent to Tavily or Exa.
+3. The only thing allowed to leave the device is the **claimed organization name**, sent to Tavily or Exa, either alone or inside a fixed search template (e.g. `"{org}" impersonation scam`). The egress log shows the exact query.
 4. With the Wi-Fi off, everything works except search, which shows "offline, skipped".
 5. The model runs on Ollama at `localhost`. Never call a cloud LLM from app code.
 
