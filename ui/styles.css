@@ -197,3 +197,34 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .st.err { background: var(--danger-tint); color: var(--danger); }
 .st.off { background: var(--idle-tint); color: var(--text); }
 .eg-detail { margin: var(--s1) var(--s1) var(--s2); color: var(--text); }
+
+/* ================= danger overlay (T6) ================= */
+.btn { font: inherit; font-size: var(--t-key); font-weight: 600; min-height: 44px; width: 100%; padding: 10px var(--s4); border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer; }
+.btn.primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+
+.overlay { position: fixed; inset: 0; z-index: 10; overflow-y: auto; background: var(--bg); display: flex; justify-content: center; }
+.overlay:focus { outline: none; }
+.ov-card { width: 100%; display: flex; flex-direction: column; gap: var(--s4); padding: var(--s4); }
+.ov-hero { padding: var(--s5) var(--s4); }
+.ov-hero h1 { font-size: var(--t-hero); }
+.ov-lock { margin: var(--s3) 0 0; font-size: var(--t-meta); }
+.ov-body { display: flex; flex-direction: column; gap: var(--s3); }
+.ov-claim { margin: 0; }
+.ov-tactics { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.ov-tactics li { display: flex; flex-direction: column; gap: 2px; padding-left: var(--s3); border-left: 3px solid var(--danger); }
+.ov-tactics .t { font-weight: 600; }
+.ov-tactics q { font-style: italic; color: var(--muted); }
+.ov-verify { margin: 0; font-size: var(--t-meta); color: var(--muted); }
+.ov-verify.has-num { font-size: var(--t-body); color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ov-next { margin: 0; padding: var(--s3) var(--s4); border-radius: var(--r-card); background: var(--danger-tint); font-weight: 600; }
+.ov-foot { position: sticky; bottom: 0; margin: auto calc(-1 * var(--s4)) calc(-1 * var(--s4)); padding: var(--s3) var(--s4) var(--s2); background: var(--bg); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: var(--s2); }
+.ov-exits { display: flex; flex-direction: column; gap: var(--s2); }
+.ov-egress { margin: 0; display: flex; align-items: center; gap: 6px; font-size: var(--t-meta); color: var(--muted); }
+.ov-egress .ok { color: var(--low); }
+/* pywebview went wide: a centred card, not a full-screen takeover. */
+@media (min-width: 701px) {
+  .overlay { background: color-mix(in srgb, var(--bg) 70%, #000); align-items: flex-start; padding: var(--s5) var(--s4); }
+  .ov-card { max-width: 720px; background: var(--bg); border-radius: var(--r-hero); box-shadow: 0 12px 40px rgba(0, 0, 0, .25); padding: var(--s5); }
+  .ov-foot { position: static; margin: 0; padding: var(--s3) 0 0; }
+  .ov-exits { flex-direction: row; }
+}

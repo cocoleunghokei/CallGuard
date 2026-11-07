@@ -17,7 +17,7 @@
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </svg>
 
-  <div class="panel">
+  <div id="panel" class="panel">
     <!-- A: header -->
     <header class="top">
       <span id="badge" class="badge"><span class="dot"></span><span id="badge-text">Listening locally · nothing stored</span></span>
@@ -85,7 +85,9 @@
     </main>
 
     <!-- G: actions (T7/T10) -->
-    <div id="actions" class="actions" hidden></div>
+    <div id="actions" class="actions" hidden>
+      <button id="show-warning" class="btn primary" type="button" hidden>Show the warning</button>
+    </div>
 
     <!-- F: what left this device (T5). The empty state is the feature. -->
     <footer id="priv" class="priv">
@@ -104,6 +106,35 @@
         <button id="end-call" class="link end" type="button" hidden>End call</button>
       </div>
     </footer>
+  </div>
+
+  <!-- Danger overlay (T6 / UI-4). Fills the Callguard window, never the screen. -->
+  <div id="overlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="ov-h" aria-describedby="ov-next" tabindex="-1" hidden>
+    <div class="ov-card">
+      <section class="hero lv-danger ov-hero">
+        <div class="ic"><svg width="28" height="28"><use href="#i-danger"/></svg></div>
+        <h1 id="ov-h">Stop and verify this call</h1>
+        <p class="sub"><span id="ov-words">Strong signs</span><span id="ov-bar" class="bar" aria-hidden="true"></span></p>
+        <!-- T7: lock line -->
+        <p id="ov-lock" class="ov-lock" hidden></p>
+      </section>
+      <div class="ov-body">
+        <p id="ov-claim" class="ov-claim" hidden></p>
+        <ul id="ov-tactics" class="ov-tactics" aria-label="Signs in this call"></ul>
+        <ul id="ov-rules" class="rules"></ul>
+        <p id="ov-verify" class="ov-verify" hidden></p>
+        <div id="ov-say" class="say" hidden><small>Say</small><q id="ov-say-text"></q></div>
+        <p id="ov-next" class="ov-next"></p>
+      </div>
+      <!-- Sticky foot: the way out and the privacy line are always on screen. -->
+      <div class="ov-foot">
+        <!-- T7: exits. For now one primary that only closes the overlay here. -->
+        <div id="ov-exits" class="ov-exits">
+          <button id="ov-hangup" class="btn primary" type="button" data-exit="hang_up">Hang up and call back</button>
+        </div>
+        <p id="ov-egress" class="ov-egress"></p>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="app.js"></script>

@@ -23,6 +23,11 @@ export const state = {
   verify: null,
   gate: null, // {state, reason, release_in} while not "off"
   egress: [], // EgressEntry[] + {seq, call}, newest first, kept for the session (org names only)
+  // Danger overlay (T6). Sticky: opens on danger, closes only on call end, mark
+  // safe, a release (T7), or the local "Hang up and call back" button.
+  // `seen` = tactics already warned about this call; a closed overlay reopens
+  // only for a new one (same no re-nagging rule as the gate, prd 7.5).
+  overlay: { open: false, opens: 0, seen: [] },
   calls: 0, // calls started this session; tags egress entries "This call" vs "Earlier today"
   ui: { expanded: null, view: "panel", egressOpen: false, egressEntry: null }, // open pill, view, egress panel, open entry seq
 };
@@ -48,6 +53,7 @@ const handlers = {
   },
   check(data) {
     state.check = data || null;
+    if (state.inCall && data && data.risk === "danger") openOverlayFor(data.tactics || []);
   },
   verify(data) {
     state.verify = data || null;
@@ -68,6 +74,17 @@ export function onMessage({ type, data }) {
   render(state);
 }
 
+function openOverlayFor(tactics) {
+  const o = state.overlay;
+  const fresh = tactics.filter((t) => !o.seen.includes(t));
+  o.seen.push(...fresh);
+  if (o.open) return; // update in place
+  if (o.opens === 0 || fresh.length) {
+    o.open = true;
+    o.opens += 1; // the view plays the tone once per open
+  }
+}
+
 function wipeCall() {
   state.tail.length = 0;
   state.check = null;
@@ -75,6 +92,7 @@ function wipeCall() {
   state.gate = null;
   state.ui.expanded = null;
   state.ui.view = "panel";
+  state.overlay = { open: false, opens: 0, seen: [] };
 }
 
 bindView(state, () => render(state));

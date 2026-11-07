@@ -55,6 +55,18 @@ export function bindView(state, redraw) {
     $("open-said").focus();
   });
   $("end-call").addEventListener("click", () => send("end_call"));
+  $("ov-hangup").addEventListener("click", () => {
+    // T6 placeholder: closes the overlay here only. T7 sends gate_release.
+    state.overlay.open = false;
+    rerender();
+    $("show-warning").focus();
+  });
+  $("show-warning").addEventListener("click", () => {
+    state.overlay.open = true; // not a new open: no tone
+    rerender();
+    $("ov-hangup").focus();
+  });
+  $("overlay").addEventListener("keydown", (e) => overlayKeys(e));
   $("priv-btn").addEventListener("click", () => {
     state.ui.egressOpen = !state.ui.egressOpen;
     rerender();
@@ -88,6 +100,7 @@ export function render(state) {
   renderSaid(state);
   renderTail(state, lv);
   renderPrivacy(state);
+  renderOverlay(state, lv);
 
   if (focusKey) {
     const el = document.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
@@ -217,6 +230,21 @@ function hostOf(url) {
   }
 }
 
+/** Verify line (C12): only when the caller claims an organization. */
+function verifyInfo(state) {
+  const c = state.check;
+  const org = c && c.claimed_identity;
+  const v = org && state.verify && state.verify.org === org ? state.verify : null;
+  const status = v ? v.status || (v.phone ? "ok" : "error") : null;
+  let note = "";
+  let phone = "";
+  if (org && !v) note = `Checking ${org}'s public number…`;
+  else if (v && status === "ok" && v.phone) phone = v.phone;
+  else if (v && status === "offline") note = "Offline, search skipped. Use the number on file.";
+  else if (v) note = "Couldn't find a public number, use the one on file.";
+  return { phone, note, host: v ? hostOf(v.source_url) : "" };
+}
+
 function renderTodo(state, lv) {
   const c = state.check;
   const show = state.ui.view === "panel" && !!c && (lv === "watch" || lv === "danger");
@@ -227,23 +255,12 @@ function renderTodo(state, lv) {
   $("say").hidden = !say;
   $("say-text").textContent = say || "";
 
-  // Verify line (C12): only when the caller claims an organization.
-  const org = c.claimed_identity;
-  const v = org && state.verify && state.verify.org === org ? state.verify : null;
-  const status = v ? v.status || (v.phone ? "ok" : "error") : null;
-  let note = "";
-  let phone = "";
-  if (org && !v) note = `Checking ${org}'s public number…`;
-  else if (v && status === "ok" && v.phone) phone = v.phone;
-  else if (v && status === "offline") note = "Offline, search skipped. Use the number on file.";
-  else if (v) note = "Couldn't find a public number, use the one on file.";
-
-  $("num").hidden = !phone;
-  $("num-phone").textContent = phone;
-  const host = v ? hostOf(v.source_url) : "";
-  $("num-src").textContent = `Public number${host ? " · " + host : ""}`;
-  $("verify-note").hidden = !note;
-  $("verify-note").textContent = note;
+  const vi = verifyInfo(state);
+  $("num").hidden = !vi.phone;
+  $("num-phone").textContent = vi.phone;
+  $("num-src").textContent = `Public number${vi.host ? " · " + vi.host : ""}`;
+  $("verify-note").hidden = !vi.note;
+  $("verify-note").textContent = vi.note;
 
   $("next-step").textContent = c.next_step || "";
 }
@@ -303,8 +320,8 @@ function renderTail(state, lv) {
 
 /** Call content leaves the DOM, not just the screen (UI-7, F9). */
 function clearCallDom() {
-  for (const id of ["pills", "quote", "rules-broken", "flagged"]) $(id).replaceChildren();
-  for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step"]) $(id).textContent = "";
+  for (const id of ["pills", "quote", "rules-broken", "flagged", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
+  for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step", "ov-claim", "ov-verify", "ov-say-text", "ov-next"]) $(id).textContent = "";
   $("reason").removeAttribute("title");
 }
 
@@ -413,4 +430,127 @@ function renderPrivacy(state) {
     flashTimer = setTimeout(() => row.classList.remove("flash"), 300);
   }
   lastEgress = state.egress.length;
+}
+
+// ---------------------------------------------------------------- danger overlay (T6 / UI-4)
+
+let lastOpens = 0;
+let audio = null;
+
+/** One short tone, generated here (no audio files). Once per overlay open. */
+function tone() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    audio = audio || new Ctx();
+    if (audio.state === "suspended") audio.resume();
+    const t = audio.currentTime;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, t);
+    osc.frequency.setValueAtTime(660, t + 0.16);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  } catch {
+    // No sound is fine: the overlay and the red panel still show.
+  }
+}
+
+function focusables() {
+  return [...$("overlay").querySelectorAll("button, [href], input, [tabindex]:not([tabindex='-1'])")].filter((el) => !el.disabled && el.offsetParent !== null);
+}
+
+/** Esc never closes; Enter never takes an exit (only click or Space); Tab stays inside. */
+function overlayKeys(e) {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    return;
+  }
+  if (e.key === "Enter" && (e.target === $("overlay") || e.target.closest("[data-exit]") || !e.target.closest("button, input, [href]"))) {
+    e.preventDefault();
+    return;
+  }
+  if (e.key !== "Tab") return;
+  const els = focusables();
+  if (!els.length) return e.preventDefault();
+  const first = els[0];
+  const last = els[els.length - 1];
+  if (e.shiftKey && (document.activeElement === first || document.activeElement === $("overlay"))) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+function renderOverlay(state, lv) {
+  const o = state.overlay;
+  const open = !!(o && o.open && state.inCall && state.check && lv === "danger");
+  const wasOpen = !$("overlay").hidden;
+  $("overlay").hidden = !open;
+  $("panel").inert = open;
+  $("actions").hidden = !(lv === "danger" && !open && state.inCall);
+  $("show-warning").hidden = $("actions").hidden;
+  if (!o || o.opens < lastOpens) lastOpens = 0; // new call
+  if (!open) return;
+
+  const c = state.check;
+  const conf = typeof c.confidence === "number" ? c.confidence : null;
+  const segs = conf == null ? null : Math.max(0, Math.min(10, Math.round(conf * 10)));
+  $("ov-words").textContent = segs == null ? "Strong signs" : signsWords(segs);
+  $("ov-bar").replaceChildren(...(segs == null ? [] : Array.from({ length: 10 }, (_, i) => h("i", { class: i < segs ? "on" : null }))));
+
+  $("ov-claim").hidden = !c.claimed_identity;
+  $("ov-claim").replaceChildren(...(c.claimed_identity ? ["The caller claims to be: ", h("b", { text: c.claimed_identity })] : []));
+
+  const quotes = callerQuotes(c);
+  const tactics = (c.tactics || []).filter((t, i, a) => a.indexOf(t) === i);
+  $("ov-tactics").replaceChildren(
+    ...tactics.map((t) => {
+      const q = quotes.find((e) => e.tactic === t);
+      return h("li", {}, h("span", { class: "t", text: plainWords(t) }), q ? h("q", { text: String(q.quote).slice(0, 80) }) : null);
+    }),
+  );
+  $("ov-rules").replaceChildren(...(c.rules_broken || []).map((id) => h("li", {}, h("b", { text: "Firm rule: " }), ruleText(state, id))));
+
+  const vi = verifyInfo(state);
+  const verify = vi.phone ? `Real public number: ${vi.phone}${vi.host ? " · source: " + vi.host : ""}` : vi.note;
+  $("ov-verify").hidden = !verify;
+  $("ov-verify").textContent = verify;
+  $("ov-verify").classList.toggle("has-num", !!vi.phone);
+
+  const say = sayThis(c.tactics);
+  $("ov-say").hidden = !say;
+  $("ov-say-text").textContent = say || "";
+  $("ov-next").textContent = c.next_step || "Hang up and call back on a number you already have.";
+
+  // One-line egress summary at the foot (T5 item 5): the privacy proof stays visible.
+  $("ov-egress").replaceChildren(privIcon(sentCount(state) === 0), egressSummary(state));
+
+  if (o.opens > lastOpens) {
+    lastOpens = o.opens;
+    tone();
+    $("ov-hangup").focus();
+  } else if (!wasOpen) {
+    $("ov-hangup").focus();
+  }
+}
+
+function privIcon(ok) {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("width", "14");
+  svg.setAttribute("height", "14");
+  svg.setAttribute("aria-hidden", "true");
+  if (ok) svg.setAttribute("class", "ok");
+  const use = document.createElementNS(NS, "use");
+  use.setAttribute("href", ok ? "#i-low" : "#i-up");
+  svg.append(use);
+  return svg;
 }
