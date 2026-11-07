@@ -4,12 +4,9 @@ Static checks always run. The browser check replays every call fixture and
 looks for transcript text in the DOM after `call ended`; it skips cleanly when
 Python Playwright or a Chromium build is not installed.
 """
-import functools
-import http.server
 import json
 import pathlib
 import re
-import threading
 
 import pytest
 
@@ -53,28 +50,6 @@ def test_tail_is_capped_and_wiped():
 # ---------------------------------------------------------------- browser check
 
 CALL_FIXTURES = sorted(p.stem for p in (UI / "dev" / "fixtures").glob("*.json") if p.stem != "idle")
-
-
-@pytest.fixture(scope="module")
-def ui_server():
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(UI))
-    handler.log_message = lambda *a, **k: None
-    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    yield f"http://127.0.0.1:{srv.server_address[1]}"
-    srv.shutdown()
-
-
-@pytest.fixture(scope="module")
-def browser():
-    sync_api = pytest.importorskip("playwright.sync_api")
-    with sync_api.sync_playwright() as pw:
-        try:
-            b = pw.chromium.launch()
-        except Exception as e:  # no browser build installed
-            pytest.skip(f"no Chromium: {e}")
-        yield b
-        b.close()
 
 
 @pytest.mark.parametrize("name", CALL_FIXTURES)

@@ -22,8 +22,9 @@ export const state = {
   check: null, // latest ScamCheck
   verify: null,
   gate: null, // {state, reason, release_in} while not "off"
-  egress: [], // EgressEntry[], newest first, kept for the session (org names only)
-  ui: { expanded: null, view: "panel" }, // open pill (tactic id), "panel" | "said"
+  egress: [], // EgressEntry[] + {seq, call}, newest first, kept for the session (org names only)
+  calls: 0, // calls started this session; tags egress entries "This call" vs "Earlier today"
+  ui: { expanded: null, view: "panel", egressOpen: false, egressEntry: null }, // open pill, view, egress panel, open entry seq
 };
 
 const handlers = {
@@ -38,6 +39,7 @@ const handlers = {
     if (s !== "started" && s !== "ended") return;
     wipeCall();
     state.inCall = s === "started";
+    if (state.inCall) state.calls += 1;
   },
   transcript(data) {
     if (!data || typeof data.text !== "string") return;
@@ -54,7 +56,8 @@ const handlers = {
     state.gate = data && data.state && data.state !== "off" ? data : null;
   },
   egress(data) {
-    if (data) state.egress.unshift(data);
+    if (!data) return;
+    state.egress.unshift({ ...data, seq: state.egress.length + 1, call: state.inCall ? state.calls : 0 });
   },
 };
 

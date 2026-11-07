@@ -55,6 +55,10 @@ export function bindView(state, redraw) {
     $("open-said").focus();
   });
   $("end-call").addEventListener("click", () => send("end_call"));
+  $("priv-btn").addEventListener("click", () => {
+    state.ui.egressOpen = !state.ui.egressOpen;
+    rerender();
+  });
   $("copy").addEventListener("click", async () => {
     const phone = state.verify && state.verify.phone;
     if (!phone) return;
@@ -304,17 +308,109 @@ function clearCallDom() {
   $("reason").removeAttribute("title");
 }
 
-// ---------------------------------------------------------------- F privacy line
+// ---------------------------------------------------------------- F what left this device (T5)
 
 // An entry "left" the device only if a request actually went out. Offline and
 // refused lookups are recorded too, but nothing was sent.
 const SENT = new Set(["ok", "error"]);
 
+// Status pill: word + colour (colour is never alone).
+const EGRESS_STATUS = {
+  ok: { word: "Sent", cls: "ok" },
+  error: { word: "Sent, no answer", cls: "err" },
+  offline: { word: "Offline, not sent", cls: "off" },
+  refused: { word: "Blocked", cls: "off" },
+};
+
+export function sentCount(state) {
+  return state.egress.filter((e) => SENT.has(e.status)).length;
+}
+
+/** One line for small spaces (the footer, and T6's overlay foot). */
+export function egressSummary(state) {
+  const sent = state.egress.filter((e) => SENT.has(e.status));
+  if (sent.length === 0) return "Nothing has left this device";
+  if (sent.length === 1) return `1 item left: “${sent[0].sent}”`;
+  return `${sent.length} items left this device`;
+}
+
+/** "19:02:11" from "2026-11-07T19:02:11" (the Server's local time). */
+function clock(time) {
+  const m = /T(\d{2}:\d{2}:\d{2})/.exec(String(time || ""));
+  return m ? m[1] : "";
+}
+
+function egressDetail(e) {
+  if (e.status === "refused") return "Blocked: lookup skipped to protect your privacy. Nothing was sent.";
+  if (e.status === "offline") return `Nothing was sent: this laptop was offline. The lookup would have sent only “${e.sent}”.`;
+  return `Only this text was sent: “${e.sent}”. Nothing from the call itself. Your call audio and words never leave this laptop.`;
+}
+
+function egressRow(state, e) {
+  const st = EGRESS_STATUS[e.status] || { word: String(e.status || "unknown"), cls: "off" };
+  const open = state.ui.egressEntry === e.seq;
+  const what = e.status === "refused" || !e.sent ? h("span", { class: "what blocked", text: "Blocked: lookup skipped to protect your privacy" }) : h("q", { class: "what", text: e.sent });
+  const id = `eg-d-${e.seq}`;
+  return h(
+    "li",
+    {},
+    h(
+      "button",
+      {
+        class: "eg-row",
+        type: "button",
+        "data-key": `eg:${e.seq}`,
+        "aria-expanded": String(open),
+        "aria-controls": id,
+        onclick: () => {
+          state.ui.egressEntry = open ? null : e.seq;
+          rerender();
+        },
+      },
+      h("span", { class: "meta" }, h("time", { text: clock(e.time) }), h("span", { class: "host", text: e.destination || "" }), h("span", { class: `st ${st.cls}`, text: st.word })),
+      what,
+    ),
+    h("p", { class: "eg-detail", id, hidden: !open, text: egressDetail(e) }),
+  );
+}
+
+let lastEgress = 0;
+let flashTimer = 0;
+const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function renderPrivacy(state) {
-  const n = state.egress.filter((e) => SENT.has(e.status)).length;
+  const n = sentCount(state);
   const skipped = state.egress.length - n;
   $("priv-ic").classList.toggle("ok", n === 0);
   $("priv-icon").setAttribute("href", n === 0 ? "#i-low" : "#i-up");
-  $("priv-text").textContent = n === 0 ? "Nothing has left this device" : `${n} ${n === 1 ? "item" : "items"} left this device`;
+  $("priv-text").textContent = egressSummary(state);
   $("priv-skipped").textContent = skipped ? `${skipped} skipped` : "";
+
+  const open = state.ui.egressOpen;
+  $("priv-btn").setAttribute("aria-expanded", String(open));
+  $("egress").hidden = !open;
+  $("egress-n").textContent = String(state.egress.length);
+  $("egress-empty").hidden = state.egress.length > 0;
+
+  // Newest first; this call's entries, then "Earlier today" (org names only, kept for the session).
+  const isNow = (e) => state.inCall && e.call === state.calls;
+  const now = state.egress.filter(isNow);
+  const earlier = state.egress.filter((e) => !isNow(e));
+  const groups = [];
+  if (now.length) groups.push(["This call", now]);
+  if (earlier.length) groups.push(["Earlier today", earlier]);
+  $("egress-list").replaceChildren(
+    ...(open ? groups : []).flatMap(([label, list]) => [h("h3", { text: label }), h("ol", { class: "eg-list" }, ...list.map((e) => egressRow(state, e)))]),
+  );
+
+  // One flash of the header when an entry arrives (skipped under reduced motion).
+  if (state.egress.length > lastEgress && !reducedMotion()) {
+    const row = $("priv-row");
+    row.classList.remove("flash");
+    void row.offsetWidth; // restart the animation
+    row.classList.add("flash");
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => row.classList.remove("flash"), 300);
+  }
+  lastEgress = state.egress.length;
 }
