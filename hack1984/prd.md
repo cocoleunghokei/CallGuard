@@ -3,7 +3,7 @@
 Owner: Coco (Lead) · Status: v1 draft for review · Last updated: Sat Nov 7, 2026
 Code freeze: **Sun Nov 8, 11:00 ET**
 
-Read with: [background.md](background.md) (why), [project-plan.md](project-plan.md) (what and when), root [AGENTS.md](../AGENTS.md) (lanes, guardrails, contracts).
+Read with: [background.md](background.md) (why), [project-plan.md](project-plan.md) (what and when), root [AGENTS.md](../AGENTS.md) (lanes, guardrails, contracts), [competitor-research.md](competitor-research.md) (who else is in the space; drives [2.4](#24-competitive-position-and-what-it-protects-in-scope)).
 
 This document is the detailed build spec. It turns the background and plan into requirements that each lane can pick up on its own branch, build against fakes, and hand to Coco for review. Every requirement has an ID (`AUD-`, `DET-`, `SRV-`, `UI-`, `LEAD-`), one owning lane, a priority, and a "done when" line, so a lane agent can commit against it (`DET-6: confidence scorer`) and Coco can review one requirement at a time.
 
@@ -58,7 +58,21 @@ The standard advice, "hang up and call back on the number on file," depends on a
 | **Why them** | They hold client funds, bank details and Social Security numbers. Scammers know it. They have no Defender team watching |
 | **Origin story** | A lawyer friend was called by a fake "government official," told she was under investigation, told not to tell her teammates, and asked for her bank details. She gave them. Every warning sign was in the words |
 
-### 2.3 Jobs to be done
+### 2.4 Competitive position and what it protects in scope
+From [competitor-research.md](competitor-research.md): nobody ships the combination of **reads the script, runs on the device, covers any laptop call app, and checks the firm's own rules**, for firms with no security team. Each piece exists somewhere (Google reads the script but only on phones; Microsoft warns but only in Teams and only on caller identity; Pindrop, Reality Defender, Polygraf, Hiya and Truecaller judge the voice, in the cloud). Google or Microsoft could close the "reads the script" lead on their own platforms, so the lasting edge is **provable privacy, firm rules, and every call app**.
+
+That makes these requirements **protected**: they are not cut at the Sun 02:00 P1 decision, and each one must be visible in the demo.
+
+| Differentiator | Answers which competitor | Protected requirements | Demo moment |
+|---|---|---|---|
+| Script, not voice | Pindrop, Reality Defender, Polygraf, Hiya, Truecaller | DET-1..9 | Gradium clone opener, then the script gets caught |
+| Firm rules | Everyone (no one checks firm policy) | DET-4, UI-3, UI-4, UI-13 | "This breaks your firm's rule" on S2; rules panel |
+| Provable privacy | Microsoft and cloud deepfake tools | SRV-3, SRV-12, UI-6 | Wi-Fi off + egress log |
+| Any call app | Microsoft (Teams only) | AUD-1 (Zoom + Teams routes) | "Same app on Zoom and Teams" |
+| Explains itself | Google (beeps without explaining) | UI-3, UI-4 (tactic, caller's words, rule, number) | Overlay with quotes |
+| Answer for mobile | Google and Samsung own the phone | SRV-13, UI-5 ("Check with a colleague") | One tap to a colleague |
+
+### 2.5 Jobs to be done
 1. *While on a call*, tell me early and in plain words when the call looks like a known scam pattern, so I can slow down.
 2. *When the caller asks me to do something risky*, stop me from doing it on autopilot and give me the safe alternative (the real number, a colleague).
 3. *Before I'll trust you with my calls*, prove that my calls are not being recorded, uploaded or shown to my employer.
@@ -75,7 +89,7 @@ The standard advice, "hang up and call back on the number on file," depends on a
 - **G5. Verify the claim (Surge).** Show the claimed organization's real public number from Tavily or Exa.
 
 ### 3.2 Non-goals
-iPhone or Android apps, a browser extension, voice/deepfake detection, caller-ID lookup, storing audio or transcripts, an employer-side transcript view, cloud LLMs, multi-user accounts, Windows support, production installer/signing.
+iPhone or Android apps, a browser extension, voice/deepfake detection (a crowded space whose signal fades as clones improve, see 2.4), caller-ID lookup, storing audio or transcripts, an employer-side transcript view, cloud LLMs, multi-user accounts, Windows support, production installer/signing.
 
 ### 3.3 Success measures
 
@@ -89,6 +103,8 @@ iPhone or Android apps, a browser extension, voice/deepfake detection, caller-ID
 | Giveaway sentence spoken → `danger` on screen | ≤ 10 s (stretch ≤ 7 s) | Stopwatch on the Zoom run, `SRV-2` timing log |
 | First `watch` hint from fast check | ≤ 5 s after the phrase | Same |
 | Egress log entries per call | Only org names; ≤ 1 per org per call | Demo + `SRV-12` test |
+| Call apps verified end to end | Zoom **and** Teams (RingCentral if time) | AUD-1 routes table |
+| Every danger warning explains itself | Names the tactic, quotes the caller, names the firm rule (if any), gives a next step with a number | UI-4 fixture test on S1, S2, S3 |
 | Works with the Wi-Fi off | Everything but search; search says "offline, skipped" | Sat 22:00 checkpoint |
 | Files written during a call | 0 | `SRV-12` no-disk-writes test |
 
@@ -791,6 +807,7 @@ Contracts are Lead-owned (guardrail 7). This section is the change Coco applies 
 |---|---|
 | `gate` | `{"state": "off | armed | locked", "mode": "soft | hard", "reason": "…", "release_in": 120}` |
 | `call` | `{"state": "started | ended"}` |
+| `rules` | `[Rule]`, sent once on connect (for UI-13) |
 
 `status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | soft | hard"`. `verify` gets optional `"status": "ok | offline | not_found | error"`.
 
@@ -819,7 +836,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 
 | ID | P | Requirement | Done when | Depends on |
 |---|---|---|---|---|
-| AUD-1 | P0 | Continuity test (plan §5), all four routes | Results table filled in the plan (Coco commits it) | Hardware |
+| AUD-1 | P0 | Continuity test (plan §5), all four routes, **plus a Teams route** (desktop or web, Mac speakers) so "any call app" is shown, not claimed. Coco adds the Teams row to the plan's results table | Results table filled in the plan (Coco commits it) | Hardware |
 | AUD-2 | P0 | `capture.py`: two input streams (BlackHole → `caller`, default mic → `you`), 16 kHz mono float32, 3 s chunks onto a queue. Device names overridable with `CALLGUARD_CALLER_DEVICE`, `CALLGUARD_MIC_DEVICE` | Prints per-source RMS for 10 s without errors | — |
 | AUD-3 | P0 | `transcribe.py`: faster-whisper `small` int8 loaded once from a local path (`CALLGUARD_WHISPER_DIR`), `HF_HUB_OFFLINE=1`; VAD filter on; skip chunks under RMS threshold (C2) | A 3 s chunk transcribes in < 1.5 s on the demo Mac | AUD-2 |
 | AUD-4 | P0 | `stream_chunks()`: generator of `TranscriptChunk` for both speakers with `start`/`end` relative to call start | Server can consume it | AUD-2, AUD-3 |
@@ -866,7 +883,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-10 | P1 | `gate_macos.py`: Quartz event tap on a background CFRunLoop thread; swallow key events unless frontmost PID is ours; re-enable on timeout once; fall back to soft; **no key code access** | Manual test on the demo Mac; Coco line review | SRV-9 |
 | SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; go full-screen on gate lock/danger, restore on release | Window covers a browser on danger | SRV-1 |
 | SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines | Green in `pytest` | — |
-| SRV-13 | P1 | `colleague`: macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
+| SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
 
 **Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned; P1 `pywebview`, `pyobjc-framework-Quartz`, `pyobjc-framework-Cocoa`; Tavily/Exa keys in `.env` on the demo Mac.
 
@@ -876,7 +893,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 |---|---|---|---|---|
 | UI-1 | P0 | Side panel shell: "Listening locally · nothing stored" badge, online/offline dot, model-status banner, consent line | Renders from a `status` fixture | — |
 | UI-2 | P0 | Risk meter with level word, icon and the 10-point confidence bar with words ([9.2](#92-states-of-the-side-panel)) | Fixture replay shows low → watch → danger | — |
-| UI-3 | P0 | Watch note: `reason` + tactic chips in plain words; chip expands to show `evidence.quote` | Fixture | LEAD-1 |
+| UI-3 | P0 | Watch note: `reason` + tactic chips in plain words; chip expands to show `evidence.quote`; if `rules_broken` is not empty, show the rule text here too, not only in the danger overlay | Fixture | LEAD-1 |
 | UI-4 | P0 | Danger overlay ([9.4](#94-the-overlay-layout-danger)): claimed identity, tactics with quotes, rule text, verify line (number, or "Offline, search skipped", or "Looking up…"), `next_step`, sound on open | Fixture | — |
 | UI-5 | P0 | Soft gate unlock: primary "Hang up and call back", "Check with a colleague", and `SAFE` + 3 s hold; Enter/Esc never dismiss; focus starts on the primary button; countdown from `gate.release_in`; sends `gate_release` | Keyboard-only test of every exit | SRV-9 contract |
 | UI-6 | P0 | "What left this device" panel: every `egress` entry (time, destination, exactly what was sent, status); empty state "Nothing has left this device" | Fixture | — |
@@ -886,6 +903,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-10 | P1 | Post-call summary card: scenario guess from tactics, count of signs, what you did; no transcript; dismiss clears it | Fixture | — |
 | UI-11 | P0 | `ui/DEMO.md` (demo machine steps) and the backup video by **Sun 09:00** | Video file exists off-repo | All |
 | UI-12 | P1 | `中文` badge when any chunk has `language: zh` | Fixture | AUD-7 |
+| UI-13 | P1 | "Your firm's rules" panel: read-only list of the loaded rules (from the `rules` message), with a count of how many fired this call | Fixture | LEAD-1, SRV-1 |
 
 **Needs (to Coco):** none for P0 (plain HTML/JS/CSS, no CDN).
 
@@ -903,7 +921,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 1. **LEAD-1 contracts v2** (first, ~Sat 13:30). Everyone rebases.
 2. **Detection** (pure functions, no hardware): DET-1..7 → `main`.
 3. **Audio** AUD-2..6 → `main` (fake_stream unblocks Server's real path).
-4. **Server** SRV-1..7, 9, 12 → `main`.
+4. **Server** SRV-1..7, 9, 12, 13 → `main`.
 5. **UI** UI-1..8 → `main`. **Sat 19:00: first full run.**
 6. P0 fixes, Wi-Fi-off run. **Sat 22:00 decision.**
 7. P1 in the same order. **Sun 02:00: P1 in or cut.**
@@ -998,6 +1016,8 @@ SUMMARY  scams danger 10/10 · twins danger 0/7 · twins low 6/7 · p95 latency 
 | Q7 | Gate could be seen as heavy-handed by judges | Coco | Frame it as "a 2-minute pause, always one click to hang up, off switch for admins" |
 | Q8 | False alarms on real bank changes (B6) | Detection | Safe signals; "verify first" copy; B6 must stay ≤ watch |
 | Q9 | Using the friend's story | Coco | Get her OK; no identifying details (the "Harmon" case name in S1 is invented) |
+| Q10 | Google (Scam Detection in Meet/Chrome) or Microsoft (transcript checks in Teams) closes the "reads the script" lead | Coco | Protect the lasting edge in scope: firm rules, egress log, any call app ([2.4](#24-competitive-position-and-what-it-protects-in-scope)) |
+| Q11 | BlackHole setup is a hurdle for a non-technical office manager | Coco | Out of scope this weekend (no installer); say it in the pitch as a known gap; AUD-9 at least explains a missing device in plain words |
 
 ---
 
