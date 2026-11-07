@@ -1,12 +1,121 @@
-/* T1 placeholder styles. T2 brings the tokens and layout from ui/dev/prototype.html. */
+/* Callguard panel styles. Design: ui/dev/prototype.html (v3, signed off).
+   Every state uses the same order: Status, Why, What to do, Actions, then one
+   privacy line. Colour lives in the Status hero only. */
+
+/* ================= tokens ================= */
 :root {
+  --bg: #ffffff;
+  --sunken: #f5f5f4;
+  --text: #18181b;
+  --muted: #5f5f66;
+  --line: #ececee;
+  --low: #1d7a3b;      --low-tint: #eef7f1;
+  --watch: #8a5800;    --watch-tint: #fdf4e1;  --watch-mark: #fbe3a6;
+  --danger: #b3261e;   --danger-tint: #fdeeed; --danger-mark: #f8cfcb; --danger-hero: #b3261e;
+  --idle: #6b6b70;     --idle-tint: #f2f2f3;
+  --on-strong: #ffffff;
+  --primary: #18181b;  --on-primary: #ffffff;
+  --focus: #0a64d6;
+
+  --r-pill: 999px; --r-card: 12px; --r-hero: 20px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+  --t-hero: 24px; --t-key: 15px; --t-body: 13px; --t-meta: 12px;
   --font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --dur: 150ms;
   color-scheme: light dark;
 }
-body { margin: 0; font: 13px/1.45 var(--font); background: Canvas; color: CanvasText; }
-.panel { padding: 16px; max-width: 420px; }
-.meta { font-size: 12px; opacity: .75; }
-.banner:empty { display: none; }
-h1 { font-size: 24px; margin: 8px 0; text-transform: capitalize; }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-button:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #18181b;
+    --sunken: #222226;
+    --text: #f4f4f5;
+    --muted: #a6a6ad;
+    --line: #2e2e33;
+    --low: #5cc77f;      --low-tint: #16261b;
+    --watch: #f0b440;    --watch-tint: #2c2310;  --watch-mark: #5a4210;
+    --danger: #ff7a70;   --danger-tint: #33181a; --danger-mark: #6b2622; --danger-hero: #b8312a;
+    --idle: #9c9ca3;     --idle-tint: #26262a;
+    --primary: #f4f4f5;  --on-primary: #18181b;
+    --focus: #7ab0ff;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 0ms; }
+}
+
+/* ================= base ================= */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font: var(--t-body)/1.45 var(--font);
+  min-width: 320px; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+button, input, summary { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+svg { display: block; flex: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.panel { min-height: 100%; display: flex; flex-direction: column; }
+
+/* ================= A header ================= */
+.top {
+  flex: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 2px var(--s2);
+  padding: var(--s3) var(--s4) var(--s2); font-size: var(--t-meta); color: var(--muted);
+}
+.top > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--low); }
+.badge.off .dot, .net.off .dot { background: var(--idle); }
+.net.off { color: var(--text); font-weight: 600; }
+.net .pause { color: var(--muted); font-weight: 400; }
+
+/* consent line (F0) */
+.consent { flex: none; margin: 0 var(--s4) var(--s3); font-size: var(--t-meta); color: var(--muted); display: flex; gap: var(--s2); align-items: flex-start; }
+.consent-body { flex: 1; }
+.consent details { display: inline; }
+.consent summary { display: inline; cursor: pointer; color: var(--text); text-decoration: underline; text-underline-offset: 3px; list-style: none; }
+.consent summary::-webkit-details-marker { display: none; }
+.consent details p { margin: var(--s2) 0 0; color: var(--text); }
+.icon-btn { border: 0; background: none; color: var(--muted); padding: 2px 4px; border-radius: 4px; line-height: 1; font-size: 15px; cursor: pointer; }
+
+/* ================= B banners ================= */
+.banner { flex: none; margin: 0 var(--s4) var(--s3); padding: 6px var(--s3); border-radius: var(--r-pill); background: var(--sunken); font-size: var(--t-meta); text-align: center; }
+
+/* ================= body ================= */
+.body { flex: 1; display: flex; flex-direction: column; gap: var(--s5); padding: 0 var(--s4) var(--s4); }
+
+/* C: status hero */
+.hero { border-radius: var(--r-hero); padding: var(--s5) var(--s4) var(--s4); text-align: center; background: var(--idle-tint); transition: background-color var(--dur); }
+.hero .ic { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto var(--s3); display: grid; place-items: center; background: var(--bg); color: var(--idle); }
+.hero h1 { margin: 0; font-size: var(--t-hero); line-height: 1.1; font-weight: 700; }
+.hero .sub { margin: var(--s2) 0 0; font-size: var(--t-meta); color: var(--muted); }
+
+.lv-idle h1 { color: var(--idle); font-weight: 600; }
+.lv-low { background: var(--low-tint); }
+.lv-low .ic { color: var(--low); }
+.lv-watch { background: var(--watch-tint); }
+.lv-watch .ic { background: var(--watch); color: var(--watch-tint); }
+.lv-watch h1 { color: var(--watch); }
+.lv-danger { background: var(--danger-hero); color: var(--on-strong); }
+.lv-danger .ic { background: rgba(255, 255, 255, .16); color: var(--on-strong); }
+.lv-danger .sub { color: var(--on-strong); }
+
+/* section label (Why / What to do / Latest) */
+.sec { display: flex; flex-direction: column; gap: var(--s3); }
+.sec > h2 { margin: 0; font-size: var(--t-meta); font-weight: 600; color: var(--muted); }
+
+/* E: latest lines */
+.said { display: flex; flex-direction: column; gap: var(--s2); margin: 0; padding: 0; list-style: none; }
+.said li { display: grid; grid-template-columns: 44px 1fr; gap: var(--s2); color: var(--muted); }
+.said .who { font-size: var(--t-meta); padding-top: 1px; }
+
+/* G: actions */
+.actions { flex: none; padding: var(--s4) var(--s4) var(--s3); display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
+
+/* F: privacy line */
+.priv { flex: none; border-top: 1px solid var(--line); padding: 10px var(--s4); font-size: var(--t-meta); color: var(--muted); display: flex; align-items: center; gap: 6px; transition: background-color var(--dur); }
+.priv .ok { color: var(--low); }
+.priv b { color: var(--text); font-weight: 600; }
+.priv .skipped { margin-left: auto; }
