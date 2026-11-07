@@ -855,7 +855,7 @@ Privacy is the product. These are requirements, not aspirations, and each one ha
 |---|---|---|
 | Audio never leaves memory | Audio lane never calls `sf.write`; chunks are numpy arrays dropped after transcription | `SRV-12` no-disk-writes test; code review |
 | Transcripts never stored, logged or sent | Window lives in `pipeline.py` memory; debug prints max 80 chars; cleared on call end | `SRV-12`; `SRV-5` test |
-| Only the claimed org name leaves | `egress.search(org)` takes a string ≤ 80 chars and nothing else; the query is the org name, or (C17, P1) the org name inside a fixed template (`"{org}" impersonation scam`); search is the only egress | `SRV-12` import scan; egress log in the demo shows the full query |
+| Only the claimed org name leaves | `egress.search(org)` only accepts a name that passed `egress.safe_org()` ([11.1](#111-searching-without-exposing-the-user-or-the-firm)); the query is the org name, or (C17, P1) the org name inside a fixed template (`"{org}" impersonation scam`); search is the only egress | `SRV-12` import scan; egress log in the demo shows the full query |
 | Every network call is visible | `egress.py` records an `EgressEntry` before sending and pushes it to the UI | Demo: "What left this device" |
 | No cloud model | Ollama at `localhost`; no LLM SDKs in requirements | Import scan; Wi-Fi-off run |
 | No hidden model downloads | Whisper is loaded from a local path with `HF_HUB_OFFLINE=1`; models are downloaded once by the setup step, before the demo | Wi-Fi-off run from a cold start |
@@ -864,6 +864,27 @@ Privacy is the product. These are requirements, not aspirations, and each one ha
 | Search is only used when it helps | Verify (and the C17 scam-report search) fires only at `watch` or above, once per org per call | Egress log stays empty on benign calls |
 
 Consent: the side panel always shows "This call is checked locally. Nothing is recorded." (Massachusetts all-party consent question is open, see [17](#17-risks-and-open-questions).)
+
+### 11.1 Searching without exposing the user or the firm
+
+The two searches (C12 verify, C17 scam reports) are the only cloud calls. They must not reveal **who** is on the call, **which firm** they work at, or **anything said** on it.
+
+**What may be sent: an organization name that passes `egress.safe_org()` (SRV-8, P0).** It runs before every search. If any check fails, nothing is sent, the egress log records `"status": "refused"` with `sent: ""`, and the verify line says "Lookup skipped to protect your privacy, use the number on file."
+
+| Check | Blocks |
+|---|---|
+| No digits, `@`, `http`, `www.` or `.com`-style domains | Case, account, phone and reference numbers; emails; links the caller gave |
+| At most 6 words and 60 characters | Sentences or extra detail the model folded into `claimed_identity` |
+| Appears word for word in the **caller's** lines of the current window | Names the model made up, and anything the user said about themselves or their firm |
+| Not on the firm's **never-search list** (P0: `CALLGUARD_NEVER_SEARCH` in `.env`, comma-separated: the firm's own name, client names, staff names; P1: edited in the UI-14 rules panel) | The firm, its clients and its people, even if the caller says them |
+| Not a person's name: reject if it is two or three capitalised words with no org word (Department, Agency, Bank, Inc, LLC, Office, Service, Police, Court, IRS, FBI…) | "Agent John Miller" |
+
+The query is then the org name alone (C12) or inside the fixed template `"{org}" impersonation scam` (C17). Nothing else is added: no user name, firm name, location, phone number or date.
+
+**What the search provider can still see, and how we say it.** Even a clean query reaches Tavily/Exa with the API key and the laptop's IP address, so the provider could tell that *this key* looked up "Department of Justice" at 19:02. It cannot see the call, the user or the firm's name. The pitch and the privacy screen say exactly that: "The search provider sees an organization name. Nothing from the call, nothing about you."
+
+**Roadmap (not this weekend):** (1) a Callguard search relay, so the provider sees Callguard's key and IP, not the firm's; (2) a local cache of commonly impersonated organizations (IRS, SSA, DOJ, FBI, major banks, Microsoft, Apple) with their public numbers and recent reports, refreshed daily, so most calls need no search at all and the timing of a lookup reveals nothing; (3) the scam alert feed in the P2 list.
+
 
 ---
 
@@ -900,7 +921,7 @@ Contracts are Lead-owned (guardrail 7). This section is the change Coco applies 
 | `rules` | `[Rule]`, sent once on connect and again after every save or reset (for UI-13, UI-14). P1: optional `"source": "default | custom"` |
 | `rules_saved` | P1: `{"ok": true}` or `{"ok": false, "errors": ["…"]}`, the reply to `save_rules` / `reset_rules` |
 
-`status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | on"`. `verify` gets optional `"status": "ok | offline | not_found | error"`, and P1 (C17) optional `"report": {"summary": "…", "source_url": "…", "date": "2026-10"}` (omitted when nothing recent is found). `EgressEntry.sent` is the exact query sent, so a C17 search shows `"Department of Justice" impersonation scam`.
+`status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | on"`. `verify` gets optional `"status": "ok | offline | not_found | error"`, and P1 (C17) optional `"report": {"summary": "…", "source_url": "…", "date": "2026-10"}` (omitted when nothing recent is found). `EgressEntry.status` gets `refused` (the query failed `safe_org()`, nothing was sent, `sent` is empty). `EgressEntry.sent` is the exact query sent, so a C17 search shows `"Department of Justice" impersonation scam`.
 
 **WebSocket, UI → Server**: add `{"type": "gate_release", "how": "hang_up | colleague | mark_safe"}` and `{"type": "end_call"}`. P1 (UI-14): add `{"type": "save_rules", "data": [Rule]}` and `{"type": "reset_rules"}`.
 
@@ -969,10 +990,10 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-5 | P0 | Call lifecycle: `call` started/ended messages; `end_call` from UI; clear window, check history, verify cache and gate on end | Test: after end, no transcript in memory | — |
 | SRV-6 | P0 | `status`: listening, online (C16), gate mode; resend on connect. Model health (C15) field is P1 | UI shows correct dots | — |
 | SRV-7 | P0 | Call-risk smoothing (C10, [6.7](#67-call-level-smoothing-server-c10)) | Unit tests for rise, sticky danger, decay | DET-6 constants |
-| SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
+| SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only, and only after `egress.safe_org(org, caller_lines, never_search)` passes ([11.1](#111-searching-without-exposing-the-user-or-the-firm)), otherwise log `refused` and send nothing; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
 | SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. No OS hooks | Unit tests for every transition | SRV-7 |
 | SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; comes to the front on danger (no full-screen). The danger notification must still work in this window (fall back to `osascript` with the same fixed copy if the web Notification API is unavailable) | Window stays on top beside Zoom; danger brings it forward | SRV-1 |
-| SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines | Green in `pytest` | — |
+| SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines; (d) `safe_org()` refuses each of: `"Agent John Miller, DOJ"`, `"DOJ case 4471-22"`, `"Chase, acct ending 8812"`, a name on the never-search list, a name the caller never said, a name only the user said; and accepts `"Department of Justice"` said by the caller | Green in `pytest` | — |
 | SRV-14 | P1 | Rules editing ([8.1](#81-customizing-the-rules-p1)): handle `save_rules` (validate with `validate_rules`, write the custom file atomically, reload, broadcast `rules` and `rules_saved`) and `reset_rules` (delete the custom file, reload defaults); refuse both while a call is active (`rules_saved` with an error); never log rule edits as egress | Unit tests with a temp directory: save, invalid save, reset, refused during a call | DET-13, SRV-5 |
 | SRV-15 | P1 | Scam-report search (C17): with the SRV-8 verify, a second `egress.search` with the fixed template `"{org}" impersonation scam` (its own `EgressEntry`); keep the most recent result from the last 12 months; one-line summary ≤ 120 chars from the result title/snippet, never model-generated from the transcript; add `report` to the `verify` message; same cache, offline and error handling as SRV-8 | Fake transport tests: report found, none recent, offline; egress log shows the full query | SRV-8 |
 | SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
@@ -988,7 +1009,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-3 | P0 | Watch note: `reason` + tactic chips in plain words; chip expands to show `evidence.quote`; if `rules_broken` is not empty, show the rule text here too, not only in the danger overlay | Fixture | LEAD-1 |
 | UI-4 | P0 | Danger notification ([9.5](#95-the-danger-notification)): fixed copy only, click focuses the page and shows the overlay, once per new ask tactic, permission request on first load. Danger overlay ([9.4](#94-the-overlay-layout-danger)): claimed identity, tactics with quotes, rule text, verify line (number, or "Offline, search skipped", or "Looking up…"), `next_step`, sound on open | Fixture | — |
 | UI-5 | P0 | Safe-path pause exits: primary "Hang up and call back", "Check with a colleague", and `SAFE` + 3 s hold; Enter/Esc never dismiss; focus starts on the primary button; countdown from `gate.release_in`; sends `gate_release` | Keyboard-only test of every exit | SRV-9 contract |
-| UI-6 | P0 | "What left this device" panel: every `egress` entry (time, destination, exactly what was sent, status); empty state "Nothing has left this device" | Fixture | — |
+| UI-6 | P0 | "What left this device" panel: every `egress` entry (time, destination, exactly what was sent, status); `refused` entries show "Blocked: lookup skipped to protect your privacy"; empty state "Nothing has left this device" | Fixture | — |
 | UI-7 | P0 | Transcript tail: last ~3 lines, speaker-tagged, cleared on `call ended`; never kept beyond the current call | Fixture | — |
 | UI-8 | P0 | `ui/dev/replay.html` + JSON fixtures for S1, S2, B3, offline, model-down: replays WebSocket messages without the Server | Every fixture runs offline | — |
 | UI-9 | P1 | "Check with a colleague" and "Mark as safe" in the side panel too (outside danger) | Sends client messages | SRV-13 |
@@ -997,7 +1018,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-15 | P1 | "Say this" line on the watch note and the danger overlay: the sentence from [18.3](#183-say-this-lines) for the top tactic (ask tactics first), fixed copy in `ui/`, no model | Fixture for each tactic | — |
 | UI-16 | P1 | Scam report line on the overlay: "Reported: {summary} · {source domain}, {date}" from `verify.report`; hidden when absent or offline | Fixture: with report, without, offline | SRV-15 contract |
 | UI-13 | P1 | "Your firm's rules" panel: read-only list of the loaded rules (from the `rules` message), with a count of how many fired this call | Fixture | LEAD-1, SRV-1 |
-| UI-14 | P1 | Rules editor in the UI-13 panel ([8.1](#81-customizing-the-rules-p1)): "Edit rules" (disabled during a call, with a line saying why); per rule an on/off switch, text field, tactic checkboxes in plain words, optional "only when the caller also…" (`requires`) and keywords; add and delete (with confirm); "Save" sends `save_rules` and shows `rules_saved` errors next to the fields; "Reset to defaults" (with confirm) sends `reset_rules`; a "Custom rules" or "Default rules" label from `rules.source` | Fixture: edit, invalid save shows errors, reset, editor locked during a call | UI-13, SRV-14 contract |
+| UI-14 | P1 | Rules editor in the UI-13 panel ([8.1](#81-customizing-the-rules-p1)), plus a "Never search for" list (firm name, clients, staff; [11.1](#111-searching-without-exposing-the-user-or-the-firm)): "Edit rules" (disabled during a call, with a line saying why); per rule an on/off switch, text field, tactic checkboxes in plain words, optional "only when the caller also…" (`requires`) and keywords; add and delete (with confirm); "Save" sends `save_rules` and shows `rules_saved` errors next to the fields; "Reset to defaults" (with confirm) sends `reset_rules`; a "Custom rules" or "Default rules" label from `rules.source` | Fixture: edit, invalid save shows errors, reset, editor locked during a call | UI-13, SRV-14 contract |
 
 **Needs (to Coco):** none for P0 (plain HTML/JS/CSS, no CDN).
 
