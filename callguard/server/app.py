@@ -15,6 +15,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from callguard.server import egress
 from callguard.shared.contracts import ClientMessageType, MessageType
 
 log = logging.getLogger("callguard.server")
@@ -93,6 +94,15 @@ def create_app(hub: Hub | None = None, ui_dir: Path = UI_DIR) -> FastAPI:
     hub = hub or Hub()
     app = FastAPI(title="Callguard", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.hub = hub
+
+    # Every egress entry goes to the UI; a (re)connecting UI gets the log so far.
+    egress.subscribe(lambda entry: hub.broadcast_threadsafe("egress", entry))
+
+    async def send_egress_log(ws: WebSocket) -> None:
+        for entry in list(egress.entries):
+            await hub.send(ws, "egress", entry)
+
+    hub.on_connect.insert(0, send_egress_log)
 
     @app.websocket("/ws")
     async def ws_endpoint(ws: WebSocket) -> None:
