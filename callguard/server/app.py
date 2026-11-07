@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Iterable
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -44,6 +45,16 @@ class Hub:
         self.handlers: dict[str, ClientHandler] = {}
         self.on_connect: list[ConnectHook] = []
         self.loop: asyncio.AbstractEventLoop | None = None
+        self._client_seen: asyncio.Event | None = None
+
+    def _seen(self) -> asyncio.Event:
+        if self._client_seen is None:
+            self._client_seen = asyncio.Event()
+        return self._client_seen
+
+    async def wait_for_client(self) -> None:
+        """Block until the first UI connects (so a fake call isn't missed)."""
+        await self._seen().wait()
 
     def handle(self, msg_type: str, fn: ClientHandler) -> None:
         if msg_type not in CLIENT_TYPES:
@@ -90,9 +101,28 @@ class Hub:
             await result
 
 
-def create_app(hub: Hub | None = None, ui_dir: Path = UI_DIR) -> FastAPI:
+BackgroundTask = Callable[[Hub], Awaitable[None]]
+
+
+def create_app(hub: Hub | None = None, ui_dir: Path = UI_DIR,
+               tasks: Iterable[BackgroundTask] = ()) -> FastAPI:
+    """`tasks` run on startup (e.g. the pipeline) and are cancelled on shutdown."""
     hub = hub or Hub()
-    app = FastAPI(title="Callguard", docs_url=None, redoc_url=None, openapi_url=None)
+    tasks = list(tasks)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        hub.loop = asyncio.get_running_loop()
+        running = [asyncio.create_task(t(hub)) for t in tasks]
+        try:
+            yield
+        finally:
+            for t in running:
+                t.cancel()
+            await asyncio.gather(*running, return_exceptions=True)
+
+    app = FastAPI(title="Callguard", docs_url=None, redoc_url=None, openapi_url=None,
+                  lifespan=lifespan)
     app.state.hub = hub
 
     # Every egress entry goes to the UI; a (re)connecting UI gets the log so far.
@@ -109,6 +139,7 @@ def create_app(hub: Hub | None = None, ui_dir: Path = UI_DIR) -> FastAPI:
         await ws.accept()
         hub.loop = asyncio.get_running_loop()
         hub.clients.add(ws)
+        hub._seen().set()
         try:
             for hook in hub.on_connect:
                 await hook(ws)

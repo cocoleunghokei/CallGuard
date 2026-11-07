@@ -1,0 +1,8 @@
+# id: s1_government
+# expect: low, watch, danger, danger
+# gate: 4
+caller: Hi, this is Officer Chen from the Department of Justice.
+caller: Your name came up in the Harmon money-laundering case. You're under investigation and could face extradition.
+you: Sorry, who is this?
+caller: This is confidential. Do not tell your colleagues or your firm, or it will be treated as obstruction.
+caller: To clear your name I need to verify your bank account number and routing number.
