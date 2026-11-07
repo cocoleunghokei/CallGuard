@@ -35,11 +35,19 @@ print(f"\nStart the call now. Recording {SECONDS} seconds...\n")
 
 results = {}
 def rec(dev, key):
-    results[key] = sd.rec(int(SECONDS * RATE), samplerate=RATE, channels=1, device=dev, dtype="float32")
+    # One InputStream per device. Do NOT use sd.rec() here: it is a single global
+    # recording, so starting the second one silently stops the first.
+    try:
+        with sd.InputStream(device=dev, samplerate=RATE, channels=1, dtype="float32") as stream:
+            audio, overflowed = stream.read(int(SECONDS * RATE))
+        if overflowed:
+            print(f"warning: {key} input overflowed (some audio dropped)")
+        results[key] = audio
+    except Exception as e:
+        print(f"ERROR recording {key} from device {dev}: {e}")
 
 threads = [threading.Thread(target=rec, args=(bh, "caller")), threading.Thread(target=rec, args=(mic, "you"))]
 for t in threads: t.start()
-sd.wait()
 for t in threads: t.join()
 
 for key, audio in results.items():
