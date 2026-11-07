@@ -61,7 +61,11 @@ try:
     print("\nTranscribing locally (no internet needed after first model download)...")
     model = WhisperModel("base", compute_type="int8")
     for key in ("caller", "you"):
-        segs, info = model.transcribe(f"{key}.wav")
+        if key not in results:
+            continue
+        # Pass the samples directly: avoids faster-whisper's file decoder (PyAV),
+        # which breaks with some av/Python 3.14 version combinations.
+        segs, info = model.transcribe(results[key][:, 0])
         print(f"\n[{key}] ({info.language}): " + " ".join(s.text.strip() for s in segs))
 except ImportError:
     print("\nfaster-whisper not installed, skipped transcription. Play caller.wav to check.")
