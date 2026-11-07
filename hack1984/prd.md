@@ -66,7 +66,7 @@ That makes these requirements **protected**: they are not cut at the Sun 02:00 P
 | Differentiator | Answers which competitor | Protected requirements | Demo moment |
 |---|---|---|---|
 | Script, not voice | Pindrop, Reality Defender, Polygraf, Hiya, Truecaller | DET-1..9 | Gradium clone opener, then the script gets caught |
-| Firm rules | Everyone (no one checks firm policy) | DET-4, UI-3, UI-4, UI-13 | "This breaks your firm's rule" on S2; rules panel |
+| Firm rules | Everyone (no one checks firm policy) | DET-4, UI-3, UI-4 (rules panel UI-13 is P1) | "This breaks your firm's rule" on S2 |
 | Provable privacy | Microsoft and cloud deepfake tools | SRV-3, SRV-12, UI-6 | Wi-Fi off + egress log |
 | Any call app | Microsoft (Teams only) | AUD-1 (Zoom + Teams routes) | "Same app on Zoom and Teams" |
 | Explains itself | Google (beeps without explaining) | UI-3, UI-4 (tactic, caller's words, rule, number) | Overlay with quotes |
@@ -95,18 +95,88 @@ iPhone or Android apps, a browser extension, voice/deepfake detection (a crowded
 
 | Measure | Target | How we check |
 |---|---|---|
-| Scam scenarios rated `danger` (English) | ≥ 9 of 10 | `DET-9` eval table |
-| Benign twins rated `danger` | 0 of 7 | `DET-9` eval table |
+| P0 scams (S1–S4) rated `danger` | 4 of 4 | `DET-9` eval table |
+| Full scam set (S1–S10) rated `danger` | ≥ 9 of 10 (P1) | `DET-9` eval table |
+| Benign twins rated `danger` | 0 of the P0 twins (B1, B2, B3, B7); 0 of 7 once the P1 set is added | `DET-9` eval table |
 | Benign twins rated `low` | ≥ 5 of 7 (the rest `watch`) | `DET-9` eval table |
 | Plan scripts 1–6 correct | ≥ 5 of 6 (plan's bar) | `DET-9` |
-| Mandarin S1 rated `danger` | Yes (P1) | `DET-9` |
 | Giveaway sentence spoken → `danger` on screen | ≤ 10 s (stretch ≤ 7 s) | Stopwatch on the Zoom run, `SRV-2` timing log |
-| First `watch` hint from fast check | ≤ 5 s after the phrase | Same |
+| First `watch` hint from fast check | ≤ 5 s after the phrase (P1, needs DET-5) | Same |
 | Egress log entries per call | Only org names; ≤ 1 per org per call | Demo + `SRV-12` test |
 | Call apps verified end to end | Zoom **and** Teams (RingCentral if time) | AUD-1 routes table |
 | Every danger warning explains itself | Names the tactic, quotes the caller, names the firm rule (if any), gives a next step with a number | UI-4 fixture test on S1, S2, S3 |
 | Works with the Wi-Fi off | Everything but search; search says "offline, skipped" | Sat 22:00 checkpoint |
 | Files written during a call | 0 | `SRV-12` no-disk-writes test |
+
+### 3.4 Priority ranking
+
+**What the tiers mean**
+- **P0, must ship to win.** The minimum product that wins Privacy-First and supports the Startup and Surge pitches. If a P0 is missing on Sunday, the demo or a judging answer breaks. P0 is not cut.
+- **P1, stretch.** Makes the demo more memorable or the Q&A stronger, but we win without it. Start only after the Sat 22:00 P0 checkpoint; whatever isn't working by Sun 02:00 is cut.
+- **P2, scoped out.** Not built this weekend. Mention it in the pitch as roadmap if it helps.
+
+**How it was ranked.** Every requirement was scored against three things:
+1. **Winning strategy** ([background §4](background.md)): prove privacy live (Wi-Fi off + egress log), lead with the friend's story, "you can't tell the voice, you can tell the script," one buyer and one platform, be honest about limits ("check with a colleague"), a demo that can't fail (backup video).
+2. **Competitive edge** ([2.4](#24-competitive-position-and-what-it-protects-in-scope)): script not voice, firm rules, provable privacy, any call app, explains itself.
+3. **Vision**: on-device scam-script detection that a 10–200 person firm with no security team can use during the call.
+
+A requirement is P0 only if one of these breaks without it. Within each tier, rank 1 matters most; enablers are listed separately because they come first in time but are not demo features.
+
+#### P0 enablers (do first)
+
+| ID | Lane | Why it can't wait |
+|---|---|---|
+| LEAD-1 | Lead | Contracts v2: every lane builds on the new fields (confidence, evidence, gate) |
+| LEAD-2, LEAD-3 | Lead | Prompt and rules sign-off; pinned dependencies |
+| AUD-5, SRV-4, UI-8 | Audio, Server, UI | Fakes and replay: lanes build in parallel, and the demo can run from a script if the live call fails |
+| LEAD-6 | Lead | Merges and the integration checklist at each checkpoint |
+
+#### P0, ranked (the MVP that wins)
+
+| Rank | IDs | Lane | Why it is must-ship |
+|---|---|---|---|
+| 1 | AUD-2, AUD-3, AUD-4 | Audio | Live capture and local transcription. Without it nothing runs, and "on the laptop" is the product |
+| 2 | DET-1, DET-2, DET-3, DET-7 | Detection | The local model reads the script. This *is* "you can't tell the voice, you can tell the script," and the edge over every voice-based competitor |
+| 3 | DET-4 (5 P0 rules) | Detection | Firm rules: the one thing no competitor does, and the hook for the business buyer |
+| 4 | DET-6, SRV-7 | Detection, Server | Confidence score, guards and sticky danger. Without them, real calls false-alarm and the warning flickers on stage |
+| 5 | SRV-1, SRV-2 | Server | Pipeline and WebSocket that put the result on screen |
+| 6 | UI-2, UI-3, UI-4 | UI | Meter, watch note and danger overlay that explain themselves (tactic, the caller's words, rule, next step). The edge over Google's beep |
+| 7 | SRV-3, UI-6, SRV-12 | Server, UI | Egress log and privacy tests. Strategy #1 and the main track's "can you prove it" |
+| 8 | LEAD-4, SRV-6 (online) | Lead, Server | Wi-Fi-off run from a cold start, with models pre-downloaded. The live privacy proof |
+| 9 | AUD-1 (Zoom + Teams) | Audio + Coco | Zoom must pass (main platform); Teams proves "any call app" against Microsoft |
+| 10 | DET-8 (P0 set), DET-9, DET-11 | Detection | S1–S4 and their twins pass on 7b. Evidence for "would anyone use it" and the false-alarm answer |
+| 11 | SRV-8 | Server | Surge lookup. Gives the egress log one real, visible entry, puts the real number on the overlay, and is a separate prize |
+| 12 | SRV-13, UI-5 (colleague exit) | Server, UI | "Check with a colleague": the honest answer to "she was on her mobile" |
+| 13 | SRV-9, UI-5 (soft gate) | Server, UI | Deliberate exits on the danger screen; the safe path is one click, "mark safe" takes effort. Cheap, no OS hooks |
+| 14 | SRV-5, AUD-6, UI-7 | Server, Audio, UI | Transcript cleared at call end; no-file-write tests; only a short transcript tail shown |
+| 15 | UI-1 | UI | "Listening locally · nothing stored" badge and consent line (Massachusetts question) |
+| 16 | LEAD-5, LEAD-9, LEAD-7 | Lead | Friend's consent and organizer answers; the Gradium opener; the demo script with exact caller lines |
+| 17 | UI-11 | UI | Backup video by Sun 09:00. The demo can't fail |
+
+#### P1, ranked (stretch)
+
+| Rank | IDs | Lane | Why it is a stretch, not must-ship |
+|---|---|---|---|
+| 1 | SRV-11 | Server | Always-on-top window that goes full-screen on danger. Biggest visual upgrade to the key moment; P0 fallback is the overlay filling the Callguard window plus sound and a notification |
+| 2 | SRV-10 | Server | Hard keyboard gate. A memorable beat ("try typing, nothing appears"), but needs Accessibility permission and native code; the soft gate already covers the idea |
+| 3 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
+| 4 | UI-13 | UI | Firm rules panel. Shows the rules exist; the rule already appears in the warnings |
+| 5 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
+| 6 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
+| 7 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
+| 8 | AUD-8 | Audio | iPhone calls answered on the Mac, only if the Continuity test passed. Strategy #4: one platform, no phone workarounds |
+| 9 | SRV-13 (real message) | Server | Sending to an actual contact instead of a local notification |
+| 10 | LEAD-8 | Lead | Contract tests |
+
+#### P2, scoped out
+
+| IDs | Why it is out |
+|---|---|
+| AUD-7, DET-10, UI-12, C11, S1-zh (Mandarin) | Not part of the winning strategy or the demo; the `scam-check` harness work already dropped it from the plan; Whisper `small` adds accuracy risk in Mandarin |
+| UI-10 (post-call summary card) | Nice after-call touch; judges score the during-call moment |
+| C13 (known-contact check, encrypted contact list) | Needs setup UI and encrypted storage; Surge already supplies a real number |
+| Training mode, admin anonymous counts, Phonon coach line | Roadmap for the Startup pitch (training mode can partner with KnowBe4/Adaptive), not this weekend |
+| `inside_knowledge` tactic | Weight 0.2, an amplifier only; S1 reaches danger without it |
 
 ---
 
@@ -121,7 +191,7 @@ Every scam scenario has a **benign twin**: a real call that shares surface featu
 | ID | Scenario | Caller claims | What they want | Tactics | Rules broken | Expected | Plan # |
 |---|---|---|---|---|---|---|---|
 | **S1** | Government official (the friend's case) | DOJ / police / "China Public Security Bureau" | Bank details, a "verification" transfer | authority, threat, secrecy, inside_knowledge, personal_data_request or bank details | `government_never_calls_for_payment_or_bank_details`, `never_keep_calls_secret` | danger | 1 |
-| **S1-zh** | S1 in Mandarin | 公安局 / 检察院 | Same | Same | Same | danger (P1) | 7 |
+| **S1-zh** | S1 in Mandarin | 公安局 / 检察院 | Same | Same | Same | danger (P2) | 7 |
 | **S2** | Vendor bank change | Known vendor's accounts team | Update bank details before Friday's payment | bank_change, urgency | `no_bank_changes_by_phone` | danger | 2 |
 | **S3** | IT support code | Firm's IT / Microsoft | The MFA code "we just sent you" | authority, urgency, credential_request | `it_never_asks_for_codes` | danger | 3 |
 | **S4** | Cloned partner wire | Managing partner (cloned voice) | Urgent escrow wire, skip the usual sign-off | payment_request, urgency, bypass_approval, secrecy | `wires_need_two_approvals` | danger | — |
@@ -139,6 +209,8 @@ Every scam scenario has a **benign twin**: a real call that shares surface featu
 | **B6** | Client confirming in writing | Client | "I emailed the new details, please call me back on the number you have" | bank_change (+ safe signals) | — | watch | — |
 | **B7** | You say the scary words | You (the employee) | "Don't tell anyone, it's a surprise party for Sam" | secrecy, but said by **you** | — | low | — |
 
+**Scenario priority.** P0 set (must pass to win, and is what the demo uses): **S1, S2, S3, S4** and twins **B1, B2, B3, B7**. P1 set (broader coverage for judge Q&A): S5–S10, B4–B6. P2: S1-zh.
+
 ### 4.2 Scenario details
 
 Each scenario lists the beats of the script in order, with the expected risk after each beat. The beat marked ⚡ is the **giveaway**: the moment the warning must be on screen by. The 🔒 beat is where the keyboard gate is expected to lock (only scenarios with a typeable ask).
@@ -155,7 +227,7 @@ Each scenario lists the beats of the script in order, with the expected risk aft
 
 *Next step:* "Hang up. Don't share bank details. Call the Department of Justice on its public number: …" *Verify:* `Department of Justice`.
 
-#### S1-zh. Mandarin version (P1)
+#### S1-zh. Mandarin version (P2, scoped out)
 "你好，我是公安局的陈警官。" → "你涉嫌一宗洗钱案，正在接受调查，可能会被引渡回国。" → ⚡ "这件事是机密，不要告诉你的同事，否则算妨碍调查。" → 🔒 "为了证明你的清白，请提供你的银行账号。"
 Same expected levels. `reason` and `next_step` may be returned in English for the demo; the UI shows the language badge `中文`.
 
@@ -233,7 +305,7 @@ Callguard runs a stack of checks. Some run on every 3-second chunk, some on the 
 |---|---|---|---|---|---|
 | **C1** | Speaker attribution | Each chunk is labelled `caller` or `you` by its audio source (BlackHole vs mic). Tactic evidence only counts when the **caller** said it | Every chunk | Audio (labels), Detection (filters) | P0 |
 | **C2** | Silence / noise gate | Skip chunks below an RMS threshold or with no words, so the model isn't called on silence | Every chunk | Audio | P0 |
-| **C3** | Fast phrase check | Local keyword and regex match (English and Mandarin) for each tactic: "don't tell", "read me the code", "gift cards", "new account", "不要告诉" … Gives an early `watch` within ~1 s of the chunk. **Can never raise `danger` alone** | Every caller chunk | Detection (`quick_check`) | P0 |
+| **C3** | Fast phrase check | Local keyword and regex match (English and Mandarin) for each tactic: "don't tell", "read me the code", "gift cards", "new account", "不要告诉" … Gives an early `watch` within ~1 s of the chunk. **Can never raise `danger` alone** | Every caller chunk | Detection (`quick_check`) | P1 |
 | **C4** | Model tactic check | Ollama `qwen2.5:7b` reads the speaker-labelled rolling 30 s window and returns tactics, evidence quotes with strength, claimed identity, safe signals, reason and next step as JSON | Every new caller chunk, skipped if one is still running | Detection (`check`) | P0 |
 | **C5** | Output validation | Validate model JSON against `ScamCheck`; drop unknown tactics; drop evidence quotes that don't appear in the window (hallucination guard); never crash | Every model call | Detection (`parse`) | P0 |
 | **C6** | Firm rules check | Match detected tactics (and optional rule keywords) to `rules.json`; fill `rules_broken` | Every check | Detection (`rules`) | P0 |
@@ -241,15 +313,15 @@ Callguard runs a stack of checks. Some run on every 3-second chunk, some on the 
 | **C8** | Safe-signal check | Signs of a legitimate call lower the score: sends you to a known number, follows the normal approval, no money or data asked, asks for it in writing | Every check | Detection (prompt + `score`) | P0 |
 | **C9** | Confidence score and guards | Combine C3–C8 into a 0–1 `confidence` and a risk level, applying the guard rules (urgency alone never danger, danger needs an ask or a strong combo) | Every check | Detection (`score`) | P0 |
 | **C10** | Call-level smoothing | Turn a stream of per-window checks into a stable meter: rises immediately, `danger` is sticky until the user acts or the call ends, `watch` decays after ~10 s of low | Every check | Server (`pipeline`) | P0 |
-| **C11** | Language check | Whisper detects `en`/`zh`; chunk carries `language`; Mandarin keywords and prompt line used when `zh` is present | Every chunk | Audio, Detection | P1 |
-| **C12** | Claimed-identity verify (Surge) | Once per organization per call, when `confidence ≥ 0.40` and `claimed_identity` is set, send **only the org name** through `egress.search()`; return the public phone and source URL | Once per org | Server | P1 |
+| **C11** | Language check | Whisper detects `en`/`zh`; chunk carries `language`; Mandarin keywords and prompt line used when `zh` is present | Every chunk | Audio, Detection | P2 |
+| **C12** | Claimed-identity verify (Surge) | Once per organization per call, when `confidence ≥ 0.40` and `claimed_identity` is set, send **only the org name** through `egress.search()`; return the public phone and source URL | Once per org | Server | P0 |
 | **C13** | Known-contact check | Compare `claimed_identity` with the firm's local contact list and show "Number on file: …" | Once per org | Server (lookup), Detection (none) | P2 |
 | **C14** | Gate eligibility | Decide whether the keyboard gate should lock (see [7](#7-the-keyboard-gate)) | Every check | Server (`gate`) | P0 soft, P1 hard |
-| **C15** | Model health | Ping Ollama at start and after failures; if down or slower than 8 s, run on C3 only and show "Basic checks only" | Startup + on error | Server, Detection | P0 |
+| **C15** | Model health | Ping Ollama at start and after failures; if down or slower than 8 s, run on C3 only and show "Basic checks only" | Startup + on error | Server, Detection | P1 |
 | **C16** | Online check | Detect network presence for `status.online`; search returns `offline` instead of erroring | Startup + every 15 s | Server (`egress`) | P0 |
 | **C17** | Privacy self-checks | Tests that fail the build if any file outside `egress.py` imports a network library, or if a pipeline run writes any file | `pytest` | Server (`tests/server/`) | P0 |
 
-**Why both a fast check and a model check?** The model takes 2–5 seconds on a laptop and sometimes fails; phrase matching is instant and never fails but is easy to fool and prone to false alarms. Running both gives an early hint from C3 and a considered judgement from C4, and the guard rules make sure the cheap check can only ever raise `watch`.
+**Why both a fast check and a model check?** The model takes 2–5 seconds on a laptop and sometimes fails; phrase matching is instant and never fails but is easy to fool and prone to false alarms. The model check (C4) is P0 on its own (~3 s per check on 7b); the phrase check (C3) is a P1 add-on that gives an earlier hint and a fallback when the model is slow, and the guard rules make sure the cheap check can only ever raise `watch`.
 
 ---
 
@@ -741,7 +813,7 @@ gantt
     section Audio
     Continuity test (AUD-1)             :a1, 2026-11-07 12:30, 60m
     Capture + transcribe + fake (AUD-2..5) :a2, 2026-11-07 13:30, 150m
-    Mandarin, Continuity (AUD-7,8)      :a3, 2026-11-07 22:00, 240m
+    Continuity, audio health (AUD-8,9)  :a3, 2026-11-07 22:00, 240m
     section Detection
     Prompt v1 + scripts (DET-1,8)       :d1, 2026-11-07 12:30, 60m
     Client, parse, rules, score (DET-2..7) :d2, 2026-11-07 13:30, 240m
@@ -829,7 +901,8 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | LEAD-4 | P0 | `hack1984/setup.md`: one-time setup (BlackHole, Ollama pull, Whisper model download to a local path, Accessibility permission) | A cold Mac reaches a Wi-Fi-off run by following it |
 | LEAD-5 | P0 | Organizer questions (pre-existing code, demo format), Tavily/Exa keys, friend's consent to use the story | Answers written in `background.md` |
 | LEAD-6 | P0 | Merge lanes at checkpoints, run the integration checklist ([14.3](#143-integration-checklist-per-checkpoint)) | Each checkpoint ticked in the plan |
-| LEAD-7 | P1 | `hack1984/demo-script.md`: final 3-minute script with exact lines for the teammate playing the caller (S1, S2, gate beat) | Rehearsed 3 times |
+| LEAD-7 | P0 | `hack1984/demo-script.md`: final 3-minute script with exact lines for the teammate playing the caller (S1, S2, gate beat) | Rehearsed 3 times |
+| LEAD-9 | P0 | Gradium-cloned "managing partner" opener clip (pre-recorded, with consent; demo content only, never user data) | Clip plays from the demo Mac offline |
 | LEAD-8 | P1 | `tests/shared/test_contracts.py`: TACTICS matches AGENTS.md; sample messages validate | Passes in `pytest` |
 
 ### 13.2 Audio · `callguard/audio/`, `tests/audio/`
@@ -842,7 +915,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | AUD-4 | P0 | `stream_chunks()`: generator of `TranscriptChunk` for both speakers with `start`/`end` relative to call start | Server can consume it | AUD-2, AUD-3 |
 | AUD-5 | P0 | `fake_stream(path, speed=1.0)`: replays a scenario script ([15.2](#152-script-file-format)) as `TranscriptChunk`s with realistic timing; `speed=0` for instant in tests | All `tests/detection/scripts/*.txt` replay | Script format |
 | AUD-6 | P0 | Tests: fake_stream parsing, silence skip, no file writes (patch `open`, `soundfile.write`) | `pytest tests/audio` green offline | — |
-| AUD-7 | P1 | Mandarin: language detection per chunk, `language` field set; handle mixed en/zh | S1-zh replay via mic shows `zh` | AUD-3 |
+| AUD-7 | P2 | Mandarin: language detection per chunk, `language` field set; handle mixed en/zh | S1-zh replay via mic shows `zh` | AUD-3 |
 | AUD-8 | P1 | Continuity route, only if AUD-1 passed | Real iPhone call transcribes | AUD-1 |
 | AUD-9 | P1 | `audio_ok()` health: both devices present and producing sound; Server shows it in `status` | Unplugging BlackHole shows a warning instead of a crash | — |
 
@@ -856,13 +929,13 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | DET-2 | P0 | `ollama_client.py`: POST `http://localhost:11434/api/chat`, `format: "json"`, `temperature: 0`, `num_ctx` sized for 30 s of text, timeout 8 s; model from `CALLGUARD_MODEL` (default `qwen2.5:7b`). Guardrail 2 bans network imports outside `egress.py`, so call Ollama through `egress.local_ollama_post()` (SRV-3), which only accepts `localhost` and is not logged as egress because nothing leaves the device. Build against a fake client until SRV-3 merges | Calls Ollama through the approved path | SRV-3 (or exemption) |
 | DET-3 | P0 | `parse.py`: validate model JSON into `ScamCheck`; drop unknown tactics; drop evidence whose quote isn't in the window (C5); truncate strings; never raise | Fuzz test with 20 malformed outputs passes | LEAD-1 |
 | DET-4 | P0 | `rules.json` (P0 rules from [8](#8-firm-rules)) + `rules.py` loader and matcher with `requires` and `keywords` | Unit tests per rule | LEAD-1 |
-| DET-5 | P0 | `quick_check(text, speaker) -> list[Evidence]`: phrase lists per tactic in English and Mandarin ([18.2](#182-starter-phrase-lists-for-quick_check)) | Hits every ⚡ line in S1–S10; no hits on B1–B4 | — |
+| DET-5 | P1 | `quick_check(text, speaker) -> list[Evidence]`: phrase lists per tactic in English and Mandarin ([18.2](#182-starter-phrase-lists-for-quick_check)) | Hits every ⚡ line in S1–S10; no hits on B1–B4 | — |
 | DET-6 | P0 | `score.py`: confidence formula, thresholds, guards G1–G5 ([6](#6-confidence-score-and-risk-levels)); weights as module constants | `test_score.py` reproduces the table in [6.6](#66-worked-examples-computed-with-the-formula-above) | DET-3 |
-| DET-7 | P0 | `check(window, rules) -> ScamCheck`: window is speaker-labelled lines; combines C3–C9; always returns a valid `ScamCheck` (`source` set) | Unit tests with a fake model client | DET-2..6 |
-| DET-8 | P0 | Scenario scripts for S1–S10 and B1–B7 in `tests/detection/scripts/`, with expected risk per beat in a header | Coco signs off | — |
+| DET-7 | P0 | `check(window, rules) -> ScamCheck`: window is speaker-labelled lines; combines C4–C9 (and C3 phrase evidence once DET-5 lands); always returns a valid `ScamCheck` (`source` set) | Unit tests with a fake model client | DET-2, 3, 4, 6 |
+| DET-8 | P0 | Scenario scripts in `tests/detection/scripts/`: the **P0 set first** (S1–S4, B1–B3, B7), then the P1 set (S5–S10, B4–B6), with expected risk per beat in a header | Coco signs off | — |
 | DET-9 | P0 | `python -m callguard.detection.eval`: runs every script beat by beat against live Ollama; prints risk, confidence, tactics, latency, pass/fail against [3.3](#33-success-measures) | Table pasted in Status | DET-7, DET-8 |
-| DET-10 | P1 | Mandarin: prompt line for `zh`, Mandarin phrase list, S1-zh passes | S1-zh = danger | DET-9 |
-| DET-11 | P1 | Tune prompt and weights until success measures hold on 7b; record 3b results as fallback | Eval table meets targets | DET-9 |
+| DET-10 | P2 | Mandarin: prompt line for `zh`, Mandarin phrase list, S1-zh passes | S1-zh = danger | DET-9 |
+| DET-11 | P0 | Tune prompt and weights until the P0 success measures hold on 7b (3b is not a fallback: it scored 3/7 on the Mac in the `scam-check` harness test) | Eval table meets targets | DET-9 |
 | DET-12 | P1 | P1 rules from [8](#8-firm-rules) | Tests | DET-4 |
 
 **Needs (to Coco):** LEAD-1 contracts; decision on how Ollama localhost calls satisfy guardrail 2 (see DET-2; recommended: `egress.local_ollama_post()` that skips the egress log because nothing leaves the device).
@@ -872,13 +945,13 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | ID | P | Requirement | Done when | Depends on |
 |---|---|---|---|---|
 | SRV-1 | P0 | `app.py` / `__main__.py`: FastAPI, serves `ui/` statically, `/ws` broadcasts `{type, data}` to all clients, accepts client messages | `python -m callguard.server` opens the page | — |
-| SRV-2 | P0 | `pipeline.py`: consumes `stream_chunks()`; keeps the speaker-labelled rolling 30 s window; per caller chunk runs `quick_check` immediately and `check()` in a worker (skip if busy, run once more after it finishes if new chunks arrived); pushes `transcript` and `check`; logs latency (no text) | Fake S1 replay pushes the expected sequence | Fakes of AUD/DET |
+| SRV-2 | P0 | `pipeline.py`: consumes `stream_chunks()`; keeps the speaker-labelled rolling 30 s window; per caller chunk runs `check()` in a worker (and `quick_check` immediately once DET-5 lands, P1) (skip if busy, run once more after it finishes if new chunks arrived); pushes `transcript` and `check`; logs latency (no text) | Fake S1 replay pushes the expected sequence | Fakes of AUD/DET |
 | SRV-3 | P0 | `egress.py`: the only network module. `search(org)` stub, `online()` probe, `EgressEntry` recorded **before** each call and pushed as `egress`; `offline` status without raising. Plus `local_ollama_post()` for Detection (localhost only, asserts host) | Unit tests with a fake transport | — |
 | SRV-4 | P0 | `--fake SCRIPT` flag (and `--fake-speed`) using `audio.fake_stream()` | Full demo flow without a call | AUD-5 (or own fake) |
 | SRV-5 | P0 | Call lifecycle: `call` started/ended messages; `end_call` from UI; clear window, check history, verify cache and gate on end | Test: after end, no transcript in memory | — |
-| SRV-6 | P0 | `status`: listening, online (C16), model health (C15), gate mode; resend on connect | UI shows correct dots | — |
+| SRV-6 | P0 | `status`: listening, online (C16), gate mode; resend on connect. Model health (C15) field is P1 | UI shows correct dots | — |
 | SRV-7 | P0 | Call-risk smoothing (C10, [6.7](#67-call-level-smoothing-server-c10)) | Unit tests for rise, sticky danger, decay | DET-6 constants |
-| SRV-8 | P1 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
+| SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
 | SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. Soft mode needs no OS hooks | Unit tests for every transition | SRV-7 |
 | SRV-10 | P1 | `gate_macos.py`: Quartz event tap on a background CFRunLoop thread; swallow key events unless frontmost PID is ours; re-enable on timeout once; fall back to soft; **no key code access** | Manual test on the demo Mac; Coco line review | SRV-9 |
 | SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; go full-screen on gate lock/danger, restore on release | Window covers a browser on danger | SRV-1 |
@@ -900,9 +973,9 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-7 | P0 | Transcript tail: last ~3 lines, speaker-tagged, cleared on `call ended`; never kept beyond the current call | Fixture | — |
 | UI-8 | P0 | `ui/dev/replay.html` + JSON fixtures for S1, S2, B3, offline, model-down: replays WebSocket messages without the Server | Every fixture runs offline | — |
 | UI-9 | P1 | "Check with a colleague" and "Mark as safe" in the side panel too (outside danger) | Sends client messages | SRV-13 |
-| UI-10 | P1 | Post-call summary card: scenario guess from tactics, count of signs, what you did; no transcript; dismiss clears it | Fixture | — |
+| UI-10 | P2 | Post-call summary card: scenario guess from tactics, count of signs, what you did; no transcript; dismiss clears it | Fixture | — |
 | UI-11 | P0 | `ui/DEMO.md` (demo machine steps) and the backup video by **Sun 09:00** | Video file exists off-repo | All |
-| UI-12 | P1 | `中文` badge when any chunk has `language: zh` | Fixture | AUD-7 |
+| UI-12 | P2 | `中文` badge when any chunk has `language: zh` | Fixture | AUD-7 |
 | UI-13 | P1 | "Your firm's rules" panel: read-only list of the loaded rules (from the `rules` message), with a count of how many fired this call | Fixture | LEAD-1, SRV-1 |
 
 **Needs (to Coco):** none for P0 (plain HTML/JS/CSS, no CDN).
@@ -921,7 +994,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 1. **LEAD-1 contracts v2** (first, ~Sat 13:30). Everyone rebases.
 2. **Detection** (pure functions, no hardware): DET-1..7 → `main`.
 3. **Audio** AUD-2..6 → `main` (fake_stream unblocks Server's real path).
-4. **Server** SRV-1..7, 9, 12, 13 → `main`.
+4. **Server** SRV-1..9, 12, 13 → `main`.
 5. **UI** UI-1..8 → `main`. **Sat 19:00: first full run.**
 6. P0 fixes, Wi-Fi-off run. **Sat 22:00 decision.**
 7. P1 in the same order. **Sun 02:00: P1 in or cut.**
@@ -1011,7 +1084,7 @@ SUMMARY  scams danger 10/10 · twins danger 0/7 · twins low 6/7 · p95 latency 
 | Q2 | Does live local transcription count as "recording" under Massachusetts all-party consent? | Coco (ask the lawyer friend) | Store nothing; show the local-check notice |
 | Q3 | Is pre-existing code allowed? | Coco | Ask organizers at 13:00 |
 | Q4 | Guardrail 2 vs Ollama on localhost (DET-2) | Coco | Recommend `egress.local_ollama_post()`, localhost-asserted, not logged as egress |
-| Q5 | Is 7b fast enough on the demo Mac? | Detection | DET-9 latency column; fall back to 3b if p95 > 5 s |
+| Q5 | Is 7b fast enough on the demo Mac? | Detection | Harness test: ~3 s per check after load. 3b is not a fallback (3/7). If p95 > 5 s, shorten the window before changing model |
 | Q6 | Hard gate on stage: does the event tap need a restart after granting Accessibility? | Server | Grant permission during setup, test before Sun 07:00 |
 | Q7 | Gate could be seen as heavy-handed by judges | Coco | Frame it as "a 2-minute pause, always one click to hang up, off switch for admins" |
 | Q8 | False alarms on real bank changes (B6) | Detection | Safe signals; "verify first" copy; B6 must stay ≤ watch |
