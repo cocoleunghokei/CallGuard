@@ -44,6 +44,8 @@ NOTIFY_BODY = {  # fixed copy, chosen by the ask tactic (prd §9.5)
     "bypass_approval": "The caller wants you to skip the usual approval. Click for details.",
 }
 NOTIFY_DEFAULT = "This call shows signs of a scam. Click for details."
+COLLEAGUE_TITLE = "Callguard: check with a colleague"
+COLLEAGUE_BODY = "Heads-up from Callguard: a call looks suspicious, can you check in?"
 ASK_PRIORITY = ("bank_change", "credential_request", "payment_request",
                 "remote_access", "personal_data_request", "bypass_approval")
 assert set(ASK_PRIORITY) == ASK_TACTICS
@@ -68,6 +70,18 @@ def notify_macos(body: str) -> None:
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except OSError as e:
         log.warning("notification failed: %s", type(e).__name__)
+
+
+def notify_colleague_macos() -> None:
+    """Local P0 heads-up with fixed copy; no transcript, identity, or contact data."""
+    if sys.platform != "darwin" or not shutil.which("osascript"):
+        return
+    script = f'display notification "{COLLEAGUE_BODY}" with title "{COLLEAGUE_TITLE}" sound name "Sosumi"'
+    try:
+        subprocess.Popen(["osascript", "-e", script],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError as e:
+        log.warning("colleague notification failed: %s", type(e).__name__)
 
 
 class DangerAlert:
