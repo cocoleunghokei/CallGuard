@@ -131,6 +131,10 @@ function renderBanners(state) {
   $("b-conn").hidden = state.connected;
   const model = state.status && state.status.model;
   $("b-model").hidden = !(state.connected && (model === "degraded" || model === "offline"));
+  // Live mode: the Server says when the mic or BlackHole input isn't working (AUD-9).
+  const audioBad = !!(state.connected && state.status && state.status.audio_ok === false);
+  $("b-audio").hidden = !audioBad;
+  $("b-audio").textContent = audioBad ? state.status.audio_message || "Callguard can't hear the call. Check the audio inputs." : "";
 }
 
 // ---------------------------------------------------------------- C status hero

@@ -1,4 +1,6 @@
-"""python -m callguard.server [--browser] [--fake SCRIPT [--fake-speed N]] [--port 8000]
+"""python -m callguard.server [--browser] [--fake SCRIPT [--fake-speed N] | --no-audio] [--port 8000]
+
+Without --fake it listens live: mic as "you", BlackHole as "caller" (callguard.audio).
 
 Default: the native Callguard window (pywebview, SRV-11), never a browser tab.
 --browser (dev/tests only): serve http://localhost:8000 for a browser.
@@ -26,6 +28,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                    help="replay a scenario script instead of live audio (prd §15.2)")
     p.add_argument("--fake-speed", type=float, default=1.0,
                    help="replay speed for --fake (2 = twice as fast, 0 = instant)")
+    p.add_argument("--no-audio", action="store_true",
+                   help="don't open the mic / BlackHole (UI only, e.g. to try the window)")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
     args = p.parse_args(argv)
@@ -52,6 +56,10 @@ def build_app(args: argparse.Namespace):
         async def fake_call(_hub: Hub) -> None:
             await runtime.run_fake(args.fake, speed=args.fake_speed)
         tasks.append(fake_call)
+    elif not args.no_audio:
+        async def live_audio(_hub: Hub) -> None:
+            await runtime.run_live()
+        tasks.append(live_audio)
     return create_app(hub, tasks=tasks), runtime
 
 

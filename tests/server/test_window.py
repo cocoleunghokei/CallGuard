@@ -106,7 +106,7 @@ def test_run_window_serves_in_a_thread_and_opens_on_top(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "webview", types.SimpleNamespace(create_window=create_window, start=start))
     port = free_port()
-    app, runtime = build_app(parse_args(["--port", str(port)]))
+    app, runtime = build_app(parse_args(["--port", str(port), "--no-audio"]))
     window.run_window(app, runtime, "127.0.0.1", port)
     assert opened["title"] == "Callguard" and opened["on_top"] is True
     assert opened["width"] <= 420 and opened["main_thread"] and opened["status"] == 200

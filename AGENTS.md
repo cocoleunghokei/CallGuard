@@ -93,7 +93,7 @@ The code version is `callguard/shared/contracts.py`; this section is the readabl
 | `check` | `ScamCheck` |
 | `verify` | `{"org": "…", "phone": "…", "source_url": "…", "status": "ok | offline | not_found | error", "report": {"summary": "…", "source_url": "…", "date": "2026-10"}}`. Only `org` is required; `report` (P1) is omitted when nothing recent is found |
 | `egress` | `EgressEntry` |
-| `status` | `{"listening": true, "online": false, "model": "ok | degraded | offline", "gate": "off | on"}` (`model`, `gate` optional) |
+| `status` | `{"listening": true, "online": false, "model": "ok | degraded | offline", "gate": "off | on", "audio_ok": true, "audio_message": "…"}` (`model`, `gate`, `audio_ok`, `audio_message` optional; the audio fields come only in live mode) |
 | `gate` | `{"state": "off | armed | locked", "reason": "…", "release_in": 120}`. The safe-path pause; it never blocks typing |
 | `call` | `{"state": "started | ended"}` |
 | `rules` | `[Rule]`, sent on connect and after every save or reset. The message also has optional top-level `"source": "default | custom"`, `"never_search": ["…"]` (app-edited names, P1) and `"never_search_env": 2` (count from `.env`, P1) |
@@ -114,11 +114,15 @@ UI → Server:
 
 ```bash
 pip install -r requirements.txt     # once
-ollama pull qwen2.5:7b              # once (fallback: qwen2.5:3b)
-python -m callguard.server          # runs the app in its own Mac window (never a browser)
-python -m callguard.server --browser  # dev only: serve http://localhost:8000 for the browser
-pytest                              # all tests, offline
+ollama pull qwen2.5:7b              # once (fallback: qwen2.5:3b, set CALLGUARD_MODEL)
+python -m callguard.server          # the app in its own Mac window, listening live (mic + BlackHole)
+python -m callguard.server --fake tests/detection/scripts/s1_government.txt  # replay a script instead of live audio
+python -m callguard.server --no-audio  # window only, no mic (try the UI)
+python -m callguard.server --browser   # dev only: serve http://localhost:8000 for the browser (combine with the above)
+python -m callguard.audio.health    # are the mic and BlackHole inputs ready?
+pytest                              # all tests, offline (browser tests skip without playwright)
 ```
+Live audio needs `CALLGUARD_WHISPER_DIR` (local faster-whisper small model) in `.env`; optional `CALLGUARD_CALLER_DEVICE` (default "BlackHole 2ch"), `CALLGUARD_MIC_DEVICE`, `CALLGUARD_CALL_IDLE_S` (a live call ends after this much silence, default 45). Full demo-machine steps: [ui/DEMO.md](ui/DEMO.md).
 Whoever first makes one of these work, or changes one, updates this section.
 
 ## 5. How to report status
