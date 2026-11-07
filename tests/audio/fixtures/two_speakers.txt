@@ -1,0 +1,5 @@
+# id: two_speakers
+# expect: low, watch
+caller: Hello, this is the vendor.
+you: Could you email the invoice?
+caller: Please use the new account number.
