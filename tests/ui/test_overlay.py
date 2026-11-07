@@ -3,14 +3,13 @@
 Static checks always run. The browser checks replay fixtures through the
 harness and skip cleanly without Python Playwright or Chromium.
 """
-import json
 import pathlib
 import re
 
 import pytest
+from ui_replay import Replay, is_danger, is_end
 
 UI = pathlib.Path(__file__).resolve().parents[2] / "ui"
-FIXTURES = UI / "dev" / "fixtures"
 
 
 def test_overlay_markup():
@@ -45,45 +44,6 @@ DANGER = {
     "s3_it_code": ["Asks for a code or password", "Firm rule: IT will never ask you for a code or password."],
     "s4_partner_wire": ["Asks you to send money", "Firm rule: Every wire needs two approvals"],
 }
-
-
-def _steps(name):
-    return [s["msg"] for s in json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))["steps"]]
-
-
-class Replay:
-    def __init__(self, page, ui_server, name):
-        self.page = page
-        self.steps = _steps(name)
-        page.goto(f"{ui_server}/dev/replay.html?f={name}&autoplay=0")
-        page.wait_for_function("!document.getElementById('clock').textContent.includes('waiting')")
-        self.frame = page.frame(url=re.compile(r"index\.html"))
-        self.frame.evaluate(
-            """() => { window.__tones = 0; const O = window.AudioContext;
-            window.AudioContext = class extends O { createOscillator() { window.__tones++; return super.createOscillator(); } }; }"""
-        )
-
-    def next_index(self):
-        t = self.page.text_content("#fed-n")
-        return int(t.split("/")[0]) if t else 0
-
-    def until(self, pred):
-        """Deliver until the next message matches pred (not delivered). False at the end."""
-        while self.next_index() < len(self.steps) and not pred(self.steps[self.next_index()]):
-            self.page.click("#step")
-        return self.next_index() < len(self.steps)
-
-    def one(self):
-        if not self.page.locator("#step").is_disabled():
-            self.page.click("#step")
-
-
-def is_danger(m):
-    return m["type"] == "check" and m["data"].get("risk") == "danger"
-
-
-def is_end(m):
-    return m["type"] == "call" and m["data"]["state"] == "ended"
 
 
 @pytest.mark.parametrize("name", sorted(DANGER))
@@ -132,8 +92,8 @@ def test_closed_overlay_reopens_only_for_a_new_tactic(ui_server, browser):
     f = r.frame
     r.until(is_danger)
     r.one()
-    f.click("#ov-hangup")
-    assert not f.is_visible("#overlay") and f.is_visible("#show-warning")
+    r.mark_safe()
+    assert not f.is_visible("#overlay") and f.inner_text("#hero-word") == "Low"
     r.until(is_danger)  # the next danger check adds a new ask tactic
     r.one()
     assert f.is_visible("#overlay")
@@ -147,10 +107,10 @@ def test_same_tactics_do_not_reopen(ui_server, browser):
     f = r.frame
     r.until(is_danger)
     r.one()
-    f.click("#ov-hangup")
+    r.mark_safe()
     r.until(is_danger)
     r.one()
-    assert not f.is_visible("#overlay")
+    assert not f.is_visible("#overlay") and f.inner_text("#hero-word") == "Danger"
     f.click("#show-warning")
     assert f.is_visible("#overlay")
     assert f.evaluate("window.__tones") == 1, "reopening by hand is not a new alert"
