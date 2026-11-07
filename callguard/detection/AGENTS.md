@@ -7,6 +7,8 @@ Coco owns the wording of `prompt.md` and `rules.json`. Coco signs off on changes
 `check(transcript: str, rules: list[Rule]) -> ScamCheck`, where `transcript` is the rolling last ~30 s of text. It always returns a valid `ScamCheck`, even if the model fails, in which case it returns `risk: "low"` with a reason saying the check failed.
 
 ## Tasks
+Full list with IDs and "done when": [prd.md §13.3](../../hack1984/prd.md#133-detection--callguarddetection-testsdetection).
+
 **P0**
 - [ ] `prompt.md`: system prompt v1 for the scam check, asking for JSON only
 - [ ] `ollama_client.py`: call `http://localhost:11434` with `qwen2.5:7b` (`format: "json"`, temperature 0). Allow switching to `qwen2.5:3b` with the `CALLGUARD_MODEL` env var
@@ -17,6 +19,7 @@ Coco owns the wording of `prompt.md` and `rules.json`. Coco signs off on changes
 
 **P1**
 - [ ] Tune so urgency alone is never "danger" (script 5)
+- [ ] Custom rules (DET-13, [prd.md §8.1](../../hack1984/prd.md#81-customizing-the-rules-p1)): `validate_rules()` and a `load_rules()` that prefers the firm's custom file, falls back to the defaults, and honours `enabled`
 
 ## Rules for this lane
 - Localhost Ollama only. No cloud models

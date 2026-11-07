@@ -98,8 +98,8 @@ Note: she was called on her **mobile**. Our laptop app would catch the same scri
 2. **Transcribes locally:** Whisper, on the laptop. English only
 3. **Checks the script locally:** a small model (via Ollama) looks for scam tactics: posing as an authority, urgency, secrecy, threats, asking for credentials or bank changes, skipping approval
 4. **Checks the firm's rules:** the firm sets rules once, e.g. "We never change vendor bank details by phone." "IT never asks for your code."
-5. **Warns in plain words:** "This breaks your firm's rule: bank changes need a callback. Vendor's number on file: …" For high risk, a full-screen warning that a bank or login window can't hide.
-6. **Verifies the claim (Surge):** for an unknown caller, searches **only the claimed company or agency name** to find its real public number.
+5. **Warns in plain words:** "This breaks your firm's rule: bank changes need a callback. Vendor's number on file: …" For high risk, a notification that opens a warning with one safe next step. (We dropped the idea of a warning that blocks other windows or freezes the keyboard: a caller can ask for the code on any device, and a lock on a false alarm hurts the user.)
+6. **Verifies the claim (Surge):** for an unknown caller, searches **only the claimed company or agency name** to find its real public number and any recent scam reports about it. The name is checked first, so a search never reveals the user, the firm or what was said.
 7. **Check with a colleague:** one tap sends a heads-up to a trusted person the firm picks. It breaks the "don't tell anyone" isolation and works for any call, even on a phone.
 
 **Privacy by design**
@@ -119,11 +119,11 @@ Note: she was called on her **mobile**. Our laptop app would catch the same scri
 1. A call starts on Zoom or Teams, and the app shows a small "Listening locally" badge
 2. A live risk meter sits next to the call window: low, watch, danger
 3. At "watch," the app shows a short note: "Caller is claiming authority and asking for secrecy"
-4. At "danger," a full-screen warning shows the tactic, the rule broken, the real number found, and the next step: "Hang up and call back on …"
+4. At "danger," a notification appears; clicking it opens a warning that shows the tactic, the rule broken, the real number found, and the next step: "Hang up and call back on …"
 5. One tap: "Check with a colleague" or "Mark as safe"
 
 **After the call**
-- A summary card ("Possible government-impersonation scam, 3 warning signs"), stored locally and deletable
+- A summary card ("Possible government-impersonation scam, 3 warning signs") with the caller's warning lines and a "Copy for a report" button. Kept in memory only, never saved, gone when dismissed
 - The admin dashboard shows anonymous counts only
 
 **Training mode (stretch, uses Gradium)**

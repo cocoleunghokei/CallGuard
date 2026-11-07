@@ -12,12 +12,12 @@ Hacking: **Sat 11:00 → Sun 11:00 (code freeze)**. Judging Sun 12:00.
 - [ ] Live local transcription (faster-whisper), English. One-shot transcription works; live 3s loop not built yet
 - [ ] Local scam check (Ollama + Qwen 2.5 7B; 3B tested and too inaccurate), returning risk level, tactic and reason
 - [ ] Firm rules check (3–5 rules from a JSON file)
-- [ ] Warning screen: risk meter, plain-language reason, full-screen warning on danger
+- [ ] Warning screen: risk meter, plain-language reason; on danger a notification and sound, and clicking it opens the danger warning with the safe next step (never freezes the keyboard)
 - [ ] "What left this device" log
 - [ ] Works with the Wi-Fi off (except the search step, which says "offline, skipped")
 
 ### P1: makes it win
-- [ ] Surge: search the claimed company or agency name with Tavily or Exa and show its real public number
+- [ ] Surge: search the claimed company or agency name with Tavily or Exa and show its real public number (P1: also show recent impersonation-scam reports for that name). The name is checked first so the search never exposes the user or the firm
 - [ ] "Check with a colleague" button (sends a message to one preset contact; a local notification is fine for the demo)
 - [ ] Gradium-cloned "managing partner" voice clip for the demo opener (pre-recorded)
 - [ ] iPhone calls answered on the Mac, **only if the Continuity test passes**
@@ -73,7 +73,7 @@ FastAPI WebSocket ──▶ warning screen
 | **Lead / product** | Scope, the model prompt and rules, demo script, pitch, talking to the friend and sponsors | Coco |
 | **Audio + transcription** | BlackHole setup, `capture.py`, faster-whisper chunking, Continuity test | |
 | **Model + backend** | Ollama prompt, JSON parsing, rules check, FastAPI, Tavily/Exa | |
-| **Screen + demo** | Warning screen, full-screen alert, "what left" log, backup video | |
+| **Screen + demo** | Warning screen, danger notification and warning, "what left" log, backup video | |
 
 Solo or 3 people: merge Model + backend with Lead.
 
@@ -91,7 +91,7 @@ Solo or 3 people: merge Model + backend with Lead.
 | 13:30–16:00 | Backend + WebSocket, warning screen v1 | Screen updates from a fake transcript |
 | 16:00–19:00 | **Wire it together**: call → transcript → check → screen | First full run on a Zoom call |
 | 19:00 | Dinner. Check-in: what's broken? | |
-| 19:30–22:00 | Rules check, full-screen warning, "what left" log, Wi-Fi-off run | P0 complete |
+| 19:30–22:00 | Rules check, danger notification and warning, "what left" log, Wi-Fi-off run | P0 complete |
 | 22:00 | **Decision point:** if P0 works, start P1. If not, fix P0 only | |
 | 22:00–02:00 | P1: Surge lookup, check with a colleague, Continuity (if the test passed) | |
 
@@ -190,7 +190,7 @@ Write these out and use them for prompt tuning and the demo.
 |---|---|
 | 0:00–0:20 | **Hook:** play the Gradium-cloned "managing partner" voice: "Hey, it's David, I need you to wire the escrow funds before 5." "You couldn't tell that was fake. Neither could my friend." |
 | 0:20–0:50 | **Story + problem:** the friend's call. Phone scams succeed 40% more often than phishing emails. Today's tools check the number, not what's said |
-| 0:50–2:00 | **Live demo:** teammate calls on Zoom as the "official" (script 1). The risk meter rises, then the full-screen warning appears at "don't tell your teammates." Show the real agency number from search |
+| 0:50–2:00 | **Live demo:** teammate calls on Zoom as the "official" (script 1). The risk meter rises, then the danger notification appears at "don't tell your teammates." Click it: the warning shows the tactic, the caller's words and the real agency number from search |
 | 2:00–2:20 | **Privacy proof:** Wi-Fi off, run script 2, still caught. Show the "what left this device" log |
 | 2:20–2:45 | **Business:** firms of 10–200, $10–20 per seat, one stopped wire pays for years. Why us |
 | 2:45–3:00 | **Close:** "You can't tell the voice. You can tell the script." |

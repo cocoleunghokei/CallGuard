@@ -20,7 +20,7 @@ What she needs, in order:
 ## 1. Screens and regions
 
 ```
-Side panel (always on top, ~360 px wide)          Danger overlay (full window / full screen)
+Side panel (always on top, ~360 px wide)          Danger overlay (fills the Callguard window)
 ┌──────────────────────────────┐                  ┌──────────────────────────────────────────┐
 │ ● Listening locally ·        │ A  header        │ ⚠ STOP AND VERIFY THIS CALL  Strong ■■■■■ │
 │   nothing stored     ◌ Online│                  │ The caller claims to be: …               │
@@ -99,7 +99,7 @@ Each flow lists: trigger, steps (what the user sees and does), the messages behi
 
 ### F3. Danger: stop and verify (S1 beat 3, S2 beat 2, S3, S4)
 1. Caller: "Do not tell your colleagues…" Meter turns red **⚠ DANGER · Strong signs**. ← `check {risk:danger}`
-2. Overlay opens over the panel (full window; full screen if pywebview, SRV-11), one short sound, focus on **Hang up and call back**.
+2. Danger notification + one short sound; the overlay opens over the panel and the Callguard window comes to the front (no full-screen, SRV-11), focus on **Hang up and call back**.
 3. Overlay content, top to bottom (PRD §9.4):
    - Headline "Stop and verify this call" + bar
    - "The caller claims to be: Department of Justice"
@@ -115,7 +115,7 @@ Each flow lists: trigger, steps (what the user sees and does), the messages behi
 ### F4. Keyboard gate locks (S1 beat 4, S2 beat 3, S3 beat 2, S4 beat 3)
 1. Caller: "Read me your account number." ← `gate {state:locked, mode, reason, release_in:120}`
 2. Overlay adds the lock line: "🔒 Typing is paused while this call asks for bank details (1:54)". Countdown ticks locally from `release_in`.
-3. Maria tries to type in her bank tab: nothing (hard gate) or the overlay keeps focus (soft gate). Enter and Esc **do nothing** on the overlay.
+3. Other apps keep working (no hard gate, nothing blocks typing); the overlay keeps focus in the Callguard window. Enter and Esc **do nothing** on the overlay.
 4. At 0:00 the gate releases on its own (Server sends `gate {state:off}`); the overlay stays in danger mode, minus the lock line.
 
 **Done when:** keyboard-only test: Tab reaches every exit, Enter/Esc never dismiss, countdown matches `release_in`.

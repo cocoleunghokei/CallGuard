@@ -17,7 +17,7 @@ This document is the detailed build spec. It turns the background and plan into 
 4. [Scam scenario catalog](#4-scam-scenario-catalog)
 5. [The checks](#5-the-checks)
 6. [Confidence score and risk levels](#6-confidence-score-and-risk-levels)
-7. [The keyboard gate](#7-the-keyboard-gate)
+7. [The safe-path pause](#7-the-safe-path-pause)
 8. [Firm rules](#8-firm-rules)
 9. [User experience](#9-user-experience)
 10. [Architecture and tech diagrams](#10-architecture-and-tech-diagrams)
@@ -34,7 +34,7 @@ This document is the detailed build spec. It turns the background and plan into 
 
 ## 1. Summary
 
-**Callguard** is a Mac desktop app that sits beside a work call (Zoom, Teams, RingCentral, and iPhone calls answered on the Mac if the Continuity test passes). It listens to the call, transcribes it on the laptop, and watches *what is being said* for the shape of a scam script: someone claiming authority, asking for secrecy, threatening, rushing, and then asking for money, a bank change, a login code or client data. It checks those signals against the firm's own rules ("We never change vendor bank details by phone"), works out how confident it is, and warns the employee in plain words. At the highest level of confidence, when the caller has asked for something the employee could type (a code, an account number, a wire), it **pauses the keyboard** until the employee takes a deliberate safe step.
+**Callguard** is a Mac desktop app that sits beside a work call (Zoom, Teams, RingCentral, and iPhone calls answered on the Mac if the Continuity test passes). It listens to the call, transcribes it on the laptop, and watches *what is being said* for the shape of a scam script: someone claiming authority, asking for secrecy, threatening, rushing, and then asking for money, a bank change, a login code or client data. It checks those signals against the firm's own rules ("We never change vendor bank details by phone"), works out how confident it is, and warns the employee in plain words. At the highest level of confidence, when the caller has asked for something the employee could type (a code, an account number, a wire), it puts the safe choice in front of them (hang up and call back, or check with a colleague) before they act. It never freezes the keyboard: the caller can ask for anything on any platform, and a frozen keyboard on a false alarm hurts more than it helps.
 
 All of this runs on the laptop. The only thing that ever leaves the device is the **name of the organization the caller claims to be**, sent to Tavily or Exa to find that organization's real public phone number, and that request is shown in a "What left this device" log.
 
@@ -66,7 +66,7 @@ That makes these requirements **protected**: they are not cut at the Sun 02:00 P
 | Differentiator | Answers which competitor | Protected requirements | Demo moment |
 |---|---|---|---|
 | Script, not voice | Pindrop, Reality Defender, Polygraf, Hiya, Truecaller | DET-1..9 | Gradium clone opener, then the script gets caught |
-| Firm rules | Everyone (no one checks firm policy) | DET-4, UI-3, UI-4 (rules panel UI-13 is P1) | "This breaks your firm's rule" on S2 |
+| Firm rules | Everyone (no one checks firm policy) | DET-4, UI-3, UI-4 (rules panel UI-13 and rules editor UI-14 are P1) | "This breaks your firm's rule" on S2 |
 | Provable privacy | Microsoft and cloud deepfake tools | SRV-3, SRV-12, UI-6 | Wi-Fi off + egress log |
 | Any call app | Microsoft (Teams only) | AUD-1 (Zoom + Teams routes) | "Same app on Zoom and Teams" |
 | Explains itself | Google (beeps without explaining) | UI-3, UI-4 (tactic, caller's words, rule, number) | Overlay with quotes |
@@ -85,7 +85,7 @@ That makes these requirements **protected**: they are not cut at the Sun 02:00 P
 - **G1. Catch the script live.** Detect the four headline scenarios (government official, vendor bank change, IT code, cloned partner wire) on a real Zoom call and raise the right risk level within about 10 seconds of the giveaway sentence.
 - **G2. Stay quiet on real calls.** No `danger` on any benign twin scenario.
 - **G3. Prove privacy live.** Wi-Fi off mid-demo, the scam is still caught, and the egress log shows only organization names.
-- **G4. Make the unsafe action hard.** At high confidence with a sensitive request, the keyboard gate stops typing until the employee chooses a safe path.
+- **G4. Make the safe path the easy one.** At high confidence with a sensitive request, the danger overlay asks the employee to choose a next step, with "Hang up and call back" first. Nothing is blocked.
 - **G5. Verify the claim (Surge).** Show the claimed organization's real public number from Tavily or Exa.
 
 ### 3.2 Non-goals
@@ -139,7 +139,7 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 | 2 | DET-1, DET-2, DET-3, DET-7 | Detection | The local model reads the script. This *is* "you can't tell the voice, you can tell the script," and the edge over every voice-based competitor |
 | 3 | DET-4 (5 P0 rules) | Detection | Firm rules: the one thing no competitor does, and the hook for the business buyer |
 | 4 | DET-6, SRV-7 | Detection, Server | Confidence score, guards and sticky danger. Without them, real calls false-alarm and the warning flickers on stage |
-| 5 | SRV-1, SRV-2, SRV-11 | Server | Pipeline and WebSocket that put the result on screen, in a native Mac window (no browser) that stays on top and goes full-screen on danger |
+| 5 | SRV-1, SRV-2, SRV-11 | Server | Pipeline and WebSocket that put the result on screen, in a native Mac window (no browser) that stays on top and comes to the front on danger (no full-screen) |
 | 6 | UI-2, UI-3, UI-4 | UI | Meter, watch note and danger overlay that explain themselves (tactic, the caller's words, rule, next step). The edge over Google's beep |
 | 7 | SRV-3, UI-6, SRV-12 | Server, UI | Egress log and privacy tests. Strategy #1 and the main track's "can you prove it" |
 | 8 | LEAD-4, SRV-6 (online) | Lead, Server | Wi-Fi-off run from a cold start, with models pre-downloaded. The live privacy proof |
@@ -147,7 +147,7 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 | 10 | DET-8 (P0 set), DET-9, DET-11 | Detection | S1–S4 and their twins pass on 7b. Evidence for "would anyone use it" and the false-alarm answer |
 | 11 | SRV-8 | Server | Surge lookup. Gives the egress log one real, visible entry, puts the real number on the overlay, and is a separate prize |
 | 12 | SRV-13, UI-5 (colleague exit) | Server, UI | "Check with a colleague": the honest answer to "she was on her mobile" |
-| 13 | SRV-9, UI-5 (soft gate) | Server, UI | Deliberate exits on the danger screen; the safe path is one click, "mark safe" takes effort. Cheap, no OS hooks |
+| 13 | SRV-9, UI-5 (safe-path pause) | Server, UI | Deliberate exits on the danger screen; the safe path is one click, "mark safe" takes effort. Cheap, no OS hooks |
 | 14 | SRV-5, AUD-6, UI-7 | Server, Audio, UI | Transcript cleared at call end; no-file-write tests; only a short transcript tail shown |
 | 15 | UI-1 | UI | "Listening locally · nothing stored" badge and consent line (Massachusetts question) |
 | 16 | LEAD-5, LEAD-9, LEAD-7 | Lead | Friend's consent and organizer answers; the Gradium opener; the demo script with exact caller lines |
@@ -157,24 +157,27 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 
 | Rank | IDs | Lane | Why it is a stretch, not must-ship |
 |---|---|---|---|
-| 1 | SRV-10 | Server | Hard keyboard gate. A memorable beat ("try typing, nothing appears"), but needs Accessibility permission and native code; the soft gate already covers the idea |
-| 2 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
-| 3 | UI-13 | UI | Firm rules panel. Shows the rules exist; the rule already appears in the warnings |
-| 4 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
-| 5 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
-| 6 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
-| 7 | AUD-8 | Audio | iPhone calls answered on the Mac, only if the Continuity test passed. Strategy #4: one platform, no phone workarounds |
-| 8 | SRV-13 (real message) | Server | Sending to an actual contact instead of a local notification |
-| 9 | LEAD-8 | Lead | Contract tests |
+| 1 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
+| 2 | UI-13, UI-14, SRV-14, DET-13 | UI, Server, Detection | Firm rules panel, then the editor that lets a company write its own rules. Strengthens the "firm rules" differentiator ([2.4](#24-competitive-position-and-what-it-protects-in-scope)); the P0 rules already appear in the warnings |
+| 3 | UI-15 | UI | "Say this" lines: one fixed sentence per tactic that the user can say to the caller ([18.3](#183-say-this-lines)). Cheap, fixed copy, works offline; turns a warning into something the user can act on under pressure |
+| 4 | SRV-15, UI-16 (C17) | Server, UI | Scam-report search: one more search per claimed organization for recent impersonation reports, shown as one line on the overlay. A second real-time use of search for the Surge pitch |
+| 5 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
+| 6 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
+| 7 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
+| 8 | AUD-8 | Audio | iPhone calls answered on the Mac, only if the Continuity test passed. Strategy #4: one platform, no phone workarounds |
+| 9 | SRV-13 (real message) | Server | Sending to an actual contact instead of a local notification |
+| 10 | LEAD-8 | Lead | Contract tests |
 
 #### P2, scoped out
 
 | IDs | Why it is out |
 |---|---|
-| UI-10 (post-call summary card) | Nice after-call touch; judges score the during-call moment |
+| UI-10 (post-call summary card with evidence quotes and "Copy for a report") | Nice after-call touch; judges score the during-call moment |
+| Scam alert feed (FTC consumer alerts, FBI IC3): fetched at startup, kept in memory, matched against the claimed organization and tactics during calls; a "Scams going around this week" card when no call is active | Nothing about any call leaves the device, but needs a feed parser, matching and a source decision. Roadmap; pairs with training mode |
 | C13 (known-contact check, encrypted contact list) | Needs setup UI and encrypted storage; Surge already supplies a real number |
 | Training mode, admin anonymous counts, Phonon coach line | Roadmap for the Startup pitch (training mode can partner with KnowBe4/Adaptive), not this weekend |
 | `inside_knowledge` tactic | Weight 0.2, an amplifier only; S1 reaches danger without it |
+| SRV-10 hard keyboard gate (cut) | Freezing typing system-wide doesn't stop a caller who asks for the code by SMS, email or another device, and a false alarm locks someone out of their work. The danger overlay and the safe-path pause cover the idea without the harm |
 
 ---
 
@@ -210,7 +213,7 @@ Every scam scenario has a **benign twin**: a real call that shares surface featu
 
 ### 4.2 Scenario details
 
-Each scenario lists the beats of the script in order, with the expected risk after each beat. The beat marked ⚡ is the **giveaway**: the moment the warning must be on screen by. The 🔒 beat is where the keyboard gate is expected to lock (only scenarios with a typeable ask).
+Each scenario lists the beats of the script in order, with the expected risk after each beat. The beat marked ⚡ is the **giveaway**: the moment the warning must be on screen by. The 🔒 beat is where the safe-path pause is expected to open (only scenarios with an ask).
 
 #### S1. Government official (the friend's case)
 *Why it works:* authority plus fear plus isolation. The victim is told she is personally in trouble, that a single mistake makes it worse, and that she must not tell anyone, which removes the colleague who would have said "that's a scam." Inside knowledge (a real case name) makes it believable.
@@ -220,7 +223,7 @@ Each scenario lists the beats of the script in order, with the expected risk aft
 | 1 | "Hi, this is Officer Chen from the Department of Justice." | low | 0.31 |
 | 2 | "Your name came up in the Harmon money-laundering case. You're under investigation and could face extradition." | watch | 0.71 |
 | 3 ⚡ | "This is confidential. Do not tell your colleagues or your firm, or it will be treated as obstruction." | **danger** | 0.99 |
-| 4 🔒 | "To clear your name I need to verify your bank account number and routing number." | danger + gate | 1.00 |
+| 4 🔒 | "To clear your name I need to verify your bank account number and routing number." | danger + pause | 1.00 |
 
 *Next step:* "Hang up. Don't share bank details. Call the Department of Justice on its public number: …" *Verify:* `Department of Justice`.
 
@@ -307,8 +310,9 @@ Callguard runs a stack of checks. Some run on every 3-second chunk, some on the 
 | **C9** | Confidence score and guards | Combine C3–C8 into a 0–1 `confidence` and a risk level, applying the guard rules (urgency alone never danger, danger needs an ask or a strong combo) | Every check | Detection (`score`) | P0 |
 | **C10** | Call-level smoothing | Turn a stream of per-window checks into a stable meter: rises immediately, `danger` is sticky until the user acts or the call ends, `watch` decays after ~10 s of low | Every check | Server (`pipeline`) | P0 |
 | **C12** | Claimed-identity verify (Surge) | Once per organization per call, when `confidence ≥ 0.40` and `claimed_identity` is set, send **only the org name** through `egress.search()`; return the public phone and source URL | Once per org | Server | P0 |
+| **C17** | Scam-report search (Surge, P1) | Same trigger as C12, once per org per call: search `"{org}" impersonation scam` through `egress.search()`; return the most recent matching report (one-line summary, source URL, date) if it is from the last 12 months | Once per org | Server | P1 |
 | **C13** | Known-contact check | Compare `claimed_identity` with the firm's local contact list and show "Number on file: …" | Once per org | Server (lookup), Detection (none) | P2 |
-| **C14** | Gate eligibility | Decide whether the keyboard gate should lock (see [7](#7-the-keyboard-gate)) | Every check | Server (`gate`) | P0 soft, P1 hard |
+| **C14** | Gate eligibility | Decide whether the safe-path pause should open (see [7](#7-the-safe-path-pause)) | Every check | Server (`gate`) | P0 |
 | **C15** | Model health | Ping Ollama at start and after failures; if down or slower than 8 s, run on C3 only and show "Basic checks only" | Startup + on error | Server, Detection | P1 |
 | **C16** | Online check | Detect network presence for `status.online`; search returns `offline` instead of erroring | Startup + every 15 s | Server (`egress`) | P0 |
 | **C17** | Privacy self-checks | Tests that fail the build if any file outside `egress.py` imports a network library, or if a pipeline run writes any file | `pytest` | Server (`tests/server/`) | P0 |
@@ -349,7 +353,7 @@ We compute it ourselves in `callguard/detection/score.py` instead of asking the 
 | `personal_data_request` *(v2)* | 0.50 | Asks for client or personal data | ✅ |
 | `inside_knowledge` *(v2)* | 0.20 | Uses real details to sound legitimate | |
 
-The "ask" tactics are the actions a scam is ultimately after. They matter for the danger guard (G2) and the keyboard gate.
+The "ask" tactics are the actions a scam is ultimately after. They matter for the danger guard (G2) and the safe-path pause.
 
 ### 6.4 The formula
 
@@ -417,34 +421,35 @@ Per-window checks jump around as the 30 s window slides. The Server keeps a smal
 |---|---|
 | any | Transcript and meter update |
 | ≥ 0.40 (`watch`) | Watch note with tactic chips. Claimed identity, if any, is verified once (C12). This keeps egress to calls that look suspicious |
-| ≥ 0.75 (`danger`) | Full-screen danger overlay, sound, macOS notification |
-| ≥ 0.85 **and** an "ask" tactic | Keyboard gate locks (hard gate if available, soft gate otherwise) |
+| ≥ 0.75 (`danger`) | Danger notification and sound; the Callguard window switches to the danger overlay, which the notification opens on click ([9.5](#95-the-danger-notification)) |
+| ≥ 0.85 **and** an "ask" tactic | Safe-path pause opens: the overlay asks for a next step ([7](#7-the-safe-path-pause)). Nothing is blocked |
 
 ---
 
-## 7. The keyboard gate
+## 7. The safe-path pause
 
 ### 7.1 Why
-The background says "a full-screen warning that a bank or login window can't hide." A warning can be dismissed on autopilot. The scams we target end with the victim **typing** something: reading a code off the phone into a chat, typing an account number into the banking portal, pasting card numbers. The keyboard gate puts a short, deliberate pause between "the caller asked" and "I typed it," and offers the safe path first.
+The background says "a full-screen warning that a bank or login window can't hide." A warning can be dismissed on autopilot. The scams we target end with the victim **typing** something: reading a code off the phone into a chat, typing an account number into the banking portal, pasting card numbers. The pause puts a deliberate choice between "the caller asked" and "I did it," and offers the safe path first.
+
+**We do not freeze the keyboard.** The caller can ask the victim to send the code by SMS, email, WhatsApp or another device, so blocking typing on the laptop doesn't stop the scam. And on a false alarm, a frozen keyboard locks someone out of their work mid-call, which is the fastest way to get Callguard uninstalled. The pause is a warning with a clear next step, never a lock. (In code and contracts it is still called the "gate", as in `gate.py` and the `gate` message.)
 
 ### 7.2 What it does
-When the gate locks:
-1. The Callguard window goes full-screen and on top (the danger overlay).
-2. **Hard gate (P1):** typing into any app other than Callguard is paused system-wide. The mouse still works, so the user can always hang up the call.
-3. The overlay offers three ways out, ordered so the safe path is easiest:
+When the pause opens:
+1. A danger notification appears with a sound ([9.5](#95-the-danger-notification)). Clicking it brings the Callguard window to the front, showing the danger overlay. Nothing goes full-screen.
+2. The overlay offers three ways out, ordered so the safe path is easiest:
    - **"Hang up and call back"** (primary, one click): shows the verified or on-file number, releases the gate.
    - **"Check with a colleague"** (one click): sends the heads-up, releases the gate.
    - **"I've verified, it's safe"** (deliberate): type `SAFE` in the box and hold the button for 3 seconds. Releases the gate and marks the call safe.
-4. A visible countdown shows the auto-release.
+3. A visible countdown shows when the overlay steps back to the red side panel on its own (120 s). Every other app keeps working the whole time.
 
-### 7.3 Two tiers
+### 7.3 How it works
 
-| | Soft gate (P0) | Hard gate (P1) |
-|---|---|---|
-| Owner | UI (overlay and unlock) + Server (state) | Server (`callguard/server/gate_macos.py`) + UI (unlock) |
-| Mechanism | Danger overlay in the always-on-top window; focus moves to it; Enter/Esc do not dismiss; typed `SAFE` + 3 s hold for mark-safe | macOS Quartz event tap (`CGEventTapCreate`, key-down and key-up) swallows key events unless Callguard's own process is frontmost |
-| Needs | `pywebview` window on top (`SRV-11`); `--browser` dev fallback only | Accessibility permission for the Python process; `pyobjc-framework-Quartz` |
-| If unavailable | Still shows overlay in the narrow window plus notification and sound | Falls back to soft gate; `status.gate` reports `"soft"` |
+| | Safe-path pause (P0) |
+|---|---|
+| Owner | UI (overlay and the three exits) + Server (state, `gate.py`) |
+| Mechanism | Danger notification + sound; clicking it brings the Callguard window to the front with the danger overlay (no full-screen); Enter/Esc do not dismiss the overlay; typed `SAFE` + 3 s hold for mark-safe. Other apps and the keyboard are never touched |
+| Needs | The native Callguard window (`SRV-11`; `--browser` is a dev fallback only); notification permission, granted once during setup (UI-11 `DEMO.md`) |
+| If unavailable | Permission denied: the tab title flashes, the sound plays and the overlay is already open in the Callguard window |
 
 ### 7.4 State machine
 
@@ -452,7 +457,7 @@ When the gate locks:
 stateDiagram-v2
     [*] --> Off
     Off --> Armed: call risk = danger
-    Armed --> Locked: confidence ≥ 0.85 AND an ask tactic AND gate mode not off
+    Armed --> Locked: confidence ≥ 0.85 AND an ask tactic AND gate not off
     Off --> Locked: same, in one step
     Locked --> Released: Hang up and call back
     Locked --> Released: Check with a colleague
@@ -465,17 +470,14 @@ stateDiagram-v2
 ```
 
 ### 7.5 Safety rules for the gate (these are hard requirements)
-- **Fail open.** If Callguard crashes or quits, the event tap dies with the process and typing returns. Never install a persistent hook, launch agent or kernel extension.
-- **Always time out.** The gate releases after 120 s no matter what, and shows the countdown.
-- **Never trap the mouse.** The user can always click to hang up the call.
-- **Re-enable or give up.** If macOS disables the tap (`kCGEventTapDisabledByTimeout`), re-enable once; if it fails again, drop to soft gate and say so.
-- **No key logging.** The tap callback looks only at the event type and the frontmost process ID. It never reads, stores, counts or logs key codes or characters. This is reviewed line by line by Coco (`SRV-10`).
-- **No re-nagging.** After a release, the gate re-locks in the same call only for a **new** ask tactic.
-- **Off switch.** `CALLGUARD_GATE=off|soft|hard` (default `hard` if permission granted, else `soft`). The demo runs with `hard`.
+- **Never block.** No keyboard or mouse hooks, no event taps, no Accessibility permission. Other apps work normally the whole time.
+- **Always time out.** After 120 s the overlay steps back to the red side panel, and shows the countdown.
+- **No re-nagging.** After a release, the pause re-opens in the same call only for a **new** ask tactic.
+- **Off switch.** `CALLGUARD_GATE=off|on` (default `on`).
 - **Escape hatch phrase is not secret.** Typing `SAFE` is visible on screen. We accept that a scammer could coach it; the 3 s hold and the visible warning text are the friction that matters.
 
 ### 7.6 Demo beat
-During S1, at beat 4 ("verify your bank account number"), the presenter clicks into a browser tab with a fake bank form and tries to type. Nothing appears. The overlay shows "Typing is paused while this call asks for bank details," the DOJ's real number from search, and the three buttons.
+During S1, at beat 4 ("verify your bank account number"), the danger notification appears. The presenter clicks it: the overlay shows "This call is asking for bank details. Verify before you send anything, here or anywhere else," the DOJ's real number from search, and the three buttons. They click "Hang up and call back".
 
 ---
 
@@ -497,14 +499,26 @@ Rules are what make Callguard about *this firm*, not generic scam advice. They l
 
 The `government_…` rule needs a co-occurrence condition (`requires: ["authority"]`, an optional v2 field). Without it, a vendor asking for a bank change would also "break" the government rule.
 
+### 8.1 Customizing the rules (P1)
+
+Every firm has different policies, so a company can edit its rules from the app instead of editing JSON (UI-14, SRV-14, DET-13).
+
+- **Where it lives.** The shipped rules in `callguard/detection/rules.json` are the defaults and are never overwritten. The company's own rules are saved to `~/Library/Application Support/Callguard/rules.json`. If that file exists and is valid, it is loaded instead of the defaults. "Reset to defaults" deletes it.
+- **What can be edited.** For each rule: the text shown to the user, the tactics that break it (picked from the fixed tactic list in [6.3](#63-tactic-weights), never free text), optional `requires` tactics, optional `keywords`, and on/off (`enabled`). New rules get an `id` generated from the text (`custom_` + slug). Rules can be added, edited, switched off and deleted.
+- **What cannot be edited.** Tactic weights, the score per broken rule (+0.15, cap 0.30) and the guards. A custom rule changes *which* calls count as breaking firm policy, not how the score works.
+- **Validation (DET-13).** At least one tactic; only known tactics; unique ids; text 1–200 characters; at most 10 keywords of at most 40 characters each; at most 30 rules. An invalid save is rejected with the reason, and the previous rules stay in force.
+- **When changes apply.** Editing is only possible when no call is active. Rules don't change halfway through a call, and the no-write privacy test (SRV-12b) stays true during calls. Saved rules apply from the next call.
+- **Privacy.** Rules are firm policy, not call content. They are stored locally and never sent anywhere, so saving them creates no egress entry.
+
 ---
 
 ## 9. User experience
 
 ### 9.1 Surfaces
 1. **Side panel** (narrow, always on top beside Zoom): "Listening locally" badge, online/offline dot, risk meter, watch note, live transcript tail, "What left this device" panel, two buttons.
-2. **Danger overlay** (full-screen): the headline, the tactics in plain words with the quote that triggered each, the rule broken, the real number, the next step, the three exits, the gate status.
-3. **Post-call summary card** (P1): "Possible government-impersonation scam · 3 warning signs · you called back." No transcript. Kept in memory for the session only.
+2. **Danger notification** ([9.5](#95-the-danger-notification)): a macOS notification with a sound; clicking it opens the overlay.
+3. **Danger overlay** (fills the Callguard window, not the screen): the headline, the tactics in plain words with the quote that triggered each, the rule broken, the real number, the next step, the three exits, the gate status.
+4. **Post-call summary card** (P2, UI-10): "Possible government-impersonation scam · 3 warning signs · you called back." Below it, the **evidence quotes** that triggered warnings, each with time and tactic (e.g. `0:42 · Asks you to keep it secret · "do not tell your colleagues"`), and a **"Copy for a report"** button for IT, the bank or the police. Never the full transcript. Nothing is saved automatically: the quotes stay in memory until the card is dismissed or the app quits, and only the user's own copy puts them anywhere else.
 
 ### 9.2 States of the side panel
 
@@ -513,7 +527,7 @@ The `government_…` rule needs a co-occurrence condition (`requires: ["authorit
 | Idle | "Not on a call" · grey meter · "Nothing has left this device" |
 | Listening, low | Green meter, "Listening locally · nothing stored", transcript tail (last ~3 lines) |
 | Watch | Amber meter, "How sure: some signs (6/10)", one line: `reason`, tactic chips ("Claims to be an official", "Threatens you") |
-| Danger | Red, overlay opens, sound, macOS notification |
+| Danger | Red, danger notification and sound, overlay opens in the Callguard window |
 | Model down | Meter still works on phrases, banner "Basic checks only, local model unavailable" |
 | Offline | Grey dot "Offline", verify line says "Offline, search skipped" |
 
@@ -538,13 +552,27 @@ The `government_…` rule needs a co-occurrence condition (`requires: ["authorit
 │                                                                │
 │  Firm rule: Agencies don't ask for bank details by phone.      │
 │  Real public number: (202) 514-2000 · source: justice.gov      │
+│  Reported: DOJ impersonators asking for bank details           │
+│            · ftc.gov, Oct 2026                                 │
 │                                                                │
-│  🔒 Typing paused: this call asks for bank details (1:54)      │
+│  Say this: "I'll call your office back on its public number."  │
+│                                                                │
+│  This call asks for bank details. Verify before you send them. │
 │                                                                │
 │  [ Hang up and call back ]   [ Check with a colleague ]        │
 │  Type SAFE and hold to continue: [____]  ( hold 3 s )          │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+### 9.5 The danger notification
+
+On `danger` the user gets a notification instead of a full-screen takeover. The details are one click away.
+
+- **How.** The UI page sends it with the browser Notification API (`new Notification(…)`), so it needs no extra dependency and no native code. Clicking it calls `window.focus()` and shows the overlay. The page asks for permission once, during setup.
+- **Text.** Title "Callguard: verify this call before you act". Body is one fixed line chosen by the ask tactic, e.g. "The caller is asking for bank details. Click for details." Ends with "Click for details".
+- **Privacy.** macOS keeps notification history on disk, so the notification **never** contains the caller's words, the transcript, the claimed identity or a number. Only the fixed copy above (guardrail 1).
+- **How often.** Once when call risk first reaches `danger`, and again only for a new ask tactic in the same call (same rule as the gate's no re-nagging, [7.5](#75-safety-rules-for-the-gate-these-are-hard-requirements)). Uses `tag: "callguard-danger"` so a new one replaces the old one instead of stacking.
+- **Ignoring it.** The overlay is already open in the Callguard window, the side panel stays red, and danger stays sticky ([6.7](#67-call-level-smoothing-server-c10)), so the warning is still there when the user looks back.
 
 ---
 
@@ -572,7 +600,7 @@ flowchart LR
     cg <--> ollama
     cg -- "ONLY the claimed org name" --> search
     cg -. "heads-up (P1: local notification)" .-> colleague
-    cg -- "risk meter, overlay, keyboard gate" --> user
+    cg -- "risk meter, overlay, safe-path pause" --> user
 ```
 
 ### 10.2 Components and lane ownership
@@ -602,11 +630,11 @@ flowchart TB
         app["app.py<br/>FastAPI, static ui/, /ws"]
         pl["pipeline.py<br/>rolling 30 s window,<br/>call state, smoothing"]
         eg["egress.py<br/>ONLY network code<br/>+ egress log"]
-        ga["gate.py (state)<br/>gate_macos.py (Quartz tap)"]
+        ga["gate.py (state)"]
         win["window.py<br/>pywebview on top"]
     end
     subgraph UI["UI lane · ui/"]
-        idx["index.html + app.js + style.css<br/>meter, overlay, egress panel,<br/>soft gate unlock"]
+        idx["index.html + app.js + style.css<br/>meter, overlay, egress panel,<br/>safe-path exits"]
     end
     subgraph LEAD["Lead · callguard/shared/, hack1984/"]
         con["contracts.py"]
@@ -743,13 +771,11 @@ flowchart LR
         t2["Transcribe worker<br/>(model loaded once)"]
         loop["asyncio loop (FastAPI)<br/>pipeline task, WebSocket"]
         t3["Detection worker<br/>(one check at a time)"]
-        t4["Gate thread<br/>CFRunLoop + event tap"]
         t5["Main thread<br/>pywebview window"]
     end
     ol["ollama serve<br/>(separate process)"]
     t1 --> t2 --> loop
     loop --> t3 --> ol
-    loop <--> t4
     loop <--> t5
 ```
 
@@ -783,9 +809,9 @@ gitGraph
     merge lane/server
     merge lane/ui id: "Sat 19:00 first full run"
     checkout lane/server
-    commit id: "SRV-7 Surge, SRV-9/10 gate"
+    commit id: "SRV-7 Surge, SRV-9 pause"
     checkout lane/ui
-    commit id: "UI-5 gate unlock"
+    commit id: "UI-5 pause exits"
     checkout main
     merge lane/server id: "Sat 22:00 P0"
     merge lane/ui
@@ -811,10 +837,10 @@ gantt
     Eval + tuning (DET-9,11)            :d3, 2026-11-07 17:30, 270m
     section Server
     App, pipeline, egress, fake (SRV-1..6) :s1, 2026-11-07 13:30, 330m
-    Surge, colleague, gate (SRV-7..11)  :s2, 2026-11-07 22:00, 240m
+    Surge, colleague, pause (SRV-7..11)  :s2, 2026-11-07 22:00, 240m
     section UI
     Panel, meter, overlay, egress (UI-1..8) :u1, 2026-11-07 13:30, 510m
-    Buttons, summary, gate unlock (UI-5,9,10) :u2, 2026-11-07 22:00, 240m
+    Buttons, summary, pause exits (UI-5,9,10) :u2, 2026-11-07 22:00, 240m
     Backup video (UI-11)                :crit, u3, 2026-11-08 07:00, 120m
 ```
 
@@ -828,15 +854,36 @@ Privacy is the product. These are requirements, not aspirations, and each one ha
 |---|---|---|
 | Audio never leaves memory | Audio lane never calls `sf.write`; chunks are numpy arrays dropped after transcription | `SRV-12` no-disk-writes test; code review |
 | Transcripts never stored, logged or sent | Window lives in `pipeline.py` memory; debug prints max 80 chars; cleared on call end | `SRV-12`; `SRV-5` test |
-| Only the claimed org name leaves | `egress.search(org)` takes a string ≤ 80 chars and nothing else; search is the only egress | `SRV-12` import scan; egress log in the demo |
+| Only the claimed org name leaves | `egress.search(org)` only accepts a name that passed `egress.safe_org()` ([11.1](#111-searching-without-exposing-the-user-or-the-firm)); the query is the org name, or (C17, P1) the org name inside a fixed template (`"{org}" impersonation scam`); search is the only egress | `SRV-12` import scan; egress log in the demo shows the full query |
 | Every network call is visible | `egress.py` records an `EgressEntry` before sending and pushes it to the UI | Demo: "What left this device" |
 | No cloud model | Ollama at `localhost`; no LLM SDKs in requirements | Import scan; Wi-Fi-off run |
 | No hidden model downloads | Whisper is loaded from a local path with `HF_HUB_OFFLINE=1`; models are downloaded once by the setup step, before the demo | Wi-Fi-off run from a cold start |
-| Keyboard gate doesn't log keys | Tap callback reads only event type + frontmost PID | Coco reviews `gate_macos.py` line by line |
+| Summary card holds quotes, not transcripts (P2) | UI-10 keeps only `evidence.quote` lines (≤ 80 chars each) in memory until dismissed; "Copy for a report" is the user's own action | UI-10 fixture: card has no transcript lines; dismiss clears it |
 | Employer gets no transcripts | No admin view of content; P2 dashboard is counts only | Out of scope this weekend; say so in the pitch |
-| Search is only used when it helps | Verify fires only at `watch` or above, once per org per call | Egress log stays empty on benign calls |
+| Search is only used when it helps | Verify (and the C17 scam-report search) fires only at `watch` or above, once per org per call | Egress log stays empty on benign calls |
 
 Consent: the side panel always shows "This call is checked locally. Nothing is recorded." (Massachusetts all-party consent question is open, see [17](#17-risks-and-open-questions).)
+
+### 11.1 Searching without exposing the user or the firm
+
+The two searches (C12 verify, C17 scam reports) are the only cloud calls. They must not reveal **who** is on the call, **which firm** they work at, or **anything said** on it.
+
+**What may be sent: an organization name that passes `egress.safe_org()` (SRV-8, P0).** It runs before every search. If any check fails, nothing is sent, the egress log records `"status": "refused"` with `sent: ""`, and the verify line says "Lookup skipped to protect your privacy, use the number on file."
+
+| Check | Blocks |
+|---|---|
+| No digits, `@`, `http`, `www.` or `.com`-style domains | Case, account, phone and reference numbers; emails; links the caller gave |
+| At most 6 words and 60 characters | Sentences or extra detail the model folded into `claimed_identity` |
+| Appears word for word in the **caller's** lines of the current window | Names the model made up, and anything the user said about themselves or their firm |
+| Not on the firm's **never-search list** (P0: `CALLGUARD_NEVER_SEARCH` in `.env`, comma-separated: the firm's own name, client names, staff names; P1: edited in the UI-14 rules panel) | The firm, its clients and its people, even if the caller says them |
+| Not a person's name: reject if it is two or three capitalised words with no org word (Department, Agency, Bank, Inc, LLC, Office, Service, Police, Court, IRS, FBI…) | "Agent John Miller" |
+
+The query is then the org name alone (C12) or inside the fixed template `"{org}" impersonation scam` (C17). Nothing else is added: no user name, firm name, location, phone number or date.
+
+**What the search provider can still see, and how we say it.** Even a clean query reaches Tavily/Exa with the API key and the laptop's IP address, so the provider could tell that *this key* looked up "Department of Justice" at 19:02. It cannot see the call, the user or the firm's name. The pitch and the privacy screen say exactly that: "The search provider sees an organization name. Nothing from the call, nothing about you."
+
+**Roadmap (not this weekend):** (1) a Callguard search relay, so the provider sees Callguard's key and IP, not the firm's; (2) a local cache of commonly impersonated organizations (IRS, SSA, DOJ, FBI, major banks, Microsoft, Apple) with their public numbers and recent reports, refreshed daily, so most calls need no search at all and the timing of a lookup reveals nothing; (3) the scam alert feed in the P2 list.
+
 
 ---
 
@@ -863,18 +910,19 @@ Contracts are Lead-owned (guardrail 7). This section is the change Coco applies 
 ```
 `SafeSignal = callback_known_number | follows_normal_approval | no_money_or_data_asked | asks_in_writing`.
 
-**`Rule`**: add optional `keywords: list[str]` and `requires: list[str]` (tactics that must also be present).
+**`Rule`**: add optional `keywords: list[str]` and `requires: list[str]` (tactics that must also be present). P1 (UI-14): add optional `enabled: bool` (default `true`; disabled rules are loaded but never matched).
 
 **WebSocket, Server → UI**: add
 | `type` | `data` |
 |---|---|
-| `gate` | `{"state": "off | armed | locked", "mode": "soft | hard", "reason": "…", "release_in": 120}` |
+| `gate` | `{"state": "off | armed | locked", "reason": "…", "release_in": 120}` |
 | `call` | `{"state": "started | ended"}` |
-| `rules` | `[Rule]`, sent once on connect (for UI-13) |
+| `rules` | `[Rule]`, sent once on connect and again after every save or reset (for UI-13, UI-14). P1: the message gets an optional top-level `"source": "default | custom"` |
+| `rules_saved` | P1: `{"ok": true}` or `{"ok": false, "errors": ["…"]}`, the reply to `save_rules` / `reset_rules` |
 
-`status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | soft | hard"`. `verify` gets optional `"status": "ok | offline | not_found | error"`.
+`status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | on"`. `verify` gets optional `"status": "ok | offline | not_found | error"`, and P1 (C17) optional `"report": {"summary": "…", "source_url": "…", "date": "2026-10"}` (omitted when nothing recent is found). `EgressEntry.status` gets `refused` (the query failed `safe_org()`, nothing was sent, `sent` is empty). `EgressEntry.sent` is the exact query sent, so a C17 search shows `"Department of Justice" impersonation scam`.
 
-**WebSocket, UI → Server**: add `{"type": "gate_release", "how": "hang_up | colleague | mark_safe"}` and `{"type": "end_call"}`.
+**WebSocket, UI → Server**: add `{"type": "gate_release", "how": "hang_up | colleague | mark_safe"}` and `{"type": "end_call"}`. P1 (UI-14): add `{"type": "save_rules", "data": [Rule]}` and `{"type": "reset_rules"}`.
 
 ---
 
@@ -888,8 +936,8 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 |---|---|---|---|
 | LEAD-1 | P0 | Apply contracts v2 ([12](#12-contract-changes-v2)) to `contracts.py` and AGENTS.md §3 | Merged to `main` before lanes build on new fields; lanes rebase |
 | LEAD-2 | P0 | Sign off `prompt.md` v1, `rules.json` wording, scenario scripts | Approved in review of DET-1, DET-4, DET-8 |
-| LEAD-3 | P0 | Collect deps from lanes' **Needs** into `requirements.txt` with pins (expected: `fastapi`, `uvicorn`, `sounddevice`, `numpy`, `faster-whisper`, `httpx` (egress only), `python-dotenv`, `pytest`; `pywebview`, `pyobjc-framework-Cocoa`; P1: `pyobjc-framework-Quartz`) | `pip install -r requirements.txt` works on the demo Mac |
-| LEAD-4 | P0 | `hack1984/setup.md`: one-time setup (BlackHole, Ollama pull, Whisper model download to a local path, Accessibility permission) | A cold Mac reaches a Wi-Fi-off run by following it |
+| LEAD-3 | P0 | Collect deps from lanes' **Needs** into `requirements.txt` with pins (expected: `fastapi`, `uvicorn`, `sounddevice`, `numpy`, `faster-whisper`, `httpx` (egress only), `python-dotenv`, `pytest`; `pywebview`, `pyobjc-framework-Cocoa`) | `pip install -r requirements.txt` works on the demo Mac |
+| LEAD-4 | P0 | `hack1984/setup.md`: one-time setup (BlackHole, Ollama pull, Whisper model download to a local path, notification permission for the Callguard window) | A cold Mac reaches a Wi-Fi-off run by following it |
 | LEAD-5 | P0 | Organizer questions (pre-existing code, demo format), Tavily/Exa keys, friend's consent to use the story | Answers written in `background.md` |
 | LEAD-6 | P0 | Merge lanes at checkpoints, run the integration checklist ([14.3](#143-integration-checklist-per-checkpoint)) | Each checkpoint ticked in the plan |
 | LEAD-7 | P0 | `hack1984/demo-script.md`: final 3-minute script with exact lines for the teammate playing the caller (S1, S2, gate beat) | Rehearsed 3 times |
@@ -926,6 +974,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | DET-9 | P0 | `python -m callguard.detection.eval`: runs every script beat by beat against live Ollama; prints risk, confidence, tactics, latency, pass/fail against [3.3](#33-success-measures) | Table pasted in Status | DET-7, DET-8 |
 | DET-11 | P0 | Tune prompt and weights until the P0 success measures hold on 7b (3b is not a fallback: it scored 3/7 on the Mac in the `scam-check` harness test) | Eval table meets targets | DET-9 |
 | DET-12 | P1 | P1 rules from [8](#8-firm-rules) | Tests | DET-4 |
+| DET-13 | P1 | Custom rules ([8.1](#81-customizing-the-rules-p1)): `validate_rules(list) -> list[str]` (error messages, empty if valid), `load_rules()` that prefers the custom file and falls back to the defaults if it is missing or invalid, honours `enabled` | Unit tests for every validation error and for the fallback | DET-4 |
 
 **Needs (to Coco):** LEAD-1 contracts; decision on how Ollama localhost calls satisfy guardrail 2 (see DET-2; recommended: `egress.local_ollama_post()` that skips the egress log because nothing leaves the device).
 
@@ -940,14 +989,15 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-5 | P0 | Call lifecycle: `call` started/ended messages; `end_call` from UI; clear window, check history, verify cache and gate on end | Test: after end, no transcript in memory | — |
 | SRV-6 | P0 | `status`: listening, online (C16), gate mode; resend on connect. Model health (C15) field is P1 | UI shows correct dots | — |
 | SRV-7 | P0 | Call-risk smoothing (C10, [6.7](#67-call-level-smoothing-server-c10)) | Unit tests for rise, sticky danger, decay | DET-6 constants |
-| SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
-| SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. Soft mode needs no OS hooks | Unit tests for every transition | SRV-7 |
-| SRV-10 | P1 | `gate_macos.py`: Quartz event tap on a background CFRunLoop thread; swallow key events unless frontmost PID is ours; re-enable on timeout once; fall back to soft; **no key code access** | Manual test on the demo Mac; Coco line review | SRV-9 |
-| SRV-11 | P0 | `window.py`: pywebview native window is the **default** (no browser, no address bar), titled "Callguard", always on top, narrow; go full-screen on gate lock/danger, restore on release. `--browser` skips the window (dev and tests only) | `python -m callguard.server` opens the Callguard window, never a browser tab; window covers a browser on danger | SRV-1 |
-| SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines | Green in `pytest` | — |
+| SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only, and only after `egress.safe_org(org, caller_lines, never_search)` passes ([11.1](#111-searching-without-exposing-the-user-or-the-firm)), otherwise log `refused` and send nothing; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
+| SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. No OS hooks | Unit tests for every transition | SRV-7 |
+| SRV-11 | P0 | `window.py`: pywebview native window is the **default** (no browser, no address bar), titled "Callguard", always on top, narrow; comes to the front on danger (no full-screen). The danger notification must still work in this window (fall back to `osascript` with the same fixed copy if the web Notification API is unavailable). `--browser` skips the window (dev and tests only) | `python -m callguard.server` opens the Callguard window, never a browser tab; window stays on top beside Zoom; danger brings it forward | SRV-1 |
+| SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines; (d) `safe_org()` refuses each of: `"Agent John Miller, DOJ"`, `"DOJ case 4471-22"`, `"Chase, acct ending 8812"`, a name on the never-search list, a name the caller never said, a name only the user said; and accepts `"Department of Justice"` said by the caller | Green in `pytest` | — |
+| SRV-14 | P1 | Rules editing ([8.1](#81-customizing-the-rules-p1)): handle `save_rules` (validate with `validate_rules`, write the custom file atomically, reload, broadcast `rules` and `rules_saved`) and `reset_rules` (delete the custom file, reload defaults); refuse both while a call is active (`rules_saved` with an error); never log rule edits as egress | Unit tests with a temp directory: save, invalid save, reset, refused during a call | DET-13, SRV-5 |
+| SRV-15 | P1 | Scam-report search (C17): with the SRV-8 verify, a second `egress.search` with the fixed template `"{org}" impersonation scam` (its own `EgressEntry`); keep the most recent result from the last 12 months; one-line summary ≤ 120 chars from the result title/snippet, never model-generated from the transcript; add `report` to the `verify` message; same cache, offline and error handling as SRV-8 | Fake transport tests: report found, none recent, offline; egress log shows the full query | SRV-8 |
 | SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
 
-**Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned, plus `pywebview` and `pyobjc-framework-Cocoa` (P0); P1 `pyobjc-framework-Quartz`; Tavily/Exa keys in `.env` on the demo Mac.
+**Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned, plus `pywebview` and `pyobjc-framework-Cocoa` (P0); Tavily/Exa keys in `.env` on the demo Mac.
 
 ### 13.5 UI · `ui/`, `tests/ui/`
 
@@ -956,15 +1006,18 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-1 | P0 | Side panel shell: "Listening locally · nothing stored" badge, online/offline dot, model-status banner, consent line | Renders from a `status` fixture | — |
 | UI-2 | P0 | Risk meter with level word, icon and the 10-point confidence bar with words ([9.2](#92-states-of-the-side-panel)) | Fixture replay shows low → watch → danger | — |
 | UI-3 | P0 | Watch note: `reason` + tactic chips in plain words; chip expands to show `evidence.quote`; if `rules_broken` is not empty, show the rule text here too, not only in the danger overlay | Fixture | LEAD-1 |
-| UI-4 | P0 | Danger overlay ([9.4](#94-the-overlay-layout-danger)): claimed identity, tactics with quotes, rule text, verify line (number, or "Offline, search skipped", or "Looking up…"), `next_step`, sound on open | Fixture | — |
-| UI-5 | P0 | Soft gate unlock: primary "Hang up and call back", "Check with a colleague", and `SAFE` + 3 s hold; Enter/Esc never dismiss; focus starts on the primary button; countdown from `gate.release_in`; sends `gate_release` | Keyboard-only test of every exit | SRV-9 contract |
-| UI-6 | P0 | "What left this device" panel: every `egress` entry (time, destination, exactly what was sent, status); empty state "Nothing has left this device" | Fixture | — |
+| UI-4 | P0 | Danger notification ([9.5](#95-the-danger-notification)): fixed copy only, click focuses the page and shows the overlay, once per new ask tactic, permission request on first load. Danger overlay ([9.4](#94-the-overlay-layout-danger)): claimed identity, tactics with quotes, rule text, verify line (number, or "Offline, search skipped", or "Looking up…"), `next_step`, sound on open | Fixture | — |
+| UI-5 | P0 | Safe-path pause exits: primary "Hang up and call back", "Check with a colleague", and `SAFE` + 3 s hold; Enter/Esc never dismiss; focus starts on the primary button; countdown from `gate.release_in`; sends `gate_release` | Keyboard-only test of every exit | SRV-9 contract |
+| UI-6 | P0 | "What left this device" panel: every `egress` entry (time, destination, exactly what was sent, status); `refused` entries show "Blocked: lookup skipped to protect your privacy"; empty state "Nothing has left this device" | Fixture | — |
 | UI-7 | P0 | Transcript tail: last ~3 lines, speaker-tagged, cleared on `call ended`; never kept beyond the current call | Fixture | — |
 | UI-8 | P0 | `ui/dev/replay.html` + JSON fixtures for S1, S2, B3, offline, model-down: replays WebSocket messages without the Server | Every fixture runs offline | — |
 | UI-9 | P1 | "Check with a colleague" and "Mark as safe" in the side panel too (outside danger) | Sends client messages | SRV-13 |
-| UI-10 | P2 | Post-call summary card: scenario guess from tactics, count of signs, what you did; no transcript; dismiss clears it | Fixture | — |
+| UI-10 | P2 | Post-call summary card ([9.1](#91-surfaces)): scenario guess from tactics, count of signs, what you did, and the evidence quotes with time and tactic; "Copy for a report" copies them as plain text; never the full transcript; dismiss clears it | Fixture | — |
 | UI-11 | P0 | `ui/DEMO.md` (demo machine steps) and the backup video by **Sun 09:00** | Video file exists off-repo | All |
+| UI-15 | P1 | "Say this" line on the watch note and the danger overlay: the sentence from [18.3](#183-say-this-lines) for the top tactic (ask tactics first), fixed copy in `ui/`, no model | Fixture for each tactic | — |
+| UI-16 | P1 | Scam report line on the overlay: "Reported: {summary} · {source domain}, {date}" from `verify.report`; hidden when absent or offline | Fixture: with report, without, offline | SRV-15 contract |
 | UI-13 | P1 | "Your firm's rules" panel: read-only list of the loaded rules (from the `rules` message), with a count of how many fired this call | Fixture | LEAD-1, SRV-1 |
+| UI-14 | P1 | Rules editor in the UI-13 panel ([8.1](#81-customizing-the-rules-p1)), plus a "Never search for" list (firm name, clients, staff; [11.1](#111-searching-without-exposing-the-user-or-the-firm)): "Edit rules" (disabled during a call, with a line saying why); per rule an on/off switch, text field, tactic checkboxes in plain words, optional "only when the caller also…" (`requires`) and keywords; add and delete (with confirm); "Save" sends `save_rules` and shows `rules_saved` errors next to the fields; "Reset to defaults" (with confirm) sends `reset_rules`; a "Custom rules" or "Default rules" label from `rules.source` | Fixture: edit, invalid save shows errors, reset, editor locked during a call | UI-13, SRV-14 contract |
 
 **Needs (to Coco):** none for P0 (plain HTML/JS/CSS, no CDN).
 
@@ -994,7 +1047,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 - [ ] Real Zoom call with S1: danger ≤ 10 s after beat 3
 - [ ] Wi-Fi off: S2 still danger, verify says "Offline, search skipped", egress panel shows the `offline` entry
 - [ ] Egress panel after S1 online: exactly one entry, `Department of Justice`
-- [ ] Kill the app during a gate lock: typing works again immediately
+- [ ] During the safe-path pause, typing in another app still works (nothing is blocked)
 
 ### 14.4 Review checklist for Coco (per PR / merge)
 - Only the lane's folder and `tests/<lane>/` touched
@@ -1059,9 +1112,6 @@ SUMMARY  scams danger 10/10 · twins danger 0/7 · twins low 6/7 · p95 latency 
 | BlackHole missing or output switched by FaceTime | AUD-9 | Warning in the panel, no crash | AUD |
 | Wi-Fi off | C16 | Search returns `offline`; everything else unchanged | SRV |
 | Search API error / no phone found | SRV-8 | Verify line says "Couldn't find a public number, use the one on file" | SRV, UI |
-| Accessibility permission denied | SRV-10 | Gate mode `soft`, shown in status | SRV |
-| Event tap disabled by macOS | SRV-10 | Re-enable once, then soft | SRV |
-| App crash during lock | OS | Tap dies with the process, typing returns | SRV |
 | UI disconnects | SRV-1 | Re-sends `status` and current call state on reconnect | SRV, UI |
 
 ---
@@ -1075,12 +1125,12 @@ SUMMARY  scams danger 10/10 · twins danger 0/7 · twins low 6/7 · p95 latency 
 | Q3 | Is pre-existing code allowed? | Coco | Ask organizers at 13:00 |
 | Q4 | Guardrail 2 vs Ollama on localhost (DET-2) | Coco | Recommend `egress.local_ollama_post()`, localhost-asserted, not logged as egress |
 | Q5 | Is 7b fast enough on the demo Mac? | Detection | Harness test: ~3 s per check after load. 3b is not a fallback (3/7). If p95 > 5 s, shorten the window before changing model |
-| Q6 | Hard gate on stage: does the event tap need a restart after granting Accessibility? | Server | Grant permission during setup, test before Sun 07:00 |
-| Q7 | Gate could be seen as heavy-handed by judges | Coco | Frame it as "a 2-minute pause, always one click to hang up, off switch for admins" |
+| Q7 | Will the `SAFE` + 3 s hold annoy people on a false alarm? | Coco | It only appears at confidence ≥ 0.85 with an ask, never blocks other apps, and steps back after 120 s; watch B-scenario results before the demo |
 | Q8 | False alarms on real bank changes (B6) | Detection | Safe signals; "verify first" copy; B6 must stay ≤ watch |
 | Q9 | Using the friend's story | Coco | Get her OK; no identifying details (the "Harmon" case name in S1 is invented) |
 | Q10 | Google (Scam Detection in Meet/Chrome) or Microsoft (transcript checks in Teams) closes the "reads the script" lead | Coco | Protect the lasting edge in scope: firm rules, egress log, any call app ([2.4](#24-competitive-position-and-what-it-protects-in-scope)) |
 | Q11 | BlackHole setup is a hurdle for a non-technical office manager | Coco | Out of scope this weekend (no installer); say it in the pitch as a known gap; AUD-9 at least explains a missing device in plain words |
+| Q12 | Who may edit the firm rules (UI-14)? Anyone at the laptop can change them this weekend | Coco | Fine for the demo; roadmap: an admin PIN, or rules pushed from an admin to every laptop |
 
 ---
 
@@ -1113,7 +1163,24 @@ SUMMARY  scams danger 10/10 · twins danger 0/7 · twins low 6/7 · p95 latency 
 | remote_access | anydesk, teamviewer, remote access, share your screen, install this |
 | personal_data_request | social security, ssn, client list, date of birth, passport |
 
-### 18.3 Glossary
+### 18.3 "Say this" lines
+
+Fixed copy (UI-15), Coco signs off the wording. Each line moves the conversation to a channel the user controls, so they never have to argue or decide on the spot whether it's a scam.
+
+| Top tactic | Say this |
+|---|---|
+| credential_request | "I don't share codes on calls. I'll contact IT myself." |
+| bank_change | "I'll call you back on the number we have on file." |
+| payment_request | "I can't send money from a call. I'll call you back on a number I already have." |
+| bypass_approval | "Every payment needs two approvals. I'll get the second one." |
+| remote_access | "I can't install anything a caller asks for. I'll check with IT." |
+| personal_data_request | "Please send that request in writing through the usual channel." |
+| secrecy | "I need to check this with a colleague before I do anything." |
+| threat (with authority) | "I'll call your office back on its public number." |
+| urgency | "I can't do this right now. What's your callback number?" |
+| authority (alone) | "Thanks. I'll call back on your organization's public number to confirm." |
+
+### 18.4 Glossary
 - **Window**: the last ~30 s of transcript, speaker-labelled, in memory.
 - **Check**: one run of Detection over the window, producing a `ScamCheck`.
 - **Call risk**: the smoothed risk the UI shows (sticky danger).
