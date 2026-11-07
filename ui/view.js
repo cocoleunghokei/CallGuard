@@ -2,6 +2,7 @@
 // The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
 
 import { plainWords, shortWords, sayThis, signsWords } from "./copy.js";
+import { send } from "./ws.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -53,6 +54,7 @@ export function bindView(state, redraw) {
     rerender();
     $("open-said").focus();
   });
+  $("end-call").addEventListener("click", () => send("end_call"));
   $("copy").addEventListener("click", async () => {
     const phone = state.verify && state.verify.phone;
     if (!phone) return;
@@ -73,6 +75,7 @@ export function render(state) {
 
   const lv = level(state);
   $("main").className = `body lv-ctx-${lv}`;
+  if (!state.inCall || !state.check) clearCallDom();
   renderHeader(state);
   renderBanners(state);
   renderHero(state, lv);
@@ -277,15 +280,28 @@ function renderSaid(state) {
 
 // ---------------------------------------------------------------- E latest lines
 
+function tailItems(state) {
+  return state.tail.map((t) => {
+    const you = t.speaker === "you";
+    return h("li", {}, h("span", { class: you ? "who you" : "who", text: you ? "You" : "Caller" }), h("span", { class: "line", text: t.text }));
+  });
+}
+
 function renderTail(state, lv) {
-  $("tail").replaceChildren(
-    ...state.tail.map((t) =>
-      h("li", {}, h("span", { class: "who", text: t.speaker === "you" ? "You" : "Caller" }), h("span", { text: t.text })),
-    ),
-  );
+  $("tail").replaceChildren(...tailItems(state));
+  $("said-latest").replaceChildren(...tailItems(state));
+  $("said-latest-h").hidden = state.tail.length === 0;
   // At watch and danger the Why / What to do sections take this space.
   const quiet = lv === "low" || (lv !== "idle" && $("why").hidden);
   $("latest").hidden = !state.inCall || state.tail.length === 0 || state.ui.view !== "panel" || !quiet;
+  $("end-call").hidden = !state.inCall;
+}
+
+/** Call content leaves the DOM, not just the screen (UI-7, F9). */
+function clearCallDom() {
+  for (const id of ["pills", "quote", "rules-broken", "flagged"]) $(id).replaceChildren();
+  for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step"]) $(id).textContent = "";
+  $("reason").removeAttribute("title");
 }
 
 // ---------------------------------------------------------------- F privacy line
