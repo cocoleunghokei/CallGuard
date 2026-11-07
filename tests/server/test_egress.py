@@ -20,9 +20,8 @@ def online_with(monkeypatch):
 def test_offline_returns_status_and_logs_entry():
     pushed = []
     egress.subscribe(pushed.append)
-    verify, raw = egress.search("Department of Justice")
+    verify = egress.search("Department of Justice")
     assert verify == {"org": "Department of Justice", "status": "offline"}
-    assert raw is None
     assert pushed == egress.entries
     assert pushed[0]["destination"] == "api.tavily.com"
     assert pushed[0]["sent"] == "Department of Justice"
@@ -43,12 +42,12 @@ def test_ok_search_sends_only_the_query(online_with):
         return httpx.Response(200, json={"results": [{"url": "https://www.justice.gov", "content": "202-514-2000"}]})
 
     online_with(handler)
-    verify, raw = egress.search("Department of Justice")
-    assert verify["status"] == "ok"
-    assert raw["results"][0]["url"] == "https://www.justice.gov"
+    verify = egress.search("Department of Justice")
+    assert verify == {"org": "Department of Justice", "status": "ok", "phone": "202-514-2000",
+                      "source_url": "https://www.justice.gov"}
     assert len(seen) == 1 and seen[0].url.host == "api.tavily.com"
     import json
-    assert json.loads(seen[0].content) == {"query": "Department of Justice", "max_results": 5}
+    assert json.loads(seen[0].content) == {"query": "Department of Justice", "max_results": 5, "search_depth": "basic"}
     assert egress.entries == [{"time": egress.entries[0]["time"], "destination": "api.tavily.com",
                                "sent": "Department of Justice", "status": "ok"}]
 
@@ -61,7 +60,7 @@ def test_entry_recorded_before_request_leaves(online_with):
         return httpx.Response(200, json={"results": []})
 
     online_with(handler)
-    verify, _ = egress.search("IRS")
+    verify = egress.search("IRS")
     assert at_send[0][0]["sent"] == "IRS"
     assert verify["status"] == "not_found"
 
@@ -71,14 +70,14 @@ def test_connect_error_is_offline_and_never_raises(online_with):
         raise httpx.ConnectError("no route")
 
     online_with(handler)
-    verify, _ = egress.search("IRS")
+    verify = egress.search("IRS")
     assert verify["status"] == "offline"
     assert egress.entries[-1]["status"] == "offline"
 
 
 def test_server_error_is_error(online_with):
     online_with(lambda r: httpx.Response(500))
-    verify, _ = egress.search("IRS")
+    verify = egress.search("IRS")
     assert verify["status"] == "error"
     assert egress.entries[-1]["status"] == "error"
 
@@ -87,7 +86,7 @@ def test_missing_key_sends_nothing(online_with, monkeypatch):
     seen = []
     online_with(lambda r: seen.append(r) or httpx.Response(200, json={}))
     monkeypatch.delenv("TAVILY_API_KEY")
-    verify, _ = egress.search("IRS")
+    verify = egress.search("IRS")
     assert verify["status"] == "error" and seen == []
     assert egress.entries[-1]["sent"] == ""
 
@@ -96,8 +95,8 @@ def test_missing_key_sends_nothing(online_with, monkeypatch):
 def test_search_refuses_long_or_multiline_input(bad, online_with):
     seen = []
     online_with(lambda r: seen.append(r) or httpx.Response(200, json={}))
-    verify, raw = egress.search(bad)
-    assert seen == [] and raw is None
+    egress.search(bad)
+    assert seen == []
     assert egress.entries[-1] == {**egress.entries[-1], "sent": "", "status": "refused"}
 
 

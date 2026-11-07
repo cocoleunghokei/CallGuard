@@ -11,6 +11,7 @@ from fastapi import WebSocket
 from callguard.server import egress
 from callguard.server.app import Hub
 from callguard.server.pipeline import Pipeline
+from callguard.server.verify import Verifier
 from callguard.shared.contracts import Status
 
 STATUS_EVERY_S = 15.0  # C16
@@ -25,6 +26,10 @@ class Runtime:
         hub.handle("end_call", self._on_end_call)
         hub.handle("mark_safe", self._on_mark_safe)
         hub.on_connect.append(self._hello)
+        p = self.pipeline
+        self.verifier = Verifier(hub.broadcast, p.caller_lines, lambda: p.call_id)
+        p.on_check.append(self.verifier)
+        p.on_call_end.append(self.verifier.reset)
         self.listening = False
         self.online = False
 
@@ -65,6 +70,8 @@ class Runtime:
             await self.hub.send(ws, "call", {"state": "started"})
             if self.pipeline.call_risk.shown:
                 await self.hub.send(ws, "check", self.pipeline.call_risk.shown)
+            for v in list(self.verifier.cache.values()):
+                await self.hub.send(ws, "verify", v)
 
     async def _on_end_call(self, msg: dict) -> None:
         await self.pipeline.end_call()
