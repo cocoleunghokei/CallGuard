@@ -65,7 +65,7 @@ try:
             continue
         # Pass the samples directly: avoids faster-whisper's file decoder (PyAV),
         # which breaks with some av/Python 3.14 version combinations.
-        segs, info = model.transcribe(results[key][:, 0])
+        segs, info = model.transcribe(results[key][:, 0], vad_filter=True)  # skip silence: stops "Thank you" hallucinations
         print(f"\n[{key}] ({info.language}): " + " ".join(s.text.strip() for s in segs))
 except ImportError:
     print("\nfaster-whisper not installed, skipped transcription. Play caller.wav to check.")

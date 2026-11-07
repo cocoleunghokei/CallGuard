@@ -160,6 +160,7 @@ Write the results here:
 
 | Route | Caller heard? | You heard? | Transcript OK? | Notes |
 |---|---|---|---|---|
+| `say` on the Mac (solo check, no call) | ✅ level 0.046 | ✅ level 0.004 (low) | Caller word-perfect. Mic side: Whisper made up "Thank you" on silence (fixed with `vad_filter`) and picked up speaker echo | Sat 15:50, Python 3.14, Whisper base |
 | Continuity (Mac speakers) | | | | |
 | Zoom (Mac speakers) | | | | |
 | Speakerphone next to laptop | | | | |
