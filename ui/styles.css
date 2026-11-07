@@ -90,7 +90,15 @@ svg { display: block; flex: none; }
 .hero { border-radius: var(--r-hero); padding: var(--s5) var(--s4) var(--s4); text-align: center; background: var(--idle-tint); transition: background-color var(--dur); }
 .hero .ic { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto var(--s3); display: grid; place-items: center; background: var(--bg); color: var(--idle); }
 .hero h1 { margin: 0; font-size: var(--t-hero); line-height: 1.1; font-weight: 700; }
-.hero .sub { margin: var(--s2) 0 0; font-size: var(--t-meta); color: var(--muted); }
+.hero .sub { margin: var(--s2) 0 0; font-size: var(--t-meta); color: var(--muted); display: flex; justify-content: center; align-items: center; gap: var(--s2); }
+.bar { display: inline-flex; gap: 3px; }
+.bar:empty { display: none; }
+.bar i { width: 12px; height: 4px; border-radius: 2px; background: currentColor; opacity: .2; }
+.bar i.on { opacity: 1; }
+.lv-low .sub { color: var(--low); }
+.lv-low .sub #hero-words { color: var(--muted); }
+.lv-watch .sub { color: var(--watch); }
+.lv-watch .sub #hero-words { color: var(--text); }
 
 .lv-idle h1 { color: var(--idle); font-weight: 600; }
 .lv-low { background: var(--low-tint); }
@@ -104,7 +112,46 @@ svg { display: block; flex: none; }
 
 /* section label (Why / What to do / Latest) */
 .sec { display: flex; flex-direction: column; gap: var(--s3); }
-.sec > h2 { margin: 0; font-size: var(--t-meta); font-weight: 600; color: var(--muted); }
+.sec > h2 { margin: 0; font-size: var(--t-meta); font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); }
+.link { border: 0; background: none; padding: 2px 0; font-size: var(--t-meta); font-weight: 400; color: var(--text); cursor: pointer; border-radius: 4px; }
+.link.back { font-weight: 600; }
+
+/* D: why */
+.reason { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 4px; }
+.reason:hover, .reason:focus { white-space: normal; }
+.reason.grey { color: var(--muted); }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pills:empty { display: none; }
+.pill { font-size: var(--t-meta); padding: 5px 12px; min-height: 28px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+button.pill { cursor: pointer; }
+.pill[aria-expanded="true"] { border-color: currentColor; }
+.lv-ctx-watch .pill[aria-expanded="true"] { background: var(--watch-tint); }
+.lv-ctx-danger .pill[aria-expanded="true"] { background: var(--danger-tint); }
+.quote { margin: 0; padding: var(--s2) var(--s3); background: var(--sunken); border-radius: var(--r-card); }
+.quote small { display: block; font-size: var(--t-meta); color: var(--muted); }
+.quote q { font-style: italic; }
+.rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: var(--t-meta); }
+.rules:empty { display: none; }
+.rules b { color: var(--danger); }
+
+/* What to do */
+.say { background: var(--sunken); border-radius: var(--r-card); padding: var(--s3) var(--s4); }
+.say small { display: block; font-size: var(--t-meta); color: var(--muted); margin-bottom: 2px; }
+.say q { font-size: var(--t-key); font-weight: 600; }
+.num { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); padding: 0 var(--s1); }
+.num small { display: block; font-size: var(--t-meta); color: var(--muted); }
+.num b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.pill-btn { font-size: var(--t-meta); border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: var(--r-pill); padding: 4px 12px; cursor: pointer; }
+.note { margin: 0; font-size: var(--t-meta); color: var(--muted); padding: 0 var(--s1); }
+.next { margin: 0; font-size: var(--t-meta); color: var(--text); padding: 0 var(--s1); }
+.next:empty { display: none; }
+
+/* flagged lines */
+.flagged li { color: var(--text); }
+.flagged .tags { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; font-size: var(--t-meta); color: var(--muted); }
+.flagged .tags .r { color: var(--danger); font-weight: 600; }
+mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--watch-mark); }
+.lv-ctx-danger mark { background: var(--danger-mark); }
 
 /* E: latest lines */
 .said { display: flex; flex-direction: column; gap: var(--s2); margin: 0; padding: 0; list-style: none; }

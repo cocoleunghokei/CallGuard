@@ -23,6 +23,7 @@ export const state = {
   verify: null,
   gate: null, // {state, reason, release_in} while not "off"
   egress: [], // EgressEntry[], newest first, kept for the session (org names only)
+  ui: { expanded: null, view: "panel" }, // open pill (tactic id), "panel" | "said"
 };
 
 const handlers = {
@@ -69,6 +70,8 @@ function wipeCall() {
   state.check = null;
   state.verify = null;
   state.gate = null;
+  state.ui.expanded = null;
+  state.ui.view = "panel";
 }
 
 bindView(state, () => render(state));

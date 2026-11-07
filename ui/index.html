@@ -38,19 +38,41 @@
     <p id="b-conn" class="banner" role="status" hidden>Connecting to Callguard…</p>
     <p id="b-model" class="banner" role="status" hidden>Basic checks only, local model unavailable</p>
 
-    <main class="body">
+    <main id="main" class="body">
       <!-- C: status hero -->
       <section id="hero" class="hero lv-idle" aria-live="polite">
         <div class="ic"><svg width="26" height="26"><use id="hero-icon" href="#i-idle"/></svg></div>
         <h1 id="hero-word">Not on a call</h1>
-        <p id="hero-sub" class="sub">Callguard starts when a call does.</p>
+        <p id="hero-sub" class="sub"><span id="hero-words">Callguard starts when a call does.</span><span id="hero-bar" class="bar" aria-hidden="true"></span></p>
       </section>
 
-      <!-- D: why (T3) -->
-      <section id="why" class="sec" hidden></section>
+      <!-- D: why -->
+      <section id="why" class="sec" hidden aria-labelledby="why-h">
+        <h2 id="why-h">Why <button id="open-said" class="link" type="button">See what they said ›</button></h2>
+        <p id="reason" class="reason" tabindex="0"></p>
+        <div id="pills" class="pills"></div>
+        <blockquote id="quote" class="quote" hidden></blockquote>
+        <ul id="rules-broken" class="rules"></ul>
+      </section>
 
-      <!-- What to do (T3/T6) -->
-      <section id="todo" class="sec" hidden></section>
+      <!-- What to do -->
+      <section id="todo" class="sec" hidden aria-labelledby="todo-h">
+        <h2 id="todo-h">What to do</h2>
+        <div id="say" class="say" hidden><small>Say</small><q id="say-text"></q></div>
+        <div id="num" class="num" hidden>
+          <div><small id="num-src"></small><b id="num-phone"></b></div>
+          <button id="copy" class="pill-btn" type="button">Copy</button>
+        </div>
+        <p id="verify-note" class="note" hidden></p>
+        <p id="next-step" class="next"></p>
+      </section>
+
+      <!-- "See what they said": flagged lines for this call -->
+      <section id="said-view" class="sec" hidden aria-labelledby="said-h">
+        <h2 id="said-h"><button id="close-said" class="link back" type="button">‹ Back</button><span>Flagged lines this call</span></h2>
+        <ol id="flagged" class="said flagged"></ol>
+        <p class="note">Deleted when the call ends. Never saved or sent.</p>
+      </section>
 
       <!-- E: latest lines (T4) -->
       <section id="latest" class="sec" hidden>

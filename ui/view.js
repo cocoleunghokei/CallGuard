@@ -1,15 +1,20 @@
-// Draws `state` (see app.js) into ui/index.html. No state of its own except
-// what the DOM holds. Never logs, never stores.
+// Draws `state` (see app.js) into ui/index.html. Never logs, never stores.
+// The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
+
+import { plainWords, shortWords, sayThis, signsWords } from "./copy.js";
 
 const $ = (id) => document.getElementById(id);
 
 // Level: colour + icon + one word (colour is never alone).
 const LEVELS = {
-  idle: { icon: "#i-idle", word: "Not on a call", sub: "Callguard starts when a call does." },
-  low: { icon: "#i-low", word: "Low", sub: "No clear signs" },
-  watch: { icon: "#i-watch", word: "Watch", sub: "Some signs" },
-  danger: { icon: "#i-danger", word: "Danger", sub: "Strong signs" },
+  idle: { icon: "#i-idle", word: "Not on a call" },
+  low: { icon: "#i-low", word: "Low" },
+  watch: { icon: "#i-watch", word: "Watch" },
+  danger: { icon: "#i-danger", word: "Danger" },
 };
+const DEFAULT_SIGNS = { low: "No clear signs", watch: "Some signs", danger: "Strong signs" };
+
+let rerender = () => {};
 
 export function level(state) {
   if (!state.inCall) return "idle";
@@ -17,20 +22,70 @@ export function level(state) {
   return LEVELS[r] ? r : "low";
 }
 
+/** Small element helper. Text always goes in as textContent, never HTML. */
+function h(tag, props = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  el.append(...kids.filter((k) => k != null && k !== false));
+  return el;
+}
+
 /** One-time wiring for controls that only change local UI state. */
-export function bindView(state, rerender) {
+export function bindView(state, redraw) {
+  rerender = redraw;
   $("consent-x").addEventListener("click", () => {
     state.consentDismissed = true;
     rerender();
   });
+  $("open-said").addEventListener("click", () => {
+    state.ui.view = "said";
+    rerender();
+    $("close-said").focus();
+  });
+  $("close-said").addEventListener("click", () => {
+    state.ui.view = "panel";
+    rerender();
+    $("open-said").focus();
+  });
+  $("copy").addEventListener("click", async () => {
+    const phone = state.verify && state.verify.phone;
+    if (!phone) return;
+    try {
+      await navigator.clipboard.writeText(phone);
+      $("copy").textContent = "Copied";
+    } catch {
+      $("copy").textContent = "Copy failed";
+    }
+    setTimeout(() => ($("copy").textContent = "Copy"), 1500);
+  });
 }
 
 export function render(state) {
+  // Keep keyboard focus on the same control across re-renders.
+  const active = document.activeElement;
+  const focusKey = active && active.dataset ? active.dataset.key : null;
+
+  const lv = level(state);
+  $("main").className = `body lv-ctx-${lv}`;
   renderHeader(state);
   renderBanners(state);
-  renderHero(state);
-  renderTail(state);
+  renderHero(state, lv);
+  renderWhy(state, lv);
+  renderTodo(state, lv);
+  renderSaid(state);
+  renderTail(state, lv);
   renderPrivacy(state);
+
+  if (focusKey) {
+    const el = document.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
+    if (el && el !== document.activeElement) el.focus();
+  }
 }
 
 // ---------------------------------------------------------------- A header
@@ -59,33 +114,178 @@ function renderBanners(state) {
 
 // ---------------------------------------------------------------- C status hero
 
-function renderHero(state) {
-  const lv = level(state);
+function renderHero(state, lv) {
   const L = LEVELS[lv];
-  const hero = $("hero");
-  hero.className = `hero lv-${lv}`;
+  $("hero").className = `hero lv-${lv}`;
+  $("hero").hidden = state.ui.view === "said";
   $("hero-icon").setAttribute("href", L.icon);
   $("hero-word").textContent = L.word;
-  $("hero-sub").textContent = L.sub;
+
+  const bar = $("hero-bar");
+  const c = state.check && typeof state.check.confidence === "number" ? state.check.confidence : null;
+  if (lv === "idle") {
+    $("hero-words").textContent = "Callguard starts when a call does.";
+    bar.replaceChildren();
+  } else if (c == null) {
+    // No confidence: no bar. The default words still name the level.
+    $("hero-words").textContent = DEFAULT_SIGNS[lv];
+    bar.replaceChildren();
+  } else {
+    const segs = Math.max(0, Math.min(10, Math.round(c * 10)));
+    $("hero-words").textContent = signsWords(segs);
+    bar.replaceChildren(...Array.from({ length: 10 }, (_, i) => h("i", { class: i < segs ? "on" : null })));
+  }
+}
+
+// ---------------------------------------------------------------- D why
+
+function callerQuotes(check) {
+  return (check.evidence || []).filter((e) => e && e.quote && e.speaker !== "you");
+}
+
+function ruleText(state, id) {
+  const r = state.rules.find((x) => x.id === id);
+  return r && r.text ? r.text : String(id).replace(/_/g, " ");
+}
+
+function renderWhy(state, lv) {
+  const c = state.check;
+  const fallback = !!(c && c.source === "fallback");
+  const show = state.ui.view === "panel" && !!c && (lv === "watch" || lv === "danger" || fallback);
+  $("why").hidden = !show;
+  if (!show) return;
+
+  const reason = $("reason");
+  reason.textContent = c.reason || "";
+  reason.title = c.reason || "";
+  reason.hidden = !c.reason;
+  reason.classList.toggle("grey", fallback);
+
+  // Pills: one per tactic; a pill opens the caller's words when there are any.
+  const quotes = callerQuotes(c);
+  const tactics = (c.tactics || []).filter((t, i, a) => a.indexOf(t) === i);
+  if (state.ui.expanded && !tactics.includes(state.ui.expanded)) state.ui.expanded = null;
+  $("pills").replaceChildren(
+    ...tactics.map((t) => {
+      if (!quotes.some((e) => e.tactic === t)) return h("span", { class: "pill", title: plainWords(t), text: shortWords(t) });
+      const open = state.ui.expanded === t;
+      return h("button", {
+        class: "pill",
+        type: "button",
+        "data-key": `pill:${t}`,
+        "aria-expanded": String(open),
+        "aria-controls": "quote",
+        "aria-label": plainWords(t),
+        title: plainWords(t),
+        text: shortWords(t),
+        onclick: () => {
+          state.ui.expanded = open ? null : t;
+          rerender();
+        },
+      });
+    }),
+  );
+
+  const qs = state.ui.expanded ? quotes.filter((e) => e.tactic === state.ui.expanded) : [];
+  $("quote").hidden = qs.length === 0;
+  $("quote").replaceChildren(
+    ...(qs.length ? [h("small", { text: `${plainWords(state.ui.expanded)}. The caller said:` })] : []),
+    ...qs.slice(0, 2).map((e) => h("div", {}, h("q", { text: String(e.quote).slice(0, 80) }))),
+  );
+
+  $("rules-broken").replaceChildren(
+    ...(c.rules_broken || []).map((id) => h("li", {}, h("b", { text: "Firm rule: " }), ruleText(state, id))),
+  );
+
+  $("open-said").hidden = quotes.length === 0;
+}
+
+// ---------------------------------------------------------------- what to do
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function renderTodo(state, lv) {
+  const c = state.check;
+  const show = state.ui.view === "panel" && !!c && (lv === "watch" || lv === "danger");
+  $("todo").hidden = !show;
+  if (!show) return;
+
+  const say = sayThis(c.tactics);
+  $("say").hidden = !say;
+  $("say-text").textContent = say || "";
+
+  // Verify line (C12): only when the caller claims an organization.
+  const org = c.claimed_identity;
+  const v = org && state.verify && state.verify.org === org ? state.verify : null;
+  const status = v ? v.status || (v.phone ? "ok" : "error") : null;
+  let note = "";
+  let phone = "";
+  if (org && !v) note = `Checking ${org}'s public number…`;
+  else if (v && status === "ok" && v.phone) phone = v.phone;
+  else if (v && status === "offline") note = "Offline, search skipped. Use the number on file.";
+  else if (v) note = "Couldn't find a public number, use the one on file.";
+
+  $("num").hidden = !phone;
+  $("num-phone").textContent = phone;
+  const host = v ? hostOf(v.source_url) : "";
+  $("num-src").textContent = `Public number${host ? " · " + host : ""}`;
+  $("verify-note").hidden = !note;
+  $("verify-note").textContent = note;
+
+  $("next-step").textContent = c.next_step || "";
+}
+
+// ---------------------------------------------------------------- flagged lines ("See what they said")
+
+function renderSaid(state) {
+  const c = state.check;
+  if (state.ui.view === "said" && !(c && state.inCall)) state.ui.view = "panel";
+  const show = state.ui.view === "said";
+  $("said-view").hidden = !show;
+  if (!show) return;
+
+  // One row per distinct quote, in evidence order.
+  const byQuote = new Map();
+  for (const e of callerQuotes(c)) {
+    if (!byQuote.has(e.quote)) byQuote.set(e.quote, []);
+    byQuote.get(e.quote).push(e.tactic);
+  }
+  const broken = new Set(c.rules_broken || []);
+  const rows = [...byQuote].map(([quote, tactics]) => {
+    // Show the whole line around the quote while it is still in the last 3 lines.
+    const line = state.tail.find((t) => t.speaker === "caller" && t.text.includes(quote));
+    const text = line ? line.text : quote;
+    const at = text.indexOf(quote);
+    const p = h("p", {}, text.slice(0, at), h("mark", { text: quote }), text.slice(at + quote.length));
+    const rules = state.rules.filter((r) => broken.has(r.id) && (r.tactics || []).some((t) => tactics.includes(t)));
+    const tags = h(
+      "div",
+      { class: "tags" },
+      ...tactics.map((t) => h("span", { text: shortWords(t), title: plainWords(t) })),
+      ...rules.map((r) => h("span", { class: "r", text: `Breaks: ${r.text}` })),
+    );
+    return h("li", {}, h("span", { class: "who", text: "Caller" }), h("div", {}, p, tags));
+  });
+  $("flagged").replaceChildren(...rows);
 }
 
 // ---------------------------------------------------------------- E latest lines
 
-function renderTail(state) {
-  const list = $("tail");
-  list.replaceChildren(
-    ...state.tail.map((t) => {
-      const li = document.createElement("li");
-      const who = document.createElement("span");
-      who.className = "who";
-      who.textContent = t.speaker === "you" ? "You" : "Caller";
-      const text = document.createElement("span");
-      text.textContent = t.text;
-      li.append(who, text);
-      return li;
-    }),
+function renderTail(state, lv) {
+  $("tail").replaceChildren(
+    ...state.tail.map((t) =>
+      h("li", {}, h("span", { class: "who", text: t.speaker === "you" ? "You" : "Caller" }), h("span", { text: t.text })),
+    ),
   );
-  $("latest").hidden = !state.inCall || state.tail.length === 0;
+  // At watch and danger the Why / What to do sections take this space.
+  const quiet = lv === "low" || (lv !== "idle" && $("why").hidden);
+  $("latest").hidden = !state.inCall || state.tail.length === 0 || state.ui.view !== "panel" || !quiet;
 }
 
 // ---------------------------------------------------------------- F privacy line
