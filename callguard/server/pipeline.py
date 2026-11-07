@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Callable, Iterable, Iterator
 
+from callguard.server.callrisk import CallRisk
 from callguard.shared.contracts import Rule, ScamCheck, TranscriptChunk
 
 log = logging.getLogger("callguard.server.pipeline")
@@ -67,7 +68,9 @@ class Pipeline:
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="detect")
         self._task: asyncio.Task | None = None
         self._pending = False
-        self.on_check: list[Callable[[ScamCheck], Any]] = []  # later: smoothing, gate, verify
+        self.call_risk = CallRisk()
+        # Called with (raw window check, smoothed call check): gate, verify.
+        self.on_check: list[Callable[[ScamCheck, ScamCheck], Any]] = []
 
     # ------------------------------------------------------------ window
     def _prune(self) -> None:
@@ -83,6 +86,7 @@ class Pipeline:
     def clear(self) -> None:
         self.window.clear()
         self._pending = False
+        self.call_risk.reset()
 
     # ------------------------------------------------------------ chunks
     async def feed(self, chunk: TranscriptChunk) -> None:
@@ -114,9 +118,10 @@ class Pipeline:
             log.info("check %.2fs, window %d chunks, risk %s",
                      time.monotonic() - t0, len(self.window), result and result.get("risk"))
             if result is not None:
-                await self.broadcast("check", result)
+                shown = self.call_risk.update(result)
+                await self.broadcast("check", shown)
                 for fn in self.on_check:
-                    r = fn(result)
+                    r = fn(result, shown)
                     if asyncio.iscoroutine(r):
                         await r
             if not self._pending:
