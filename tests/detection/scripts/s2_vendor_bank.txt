@@ -1,0 +1,15 @@
+# id: s2_vendor_bank
+# set: p0
+# kind: scam
+# twin_of: -
+# expect: low, danger, danger
+# giveaway: 2
+# gate: 3
+# tactics: bank_change, urgency
+# rules: no_bank_changes_by_phone
+# claimed: Brightline Supplies
+caller: Hi, it's Dana from Brightline Supplies accounts.
+you: Oh hi Dana, what can I do for you?
+caller: We've switched banks, so Friday's payment needs to go to our new account.
+you: Okay, um, can you send that over by email?
+caller: Can you update it now while I'm on the line? Account ending 4471, routing number is two one one, two seven four.

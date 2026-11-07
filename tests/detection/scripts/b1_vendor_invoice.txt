@@ -1,0 +1,13 @@
+# id: b1_vendor_invoice
+# set: p0
+# kind: twin
+# twin_of: s2
+# expect: low, low, low
+# tactics: -
+# rules: -
+# claimed: Brightline Supplies
+caller: Hi, it's Priya from Brightline Supplies accounts.
+you: Hi Priya, how can I help?
+caller: Line 3 on invoice 2210 has the wrong quantity, it says two cases but you got three. Can you resend it?
+you: Sure, let me check. Yes, we got three.
+caller: Great, I'll email a corrected invoice for your records. Nothing changes on the payment side, thanks!
