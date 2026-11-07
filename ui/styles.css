@@ -1,0 +1,12 @@
+/* T1 placeholder styles. T2 brings the tokens and layout from ui/dev/prototype.html. */
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  color-scheme: light dark;
+}
+body { margin: 0; font: 13px/1.45 var(--font); background: Canvas; color: CanvasText; }
+.panel { padding: 16px; max-width: 420px; }
+.meta { font-size: 12px; opacity: .75; }
+.banner:empty { display: none; }
+h1 { font-size: 24px; margin: 8px 0; text-transform: capitalize; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+button:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }

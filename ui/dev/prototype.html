@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callguard panel prototype</title>
+<!--
+  Static visual mock for sign-off (v3, not the app). No network.
+  Every state uses the same four sections, top to bottom:
+    1 Status   2 Why   3 What to do   4 Actions
+  plus one muted privacy line at the very bottom.
+-->
+<style>
+/* ================= tokens ================= */
+:root, .light {
+  --bg: #ffffff;
+  --sunken: #f5f5f4;
+  --text: #18181b;
+  --muted: #5f5f66;
+  --line: #ececee;
+  --low: #1d7a3b;      --low-tint: #eef7f1;
+  --watch: #8a5800;    --watch-tint: #fdf4e1;  --watch-mark: #fbe3a6;
+  --danger: #b3261e;   --danger-tint: #fdeeed; --danger-mark: #f8cfcb; --danger-hero: #b3261e;
+  --idle: #6b6b70;     --idle-tint: #f2f2f3;
+  --on-strong: #ffffff;
+  --primary: #18181b;  --on-primary: #ffffff;   /* primary pill is ink, not a hue */
+  --focus: #0a64d6;
+  --r-pill: 999px; --r-card: 12px; --r-hero: 20px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+  --t-hero: 24px; --t-key: 15px; --t-body: 13px; --t-meta: 12px;
+  --font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  color-scheme: light;
+}
+.dark {
+  --bg: #18181b;
+  --sunken: #222226;
+  --text: #f4f4f5;
+  --muted: #a6a6ad;
+  --line: #2e2e33;
+  --low: #5cc77f;      --low-tint: #16261b;
+  --watch: #f0b440;    --watch-tint: #2c2310;  --watch-mark: #5a4210;
+  --danger: #ff7a70;   --danger-tint: #33181a; --danger-mark: #6b2622; --danger-hero: #b8312a;
+  --idle: #9c9ca3;     --idle-tint: #26262a;
+  --primary: #f4f4f5;  --on-primary: #18181b;
+  --focus: #7ab0ff;
+  color-scheme: dark;
+}
+
+/* ================= page holding the mocks ================= */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); background: #dcdcdf; color: #1c1c1e; }
+.page-head { padding: 24px 24px 8px; }
+.page-head h1 { font-size: 20px; margin: 0 0 4px; }
+.page-head p { margin: 0; font-size: 13px; color: #4a4a50; max-width: 980px; }
+.row { padding: 16px 24px 32px; }
+.row > h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #4a4a50; margin: 0 0 12px; }
+.dark-row { background: #0c0c0e; }
+.dark-row > h2, .dark-row .label { color: #b4b4ba !important; }
+.strip { display: flex; gap: 24px; align-items: flex-start; }
+.label { font-size: 12px; font-weight: 600; color: #4a4a50; margin-bottom: 6px; }
+
+/* ================= window ================= */
+.win {
+  width: 360px; height: 720px; position: relative; overflow: hidden;
+  background: var(--bg); color: var(--text); font: var(--t-body)/1.45 var(--font);
+  border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  display: flex; flex-direction: column;
+}
+.chrome { flex: none; height: 28px; display: flex; gap: 6px; align-items: center; padding: 0 10px; }
+.chrome i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+svg { display: block; }
+
+.top { flex: none; display: flex; justify-content: space-between; padding: 0 var(--s4) var(--s2); font-size: var(--t-meta); color: var(--muted); }
+.top .d { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--low); margin-right: 6px; vertical-align: 2px; }
+.top .off { color: var(--text); font-weight: 600; }
+.top .off .d { background: var(--idle); }
+
+.scroll { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: var(--s5); padding: 0 var(--s4); }
+
+/* ---------- 1 STATUS (hero) ---------- */
+.hero { border-radius: var(--r-hero); padding: var(--s5) var(--s4) var(--s4); text-align: center; background: var(--idle-tint); }
+.hero .ic { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto var(--s3); display: grid; place-items: center; }
+.hero h2 { margin: 0; font-size: var(--t-hero); line-height: 1.1; font-weight: 700; }
+.hero .sig { margin-top: var(--s2); font-size: var(--t-meta); color: var(--muted); display: flex; justify-content: center; align-items: center; gap: var(--s2); }
+.bar { display: inline-flex; gap: 3px; }
+.bar i { width: 12px; height: 4px; border-radius: 2px; background: currentColor; opacity: .2; }
+.bar i.on { opacity: 1; }
+.hero .lock { margin: var(--s3) auto 0; display: inline-flex; gap: 6px; align-items: center; font-size: var(--t-meta); font-weight: 600; padding: 4px 12px; border-radius: var(--r-pill); background: rgba(255,255,255,.18); }
+.hero .lock time { font-variant-numeric: tabular-nums; }
+
+.lv-idle .ic { background: var(--bg); color: var(--idle); }
+.lv-idle h2 { color: var(--idle); font-weight: 600; }
+.lv-low { background: var(--low-tint); }
+.lv-low .ic { background: var(--bg); color: var(--low); }
+.lv-low .sig { color: var(--low); }
+.lv-low .sig span { color: var(--muted); }
+.lv-watch { background: var(--watch-tint); }
+.lv-watch .ic { background: var(--watch); color: var(--watch-tint); }
+.lv-watch h2, .lv-watch .sig { color: var(--watch); }
+.lv-watch .sig span { color: var(--text); }
+.lv-danger { background: var(--danger-hero); color: var(--on-strong); }
+.lv-danger .ic { background: rgba(255,255,255,.16); color: var(--on-strong); }
+.lv-danger .sig { color: var(--on-strong); }
+
+/* ---------- section label ---------- */
+.sec { display: flex; flex-direction: column; gap: var(--s3); }
+.sec > h3 { margin: 0; font-size: var(--t-meta); font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; }
+.sec > h3 a { font-weight: 400; color: var(--text); text-decoration: none; }
+
+/* ---------- 2 WHY ---------- */
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { font: inherit; font-size: var(--t-meta); padding: 5px 12px; min-height: 28px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.pill.rule { border-color: transparent; background: var(--danger-tint); color: var(--text); }
+.said { display: flex; flex-direction: column; gap: var(--s3); }
+.ln { display: grid; grid-template-columns: 44px 1fr; gap: var(--s2); }
+.ln .who { font-size: var(--t-meta); color: var(--muted); padding-top: 1px; }
+.ln p { margin: 0; }
+.ln.dim p { color: var(--muted); }
+mark { color: inherit; border-radius: 3px; padding: 0 2px; }
+.watch-ctx mark { background: var(--watch-mark); }
+.danger-ctx mark { background: var(--danger-mark); }
+.tags { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: var(--t-meta); color: var(--muted); }
+.tags .r { color: var(--danger); font-weight: 600; }
+
+/* ---------- 3 WHAT TO DO ---------- */
+.say { background: var(--sunken); border-radius: var(--r-card); padding: var(--s3) var(--s4); }
+.say small { display: block; font-size: var(--t-meta); color: var(--muted); margin-bottom: 2px; }
+.say q { font-size: var(--t-key); font-weight: 600; quotes: "“" "”"; }
+.num { display: flex; justify-content: space-between; align-items: center; padding: 0 var(--s1); }
+.num small { display: block; font-size: var(--t-meta); color: var(--muted); }
+.num b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.num .copy { font: inherit; font-size: var(--t-meta); border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: var(--r-pill); padding: 4px 12px; }
+.note { font-size: var(--t-meta); color: var(--muted); padding: 0 var(--s1); }
+
+/* ---------- 4 ACTIONS ---------- */
+.actions { flex: none; padding: var(--s4) var(--s4) var(--s3); display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
+.btn { font: inherit; width: 100%; border-radius: var(--r-pill); padding: 12px 20px; font-size: var(--t-key); font-weight: 600; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.btn.focus { outline: 2px solid var(--focus); outline-offset: 3px; }
+.text-btn { font: inherit; font-size: var(--t-meta); color: var(--muted); background: none; border: 0; padding: 4px; text-decoration: underline; text-underline-offset: 3px; }
+.safe { width: 100%; display: flex; align-items: center; gap: var(--s2); font-size: var(--t-meta); color: var(--muted); justify-content: center; }
+.safe input { font: inherit; width: 64px; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--bg); color: var(--text); text-align: center; letter-spacing: .12em; }
+.safe .hold { position: relative; overflow: hidden; font: inherit; font-size: var(--t-meta); padding: 4px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.safe .hold::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 40%; background: var(--low-tint); }
+.safe .hold span { position: relative; }
+
+/* ---------- privacy line ---------- */
+.priv { flex: none; border-top: 1px solid var(--line); padding: 10px var(--s4); font-size: var(--t-meta); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.priv .ok { color: var(--low); }
+.priv b { color: var(--text); font-weight: 600; }
+.priv .go { margin-left: auto; }
+
+.banner { flex: none; margin: 0 var(--s4) var(--s3); padding: 6px 12px; border-radius: var(--r-pill); background: var(--sunken); font-size: var(--t-meta); text-align: center; }
+
+/* ================= system sheet ================= */
+.sheet { display: flex; gap: 32px; flex-wrap: wrap; padding: 4px 24px 8px; font-size: 12px; color: #3a3a40; }
+.sheet h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6a6a70; }
+.sw { display: flex; gap: 6px; }
+.sw div { width: 56px; }
+.sw span { display: block; height: 28px; border-radius: 8px; margin-bottom: 4px; border: 1px solid rgba(0,0,0,.06); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-idle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/></symbol>
+  <symbol id="i-low" viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-watch" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 4.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></symbol>
+  <symbol id="i-danger" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="page-head">
+  <h1>Callguard: panel prototype v3</h1>
+  <p>Every state uses the same four sections: <b>1 Status</b> · <b>2 Why</b> · <b>3 What to do</b> · <b>4 Actions</b>, then one privacy line. Sections that have nothing to say are left out. 360 px window, S1 government-call data.</p>
+</div>
+
+<div class="sheet">
+  <div><h4>Level colours</h4><div class="sw">
+    <div><span style="background:#f2f2f3"></span>Idle</div>
+    <div><span style="background:#eef7f1"></span>Low</div>
+    <div><span style="background:#fdf4e1"></span>Watch</div>
+    <div><span style="background:#b3261e"></span>Danger</div>
+  </div></div>
+  <div><h4>Type</h4>24 Status word · 15 Key line, buttons · 13 Body · 12 Meta</div>
+  <div><h4>Shape</h4>Hero 20 · Card 12 · Pills and buttons fully round</div>
+  <div><h4>Buttons</h4>Primary = ink fill · Secondary = outline · Tertiary = underlined text</div>
+  <div><h4>Rule</h4>Colour lives in the Status hero only. Highlights in “What they said” reuse the level colour.</div>
+</div>
+
+<template id="strip">
+<div class="strip">
+
+  <!-- 1 IDLE -->
+  <div><div class="label">1 · Idle</div>
+  <div class="win">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="top"><span><span class="d"></span>Local only · nothing stored</span><span>Online</span></div>
+    <div class="scroll">
+      <div class="hero lv-idle"><div class="ic"><svg width="26" height="26"><use href="#i-idle"/></svg></div><h2>Not on a call</h2>
+        <div class="sig">Checks run on this laptop. Nothing is recorded.</div></div>
+    </div>
+    <div class="priv"><svg class="ok" width="14" height="14"><use href="#i-low"/></svg><b>Nothing has left this device</b></div>
+  </div></div>
+
+  <!-- 2 LOW -->
+  <div><div class="label">2 · Low</div>
+  <div class="win">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="top"><span><span class="d"></span>Local only · nothing stored</span><span>Online</span></div>
+    <div class="scroll">
+      <div class="hero lv-low"><div class="ic"><svg width="26" height="26"><use href="#i-low"/></svg></div><h2>Low</h2>
+        <div class="sig"><span>No clear signs</span><span class="bar"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div></div>
+      <div class="sec"><h3>Latest</h3>
+        <div class="said">
+          <div class="ln dim"><span class="who">Caller</span><p>Can we push the 3pm? I need the draft by five.</p></div>
+          <div class="ln dim"><span class="who">You</span><p>No problem, I'll move it to 4.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="priv"><svg class="ok" width="14" height="14"><use href="#i-low"/></svg><b>Nothing has left this device</b></div>
+  </div></div>
+
+  <!-- 3 WATCH -->
+  <div><div class="label">3 · Watch</div>
+  <div class="win watch-ctx">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="top"><span><span class="d"></span>Local only · nothing stored</span><span>Online</span></div>
+    <div class="scroll">
+      <div class="hero lv-watch"><div class="ic"><svg width="26" height="26"><use href="#i-watch"/></svg></div><h2>Watch</h2>
+        <div class="sig"><span>Some signs</span><span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div></div>
+
+      <div class="sec"><h3>Why <a href="#">See what they said ›</a></h3>
+        <div class="pills"><span class="pill">Claims authority</span><span class="pill">Threatens you</span></div>
+      </div>
+
+      <div class="sec"><h3>What to do</h3>
+        <div class="say"><small>Say</small><q>I'll call the Department of Justice back on its public number.</q></div>
+        <div class="num"><div><small>Public number · justice.gov</small><b>(202) 514-2000</b></div><button class="copy">Copy</button></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary">Hang up and call back</button>
+      <button class="btn">Ask a colleague</button>
+      <button class="text-btn">It's fine, mark as safe</button>
+    </div>
+    <div class="priv"><svg width="14" height="14"><use href="#i-up"/></svg>1 item left: <b>“Department of Justice”</b><span class="go">›</span></div>
+  </div></div>
+
+  <!-- 3b WATCH: WHAT THEY SAID -->
+  <div><div class="label">3b · “See what they said”</div>
+  <div class="win watch-ctx">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="top"><span>‹ Back</span><span>Last 3 lines + flagged lines</span></div>
+    <div class="scroll">
+      <div class="sec"><h3>Flagged</h3>
+        <div class="said">
+          <div class="ln"><span class="who">Caller</span><div><p>Hi, <mark>this is Officer Chen from the Department of Justice</mark>.</p><div class="tags"><span>Claims authority</span></div></div></div>
+          <div class="ln"><span class="who">Caller</span><div><p>Your name came up in the Harmon money-laundering case. <mark>You're under investigation and could face extradition.</mark></p><div class="tags"><span>Threatens you</span></div></div></div>
+        </div>
+      </div>
+      <div class="sec"><h3>Latest</h3>
+        <div class="said">
+          <div class="ln dim"><span class="who">You</span><p>Okay. What is this about?</p></div>
+          <div class="ln dim"><span class="who">You</span><p>I don't understand, what case?</p></div>
+        </div>
+      </div>
+      <div class="note">Deleted when the call ends. Never saved or sent.</div>
+    </div>
+    <div class="priv"><svg width="14" height="14"><use href="#i-up"/></svg>1 item left: <b>“Department of Justice”</b><span class="go">›</span></div>
+  </div></div>
+
+  <!-- 4 DANGER -->
+  <div><div class="label">4 · Danger + typing paused</div>
+  <div class="win danger-ctx">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="scroll" style="padding-top:4px">
+      <div class="hero lv-danger"><div class="ic"><svg width="28" height="28"><use href="#i-danger"/></svg></div><h2>Stop and verify</h2>
+        <div class="sig">Strong signs <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+        <div class="lock">🔒 Typing paused <time>1:54</time></div></div>
+
+      <div class="sec"><h3>Why <a href="#">See what they said ›</a></h3>
+        <div class="pills"><span class="pill">Threatens you</span><span class="pill">Keep it secret</span><span class="pill">Asks for bank details</span><span class="pill rule">Breaks 2 firm rules</span></div>
+      </div>
+
+      <div class="sec"><h3>What to do</h3>
+        <div class="say"><small>Say</small><q>I don't give bank details by phone. I'll call you back.</q></div>
+        <div class="num"><div><small>Real number · justice.gov</small><b>(202) 514-2000</b></div><button class="copy">Copy</button></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary focus">Hang up and call back</button>
+      <button class="btn">Ask a colleague</button>
+      <div class="safe">Verified? Type <input value="SAF" aria-label="Type SAFE"><button class="hold"><span>Hold 3 s</span></button></div>
+    </div>
+  </div></div>
+
+  <!-- 4b DANGER: WHAT THEY SAID -->
+  <div><div class="label">4b · Danger · what they said</div>
+  <div class="win danger-ctx">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="top"><span>‹ Back</span><span>Flagged lines this call</span></div>
+    <div class="scroll">
+      <div class="sec"><h3>Flagged</h3>
+        <div class="said">
+          <div class="ln"><span class="who">Caller</span><div><p><mark>You're under investigation and could face extradition.</mark></p><div class="tags"><span>Threatens you</span></div></div></div>
+          <div class="ln"><span class="who">Caller</span><div><p>This is confidential. <mark>Do not tell your colleagues or your firm</mark>, or it will be treated as obstruction.</p><div class="tags"><span>Keep it secret</span><span class="r">Breaks: No one at this firm will ask you to keep a call secret</span></div></div></div>
+          <div class="ln"><span class="who">Caller</span><div><p>To clear your name <mark>I need to verify your bank account number and routing number</mark>.</p><div class="tags"><span>Asks for bank details</span><span class="r">Breaks: Government agencies do not ask for payment or bank details by phone</span></div></div></div>
+        </div>
+      </div>
+      <div class="note">Deleted when the call ends. Never saved or sent.</div>
+    </div>
+    <div class="actions">
+      <button class="btn primary">Hang up and call back</button>
+    </div>
+  </div></div>
+
+  <!-- 5 AFTER HANG UP -->
+  <div><div class="label">5 · After “Hang up and call back”</div>
+  <div class="win">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="scroll" style="padding-top:4px">
+      <div class="hero lv-danger"><div class="ic"><svg width="28" height="28"><use href="#i-danger"/></svg></div><h2>Hang up now</h2>
+        <div class="sig">Typing is back on</div></div>
+      <div class="sec"><h3>What to do</h3>
+        <div class="say"><small>Then call back on</small><q style="quotes:none;font-size:26px;font-variant-numeric:tabular-nums">(202) 514-2000</q><div class="note" style="padding:4px 0 0">Department of Justice · justice.gov</div></div>
+        <div class="note">Don't use any number the caller gave you.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary">Copy number</button>
+    </div>
+  </div></div>
+
+  <!-- 6 OFFLINE -->
+  <div><div class="label">6 · Wi-Fi off</div>
+  <div class="win watch-ctx">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="top"><span><span class="d"></span>Local only · nothing stored</span><span class="off"><span class="d"></span>Offline</span></div>
+    <div class="scroll">
+      <div class="hero lv-watch"><div class="ic"><svg width="26" height="26"><use href="#i-watch"/></svg></div><h2>Watch</h2>
+        <div class="sig"><span>Some signs</span><span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div></div>
+      <div class="sec"><h3>Why <a href="#">See what they said ›</a></h3>
+        <div class="pills"><span class="pill">Claims authority</span><span class="pill">Threatens you</span></div>
+      </div>
+      <div class="sec"><h3>What to do</h3>
+        <div class="say"><small>Say</small><q>I'll call the Department of Justice back on its public number.</q></div>
+        <div class="note">Offline, so the number wasn't looked up. Use the one on file.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary">Hang up and call back</button>
+      <button class="btn">Ask a colleague</button>
+      <button class="text-btn">It's fine, mark as safe</button>
+    </div>
+    <div class="priv"><svg class="ok" width="14" height="14"><use href="#i-low"/></svg><b>Nothing has left this device</b><span class="go">1 skipped ›</span></div>
+  </div></div>
+
+  <!-- 7 MODEL DOWN -->
+  <div><div class="label">7 · Local model down</div>
+  <div class="win">
+    <div class="chrome"><i></i><i></i><i></i></div>
+    <div class="top"><span><span class="d"></span>Local only · nothing stored</span><span>Online</span></div>
+    <div class="banner">Basic checks only · local model unavailable</div>
+    <div class="scroll">
+      <div class="hero lv-low"><div class="ic"><svg width="26" height="26"><use href="#i-low"/></svg></div><h2>Low</h2>
+        <div class="sig"><span>No clear signs</span><span class="bar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div></div>
+      <div class="sec"><h3>Latest</h3>
+        <div class="said"><div class="ln dim"><span class="who">Caller</span><p>Hi, this is Officer Chen from the Department of Justice.</p></div></div>
+      </div>
+    </div>
+    <div class="priv"><svg class="ok" width="14" height="14"><use href="#i-low"/></svg><b>Nothing has left this device</b></div>
+  </div></div>
+
+</div>
+</template>
+
+<section class="row light"><h2>Light</h2><div class="slot"></div></section>
+<section class="row dark dark-row"><h2>Dark</h2><div class="slot"></div></section>
+
+<script>
+  const t = document.getElementById("strip");
+  document.querySelectorAll(".slot").forEach((s) => s.appendChild(t.content.cloneNode(true)));
+</script>
+</body>
+</html>

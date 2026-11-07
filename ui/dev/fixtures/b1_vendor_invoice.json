@@ -1,0 +1,163 @@
+{
+  "id": "b1_vendor_invoice",
+  "description": "B1 real vendor invoice question. Low throughout, no search, nothing leaves the device.",
+  "steps": [
+    {
+      "at": 0.0,
+      "msg": {
+        "type": "status",
+        "data": {
+          "listening": true,
+          "online": true,
+          "model": "ok",
+          "gate": "on"
+        }
+      }
+    },
+    {
+      "at": 0.5,
+      "msg": {
+        "type": "rules",
+        "data": [
+          {
+            "id": "no_bank_changes_by_phone",
+            "text": "We never change vendor or client bank details because of a phone call. Call back on the number on file.",
+            "tactics": [
+              "bank_change"
+            ]
+          },
+          {
+            "id": "it_never_asks_for_codes",
+            "text": "IT will never ask you for a code or password.",
+            "tactics": [
+              "credential_request"
+            ]
+          },
+          {
+            "id": "wires_need_two_approvals",
+            "text": "Every wire needs two approvals, no exceptions, no matter who asks.",
+            "tactics": [
+              "bypass_approval",
+              "payment_request"
+            ]
+          },
+          {
+            "id": "government_never_calls_for_payment_or_bank_details",
+            "text": "Government agencies do not ask for payment or bank details by phone.",
+            "tactics": [
+              "payment_request",
+              "bank_change",
+              "personal_data_request"
+            ],
+            "requires": [
+              "authority"
+            ]
+          },
+          {
+            "id": "never_keep_calls_secret",
+            "text": "No one at this firm will ask you to keep a call secret from your colleagues.",
+            "tactics": [
+              "secrecy"
+            ]
+          }
+        ],
+        "source": "default"
+      }
+    },
+    {
+      "at": 1.0,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "started"
+        }
+      }
+    },
+    {
+      "at": 1.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "Hi, it's Sam from Brightline Supplies.",
+          "start": 0.0,
+          "end": 3.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 6.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "low",
+          "tactics": [],
+          "claimed_identity": null,
+          "rules_broken": [],
+          "reason": "No clear signs.",
+          "next_step": "",
+          "confidence": 0.0,
+          "evidence": [],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 6.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "Line 3 on invoice 2210 has the wrong quantity, can you resend it?",
+          "start": 3.5,
+          "end": 7.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 12.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "low",
+          "tactics": [],
+          "claimed_identity": null,
+          "rules_broken": [],
+          "reason": "No clear signs.",
+          "next_step": "",
+          "confidence": 0.0,
+          "evidence": [],
+          "safe_signals": [
+            "no_money_or_data_asked"
+          ],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 12.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "you",
+          "text": "Sure, I'll fix the quantity and resend it this afternoon.",
+          "start": 8.0,
+          "end": 11.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 18.5,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "ended"
+        }
+      }
+    }
+  ]
+}

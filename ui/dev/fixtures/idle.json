@@ -1,0 +1,80 @@
+{
+  "id": "idle",
+  "description": "F0 first open. App running, no call: not listening, then listening. Nothing has left this device.",
+  "steps": [
+    {
+      "at": 0.0,
+      "msg": {
+        "type": "status",
+        "data": {
+          "listening": false,
+          "online": true,
+          "model": "ok",
+          "gate": "on"
+        }
+      }
+    },
+    {
+      "at": 0.5,
+      "msg": {
+        "type": "rules",
+        "data": [
+          {
+            "id": "no_bank_changes_by_phone",
+            "text": "We never change vendor or client bank details because of a phone call. Call back on the number on file.",
+            "tactics": [
+              "bank_change"
+            ]
+          },
+          {
+            "id": "it_never_asks_for_codes",
+            "text": "IT will never ask you for a code or password.",
+            "tactics": [
+              "credential_request"
+            ]
+          },
+          {
+            "id": "wires_need_two_approvals",
+            "text": "Every wire needs two approvals, no exceptions, no matter who asks.",
+            "tactics": [
+              "bypass_approval",
+              "payment_request"
+            ]
+          },
+          {
+            "id": "government_never_calls_for_payment_or_bank_details",
+            "text": "Government agencies do not ask for payment or bank details by phone.",
+            "tactics": [
+              "payment_request",
+              "bank_change",
+              "personal_data_request"
+            ],
+            "requires": [
+              "authority"
+            ]
+          },
+          {
+            "id": "never_keep_calls_secret",
+            "text": "No one at this firm will ask you to keep a call secret from your colleagues.",
+            "tactics": [
+              "secrecy"
+            ]
+          }
+        ],
+        "source": "default"
+      }
+    },
+    {
+      "at": 2.0,
+      "msg": {
+        "type": "status",
+        "data": {
+          "listening": true,
+          "online": true,
+          "model": "ok",
+          "gate": "on"
+        }
+      }
+    }
+  ]
+}

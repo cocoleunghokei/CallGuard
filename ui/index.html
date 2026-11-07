@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callguard</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- T1 placeholder. T2 replaces this with the panel in ui/dev/prototype.html. -->
+  <main class="panel">
+    <p id="conn" class="banner" role="status"></p>
+    <p id="hdr" class="meta"></p>
+    <h1 id="level">Not on a call</h1>
+    <p id="reason"></p>
+    <p id="verify" class="meta"></p>
+    <p id="gate"></p>
+    <div id="tail" class="meta"></div>
+    <p id="egress" class="meta"></p>
+    <div class="actions">
+      <button id="b-hangup" type="button">Hang up and call back</button>
+      <button id="b-colleague" type="button">Ask a colleague</button>
+      <button id="b-safe" type="button">Mark as safe</button>
+      <button id="b-end" type="button">End call</button>
+    </div>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

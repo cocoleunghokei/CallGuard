@@ -1,0 +1,166 @@
+{
+  "id": "b2_colleague",
+  "description": "B2 colleague with a deadline. Urgency alone stays low (G1). Zero amber/red frames.",
+  "steps": [
+    {
+      "at": 0.0,
+      "msg": {
+        "type": "status",
+        "data": {
+          "listening": true,
+          "online": true,
+          "model": "ok",
+          "gate": "on"
+        }
+      }
+    },
+    {
+      "at": 0.5,
+      "msg": {
+        "type": "rules",
+        "data": [
+          {
+            "id": "no_bank_changes_by_phone",
+            "text": "We never change vendor or client bank details because of a phone call. Call back on the number on file.",
+            "tactics": [
+              "bank_change"
+            ]
+          },
+          {
+            "id": "it_never_asks_for_codes",
+            "text": "IT will never ask you for a code or password.",
+            "tactics": [
+              "credential_request"
+            ]
+          },
+          {
+            "id": "wires_need_two_approvals",
+            "text": "Every wire needs two approvals, no exceptions, no matter who asks.",
+            "tactics": [
+              "bypass_approval",
+              "payment_request"
+            ]
+          },
+          {
+            "id": "government_never_calls_for_payment_or_bank_details",
+            "text": "Government agencies do not ask for payment or bank details by phone.",
+            "tactics": [
+              "payment_request",
+              "bank_change",
+              "personal_data_request"
+            ],
+            "requires": [
+              "authority"
+            ]
+          },
+          {
+            "id": "never_keep_calls_secret",
+            "text": "No one at this firm will ask you to keep a call secret from your colleagues.",
+            "tactics": [
+              "secrecy"
+            ]
+          }
+        ],
+        "source": "default"
+      }
+    },
+    {
+      "at": 1.0,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "started"
+        }
+      }
+    },
+    {
+      "at": 1.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "Can we push the 3pm? I need the draft by five.",
+          "start": 0.0,
+          "end": 4.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 7.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "low",
+          "tactics": [
+            "urgency"
+          ],
+          "claimed_identity": null,
+          "rules_broken": [],
+          "reason": "No clear signs. A deadline on its own is normal.",
+          "next_step": "",
+          "confidence": 0.14,
+          "evidence": [
+            {
+              "tactic": "urgency",
+              "quote": "I need the draft by five.",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 7.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "you",
+          "text": "No problem, I'll move it to 4 and send the draft before five.",
+          "start": 4.5,
+          "end": 7.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 12.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "low",
+          "tactics": [
+            "urgency"
+          ],
+          "claimed_identity": null,
+          "rules_broken": [],
+          "reason": "No clear signs. A deadline on its own is normal.",
+          "next_step": "",
+          "confidence": 0.14,
+          "evidence": [
+            {
+              "tactic": "urgency",
+              "quote": "I need the draft by five.",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 15.5,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "ended"
+        }
+      }
+    }
+  ]
+}

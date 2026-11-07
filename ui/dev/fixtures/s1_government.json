@@ -1,0 +1,365 @@
+{
+  "id": "s1_government",
+  "description": "S1 government official (DOJ). low 0.31 -> watch 0.71 (verify + 1 egress) -> danger 0.99 -> danger 1.00 + gate locked.",
+  "steps": [
+    {
+      "at": 0.0,
+      "msg": {
+        "type": "status",
+        "data": {
+          "listening": true,
+          "online": true,
+          "model": "ok",
+          "gate": "on"
+        }
+      }
+    },
+    {
+      "at": 0.5,
+      "msg": {
+        "type": "rules",
+        "data": [
+          {
+            "id": "no_bank_changes_by_phone",
+            "text": "We never change vendor or client bank details because of a phone call. Call back on the number on file.",
+            "tactics": [
+              "bank_change"
+            ]
+          },
+          {
+            "id": "it_never_asks_for_codes",
+            "text": "IT will never ask you for a code or password.",
+            "tactics": [
+              "credential_request"
+            ]
+          },
+          {
+            "id": "wires_need_two_approvals",
+            "text": "Every wire needs two approvals, no exceptions, no matter who asks.",
+            "tactics": [
+              "bypass_approval",
+              "payment_request"
+            ]
+          },
+          {
+            "id": "government_never_calls_for_payment_or_bank_details",
+            "text": "Government agencies do not ask for payment or bank details by phone.",
+            "tactics": [
+              "payment_request",
+              "bank_change",
+              "personal_data_request"
+            ],
+            "requires": [
+              "authority"
+            ]
+          },
+          {
+            "id": "never_keep_calls_secret",
+            "text": "No one at this firm will ask you to keep a call secret from your colleagues.",
+            "tactics": [
+              "secrecy"
+            ]
+          }
+        ],
+        "source": "default"
+      }
+    },
+    {
+      "at": 1.0,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "started"
+        }
+      }
+    },
+    {
+      "at": 1.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "Hi, this is Officer Chen from the Department of Justice.",
+          "start": 0.0,
+          "end": 3.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 6.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "low",
+          "tactics": [
+            "authority"
+          ],
+          "claimed_identity": "Department of Justice",
+          "rules_broken": [],
+          "reason": "Caller says they are a government official.",
+          "next_step": "Keep listening. Don't share anything yet.",
+          "confidence": 0.31,
+          "evidence": [
+            {
+              "tactic": "authority",
+              "quote": "this is Officer Chen from the Department of Justice",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 6.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "you",
+          "text": "Okay. What is this about?",
+          "start": 3.5,
+          "end": 5.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 8.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "Your name came up in the Harmon money-laundering case. You're under investigation and could face extradition.",
+          "start": 6.0,
+          "end": 11.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 15.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "watch",
+          "tactics": [
+            "authority",
+            "threat"
+          ],
+          "claimed_identity": "Department of Justice",
+          "rules_broken": [],
+          "reason": "Caller claims to be a government official and says you are under investigation.",
+          "next_step": "Verify first: don't share anything until you've called the Department of Justice on its public number.",
+          "confidence": 0.71,
+          "evidence": [
+            {
+              "tactic": "authority",
+              "quote": "this is Officer Chen from the Department of Justice",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "threat",
+              "quote": "You're under investigation and could face extradition.",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 16.0,
+      "msg": {
+        "type": "egress",
+        "data": {
+          "time": "2026-11-07T19:02:11",
+          "destination": "api.tavily.com",
+          "sent": "Department of Justice",
+          "status": "ok"
+        }
+      }
+    },
+    {
+      "at": 17.4,
+      "msg": {
+        "type": "verify",
+        "data": {
+          "org": "Department of Justice",
+          "phone": "(202) 514-2000",
+          "source_url": "https://www.justice.gov/contact-us",
+          "status": "ok"
+        }
+      }
+    },
+    {
+      "at": 17.4,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "you",
+          "text": "I don't understand, what case?",
+          "start": 11.5,
+          "end": 13.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 19.4,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "This is confidential. Do not tell your colleagues or your firm, or it will be treated as obstruction.",
+          "start": 14.0,
+          "end": 19.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 25.9,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "danger",
+          "tactics": [
+            "authority",
+            "threat",
+            "secrecy"
+          ],
+          "claimed_identity": "Department of Justice",
+          "rules_broken": [
+            "never_keep_calls_secret"
+          ],
+          "reason": "Caller claims to be a government official, threatens you, and asked you not to tell colleagues.",
+          "next_step": "Hang up. Don't share bank details. Call the Department of Justice on its public number.",
+          "confidence": 0.99,
+          "evidence": [
+            {
+              "tactic": "authority",
+              "quote": "this is Officer Chen from the Department of Justice",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "threat",
+              "quote": "You're under investigation and could face extradition.",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "secrecy",
+              "quote": "Do not tell your colleagues or your firm",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 26.4,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "To clear your name I need to verify your bank account number and routing number.",
+          "start": 19.5,
+          "end": 24.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 32.9,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "danger",
+          "tactics": [
+            "authority",
+            "threat",
+            "secrecy",
+            "personal_data_request"
+          ],
+          "claimed_identity": "Department of Justice",
+          "rules_broken": [
+            "never_keep_calls_secret",
+            "government_never_calls_for_payment_or_bank_details"
+          ],
+          "reason": "Caller claims to be a government official and is asking for your bank details.",
+          "next_step": "Hang up. Don't share bank details. Call the Department of Justice on its public number.",
+          "confidence": 1.0,
+          "evidence": [
+            {
+              "tactic": "authority",
+              "quote": "this is Officer Chen from the Department of Justice",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "threat",
+              "quote": "You're under investigation and could face extradition.",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "secrecy",
+              "quote": "Do not tell your colleagues or your firm",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "personal_data_request",
+              "quote": "I need to verify your bank account number and routing number",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 33.6,
+      "msg": {
+        "type": "gate",
+        "data": {
+          "state": "locked",
+          "reason": "This call is asking for bank details. Verify before you send anything, here or anywhere else.",
+          "release_in": 120
+        }
+      }
+    },
+    {
+      "at": 48.6,
+      "msg": {
+        "type": "gate",
+        "data": {
+          "state": "off",
+          "reason": "",
+          "release_in": 0
+        }
+      }
+    },
+    {
+      "at": 49.1,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "ended"
+        }
+      }
+    }
+  ]
+}

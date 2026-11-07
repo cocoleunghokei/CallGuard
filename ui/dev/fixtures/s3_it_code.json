@@ -1,0 +1,217 @@
+{
+  "id": "s3_it_code",
+  "description": "S3 IT support code. low 0.31 -> danger 1.00 + gate locked on the same beat. Internal identity, so no search (no egress).",
+  "steps": [
+    {
+      "at": 0.0,
+      "msg": {
+        "type": "status",
+        "data": {
+          "listening": true,
+          "online": true,
+          "model": "ok",
+          "gate": "on"
+        }
+      }
+    },
+    {
+      "at": 0.5,
+      "msg": {
+        "type": "rules",
+        "data": [
+          {
+            "id": "no_bank_changes_by_phone",
+            "text": "We never change vendor or client bank details because of a phone call. Call back on the number on file.",
+            "tactics": [
+              "bank_change"
+            ]
+          },
+          {
+            "id": "it_never_asks_for_codes",
+            "text": "IT will never ask you for a code or password.",
+            "tactics": [
+              "credential_request"
+            ]
+          },
+          {
+            "id": "wires_need_two_approvals",
+            "text": "Every wire needs two approvals, no exceptions, no matter who asks.",
+            "tactics": [
+              "bypass_approval",
+              "payment_request"
+            ]
+          },
+          {
+            "id": "government_never_calls_for_payment_or_bank_details",
+            "text": "Government agencies do not ask for payment or bank details by phone.",
+            "tactics": [
+              "payment_request",
+              "bank_change",
+              "personal_data_request"
+            ],
+            "requires": [
+              "authority"
+            ]
+          },
+          {
+            "id": "never_keep_calls_secret",
+            "text": "No one at this firm will ask you to keep a call secret from your colleagues.",
+            "tactics": [
+              "secrecy"
+            ]
+          }
+        ],
+        "source": "default"
+      }
+    },
+    {
+      "at": 1.0,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "started"
+        }
+      }
+    },
+    {
+      "at": 1.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "This is Jake from IT, we've seen suspicious logins on your account.",
+          "start": 0.0,
+          "end": 4.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 7.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "low",
+          "tactics": [
+            "authority"
+          ],
+          "claimed_identity": "your firm's IT team",
+          "rules_broken": [],
+          "reason": "Caller says they are from IT.",
+          "next_step": "Keep listening. Don't share any codes.",
+          "confidence": 0.31,
+          "evidence": [
+            {
+              "tactic": "authority",
+              "quote": "This is Jake from IT",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 7.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "you",
+          "text": "Oh no. What do I need to do?",
+          "start": 4.5,
+          "end": 6.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 9.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "I've just sent a code to your phone. Read it to me so I can lock the attacker out.",
+          "start": 7.0,
+          "end": 11.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 15.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "danger",
+          "tactics": [
+            "credential_request",
+            "authority",
+            "urgency"
+          ],
+          "claimed_identity": "your firm's IT team",
+          "rules_broken": [
+            "it_never_asks_for_codes"
+          ],
+          "reason": "Caller says they are from IT and is asking for the code sent to your phone.",
+          "next_step": "IT never asks for your code. Don't read it out. Message IT on the help desk channel.",
+          "confidence": 1.0,
+          "evidence": [
+            {
+              "tactic": "credential_request",
+              "quote": "Read it to me so I can lock the attacker out.",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "authority",
+              "quote": "This is Jake from IT",
+              "strength": "hint",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "urgency",
+              "quote": "I've just sent a code to your phone.",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 15.7,
+      "msg": {
+        "type": "gate",
+        "data": {
+          "state": "locked",
+          "reason": "This call is asking for a code. Verify before you share anything.",
+          "release_in": 120
+        }
+      }
+    },
+    {
+      "at": 30.7,
+      "msg": {
+        "type": "gate",
+        "data": {
+          "state": "off",
+          "reason": "",
+          "release_in": 0
+        }
+      }
+    },
+    {
+      "at": 31.2,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "ended"
+        }
+      }
+    }
+  ]
+}
