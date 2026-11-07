@@ -7,23 +7,136 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- T1 placeholder. T2 replaces this with the panel in ui/dev/prototype.html. -->
-  <main class="panel">
-    <p id="conn" class="banner" role="status"></p>
-    <p id="hdr" class="meta"></p>
-    <h1 id="level">Not on a call</h1>
-    <p id="reason"></p>
-    <p id="verify" class="meta"></p>
-    <p id="gate"></p>
-    <div id="tail" class="meta"></div>
-    <p id="egress" class="meta"></p>
-    <div class="actions">
-      <button id="b-hangup" type="button">Hang up and call back</button>
-      <button id="b-colleague" type="button">Ask a colleague</button>
-      <button id="b-safe" type="button">Mark as safe</button>
-      <button id="b-end" type="button">End call</button>
+  <!-- Icons: one weight in every state. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-idle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/></symbol>
+    <symbol id="i-low" viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-watch" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 4.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></symbol>
+    <symbol id="i-danger" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-lock-laptop" viewBox="0 0 24 24"><path d="M4 16V7a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7v9M2 18.5h20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="10.5" width="6" height="4.5" rx="1" fill="currentColor"/><path d="M10.3 10.5V9.3a1.7 1.7 0 0 1 3.4 0v1.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <div id="panel" class="panel">
+    <!-- A: header -->
+    <header class="top">
+      <span id="badge" class="badge"><span class="dot"></span><span id="badge-text">Listening locally · nothing stored</span></span>
+      <span id="net" class="net"><span class="dot"></span><span id="net-text">Online</span><span id="pause" class="pause" hidden> · Pause on</span></span>
+    </header>
+
+    <div id="consent" class="consent">
+      <div class="consent-body">
+        Checks run on this laptop. Nothing is recorded.
+        <details>
+          <summary>Why?</summary>
+          <p>Callguard listens to this call on your laptop and warns you when it sounds like a pressure script. Audio and words are never saved or sent, and are deleted when the call ends. The only thing ever looked up online is the name of the organization the caller claims to be.</p>
+        </details>
+      </div>
+      <button id="consent-x" class="icon-btn" type="button" aria-label="Dismiss this note">×</button>
     </div>
-  </main>
+
+    <!-- B: banners -->
+    <p id="b-conn" class="banner" role="status" hidden>Connecting to Callguard…</p>
+    <p id="b-model" class="banner" role="status" hidden>Basic checks only, local model unavailable</p>
+
+    <main id="main" class="body">
+      <!-- C: status hero -->
+      <section id="hero" class="hero lv-idle" aria-live="polite">
+        <div class="ic"><svg width="26" height="26"><use id="hero-icon" href="#i-idle"/></svg></div>
+        <h1 id="hero-word">Not on a call</h1>
+        <p id="hero-sub" class="sub"><span id="hero-words">Callguard starts when a call does.</span><span id="hero-bar" class="bar" aria-hidden="true"></span></p>
+      </section>
+
+      <!-- D: why -->
+      <section id="why" class="sec" hidden aria-labelledby="why-h">
+        <h2 id="why-h">Why <button id="open-said" class="link" type="button">See what they said ›</button></h2>
+        <p id="reason" class="reason" tabindex="0"></p>
+        <div id="pills" class="pills"></div>
+        <blockquote id="quote" class="quote" hidden></blockquote>
+        <ul id="rules-broken" class="rules"></ul>
+      </section>
+
+      <!-- What to do -->
+      <section id="todo" class="sec" hidden aria-labelledby="todo-h">
+        <h2 id="todo-h">What to do</h2>
+        <div id="say" class="say" hidden><small>Say</small><q id="say-text"></q></div>
+        <div id="num" class="num" hidden>
+          <div><small id="num-src"></small><b id="num-phone"></b></div>
+          <button id="copy" class="pill-btn" type="button">Copy</button>
+        </div>
+        <p id="verify-note" class="note" hidden></p>
+        <p id="next-step" class="next"></p>
+      </section>
+
+      <!-- "See what they said": flagged lines for this call -->
+      <section id="said-view" class="sec" hidden aria-labelledby="said-h">
+        <h2 id="said-h"><button id="close-said" class="link back" type="button">‹ Back</button><span>Flagged lines this call</span></h2>
+        <ol id="flagged" class="said flagged"></ol>
+        <h2 id="said-latest-h">Latest</h2>
+        <ol id="said-latest" class="said"></ol>
+        <p class="note">Deleted when the call ends. Never saved or sent.</p>
+      </section>
+
+      <!-- E: latest lines (T4) -->
+      <section id="latest" class="sec" hidden>
+        <h2>Latest</h2>
+        <ol id="tail" class="said"></ol>
+      </section>
+    </main>
+
+    <!-- G: actions (T7/T10) -->
+    <div id="actions" class="actions" hidden>
+      <button id="show-warning" class="btn primary" type="button" hidden>Show the warning</button>
+    </div>
+
+    <!-- F: what left this device (T5). The empty state is the feature. -->
+    <footer id="priv" class="priv">
+      <section id="egress" class="egress" hidden aria-labelledby="egress-h">
+        <h2 id="egress-h">What left this device (<span id="egress-n">0</span>)</h2>
+        <div id="egress-empty" class="egress-empty">
+          <svg width="40" height="40" class="ok"><use href="#i-lock-laptop"/></svg>
+          <div><b>Nothing has left this device</b><p>Your call audio and words stay on this laptop.</p></div>
+        </div>
+        <div id="egress-list"></div>
+      </section>
+      <div id="priv-row" class="priv-row">
+        <button id="priv-btn" class="priv-btn" type="button" aria-expanded="false" aria-controls="egress">
+          <svg id="priv-ic" class="ok" width="14" height="14"><use id="priv-icon" href="#i-low"/></svg><span id="priv-text">Nothing has left this device</span><span id="priv-skipped" class="skipped"></span><span class="go" aria-hidden="true">›</span>
+        </button>
+        <button id="end-call" class="link end" type="button" hidden>End call</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Danger overlay (T6 / UI-4). Fills the Callguard window, never the screen. -->
+  <div id="overlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="ov-h" aria-describedby="ov-next" tabindex="-1" hidden>
+    <div class="ov-card">
+      <section class="hero lv-danger ov-hero">
+        <div class="ic"><svg width="28" height="28"><use href="#i-danger"/></svg></div>
+        <h1 id="ov-h">Stop and verify this call</h1>
+        <p class="sub"><span id="ov-words">Strong signs</span><span id="ov-bar" class="bar" aria-hidden="true"></span></p>
+        <!-- T7: lock line -->
+        <p id="ov-lock" class="ov-lock" hidden></p>
+      </section>
+      <div class="ov-body">
+        <p id="ov-claim" class="ov-claim" hidden></p>
+        <ul id="ov-tactics" class="ov-tactics" aria-label="Signs in this call"></ul>
+        <ul id="ov-rules" class="rules"></ul>
+        <p id="ov-verify" class="ov-verify" hidden></p>
+        <div id="ov-say" class="say" hidden><small>Say</small><q id="ov-say-text"></q></div>
+        <p id="ov-next" class="ov-next"></p>
+      </div>
+      <!-- Sticky foot: the way out and the privacy line are always on screen. -->
+      <div class="ov-foot">
+        <!-- T7: exits. For now one primary that only closes the overlay here. -->
+        <div id="ov-exits" class="ov-exits">
+          <button id="ov-hangup" class="btn primary" type="button" data-exit="hang_up">Hang up and call back</button>
+        </div>
+        <p id="ov-egress" class="ov-egress"></p>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>

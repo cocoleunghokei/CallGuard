@@ -1,0 +1,89 @@
+// All fixed UI wording for tactics. Coco signs off on changes here.
+// tests/ui/test_copy.py checks PLAIN against the design brief and the SAY
+// lines against prd.md 18.3.
+
+/** The brief's plain words for each tactic (accessible name, tooltips, details). */
+export const PLAIN = {
+  authority: "Claims to be an official or someone senior",
+  secrecy: "Asks you to keep it secret",
+  urgency: "Rushing you",
+  threat: "Threatens you or the firm",
+  credential_request: "Asks for a code or password",
+  bank_change: "Wants to change bank details",
+  bypass_approval: "Wants you to skip the usual approval",
+  payment_request: "Asks you to send money",
+  remote_access: "Asks you to install software or give screen access",
+  personal_data_request: "Asks for client or personal data",
+  inside_knowledge: "Uses real details to sound legitimate",
+};
+
+/** Short pill labels (prototype v3, signed off by Coco). */
+export const SHORT = {
+  authority: "Claims authority",
+  secrecy: "Keep it secret",
+  urgency: "Rushing you",
+  threat: "Threatens you",
+  credential_request: "Asks for a code",
+  bank_change: "Bank change",
+  bypass_approval: "Skip approval",
+  payment_request: "Send money",
+  remote_access: "Screen access",
+  personal_data_request: "Asks for data",
+  inside_knowledge: "Knows details",
+};
+
+/** Unknown tactic ids: the id with underscores replaced by spaces. */
+export function plainWords(tactic) {
+  return PLAIN[tactic] || String(tactic).replace(/_/g, " ");
+}
+
+export function shortWords(tactic) {
+  return SHORT[tactic] || String(tactic).replace(/_/g, " ");
+}
+
+/** "Say this" lines (prd.md 18.3, UI-15). */
+export const SAY = {
+  credential_request: "I don't share codes on calls. I'll contact IT myself.",
+  bank_change: "I'll call you back on the number we have on file.",
+  payment_request: "I can't send money from a call. I'll call you back on a number I already have.",
+  bypass_approval: "Every payment needs two approvals. I'll get the second one.",
+  remote_access: "I can't install anything a caller asks for. I'll check with IT.",
+  personal_data_request: "Please send that request in writing through the usual channel.",
+  secrecy: "I need to check this with a colleague before I do anything.",
+  threat: "I'll call your office back on its public number.",
+  urgency: "I can't do this right now. What's your callback number?",
+  authority: "Thanks. I'll call back on your organization's public number to confirm.",
+};
+
+/** Ask tactics first, then the rest (prd.md 18.3). "authority (alone)" falls out
+ *  of the order: any other listed tactic is picked before it. */
+const SAY_ORDER = [
+  "credential_request",
+  "bank_change",
+  "payment_request",
+  "bypass_approval",
+  "remote_access",
+  "personal_data_request",
+  "secrecy",
+  "threat",
+  "urgency",
+  "authority",
+];
+
+/** The sentence to say for a set of tactics, or null. */
+export function sayThis(tactics) {
+  const has = new Set(tactics || []);
+  for (const t of SAY_ORDER) {
+    if (!has.has(t)) continue;
+    if (t === "threat" && !has.has("authority")) continue; // "threat (with authority)"
+    return SAY[t];
+  }
+  return null;
+}
+
+/** Signs words from the 10-segment bar (never a percentage). */
+export function signsWords(segments) {
+  if (segments >= 8) return "Strong signs";
+  if (segments >= 4) return "Some signs";
+  return "No clear signs";
+}
