@@ -139,7 +139,7 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 | 2 | DET-1, DET-2, DET-3, DET-7 | Detection | The local model reads the script. This *is* "you can't tell the voice, you can tell the script," and the edge over every voice-based competitor |
 | 3 | DET-4 (5 P0 rules) | Detection | Firm rules: the one thing no competitor does, and the hook for the business buyer |
 | 4 | DET-6, SRV-7 | Detection, Server | Confidence score, guards and sticky danger. Without them, real calls false-alarm and the warning flickers on stage |
-| 5 | SRV-1, SRV-2 | Server | Pipeline and WebSocket that put the result on screen |
+| 5 | SRV-1, SRV-2, SRV-11 | Server | Pipeline and WebSocket that put the result on screen, in a native Mac window (no browser) that stays on top and goes full-screen on danger |
 | 6 | UI-2, UI-3, UI-4 | UI | Meter, watch note and danger overlay that explain themselves (tactic, the caller's words, rule, next step). The edge over Google's beep |
 | 7 | SRV-3, UI-6, SRV-12 | Server, UI | Egress log and privacy tests. Strategy #1 and the main track's "can you prove it" |
 | 8 | LEAD-4, SRV-6 (online) | Lead, Server | Wi-Fi-off run from a cold start, with models pre-downloaded. The live privacy proof |
@@ -157,16 +157,15 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 
 | Rank | IDs | Lane | Why it is a stretch, not must-ship |
 |---|---|---|---|
-| 1 | SRV-11 | Server | Always-on-top window that goes full-screen on danger. Biggest visual upgrade to the key moment; P0 fallback is the overlay filling the Callguard window plus sound and a notification |
-| 2 | SRV-10 | Server | Hard keyboard gate. A memorable beat ("try typing, nothing appears"), but needs Accessibility permission and native code; the soft gate already covers the idea |
-| 3 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
-| 4 | UI-13 | UI | Firm rules panel. Shows the rules exist; the rule already appears in the warnings |
-| 5 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
-| 6 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
-| 7 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
-| 8 | AUD-8 | Audio | iPhone calls answered on the Mac, only if the Continuity test passed. Strategy #4: one platform, no phone workarounds |
-| 9 | SRV-13 (real message) | Server | Sending to an actual contact instead of a local notification |
-| 10 | LEAD-8 | Lead | Contract tests |
+| 1 | SRV-10 | Server | Hard keyboard gate. A memorable beat ("try typing, nothing appears"), but needs Accessibility permission and native code; the soft gate already covers the idea |
+| 2 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
+| 3 | UI-13 | UI | Firm rules panel. Shows the rules exist; the rule already appears in the warnings |
+| 4 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
+| 5 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
+| 6 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
+| 7 | AUD-8 | Audio | iPhone calls answered on the Mac, only if the Continuity test passed. Strategy #4: one platform, no phone workarounds |
+| 8 | SRV-13 (real message) | Server | Sending to an actual contact instead of a local notification |
+| 9 | LEAD-8 | Lead | Contract tests |
 
 #### P2, scoped out
 
@@ -444,7 +443,7 @@ When the gate locks:
 |---|---|---|
 | Owner | UI (overlay and unlock) + Server (state) | Server (`callguard/server/gate_macos.py`) + UI (unlock) |
 | Mechanism | Danger overlay in the always-on-top window; focus moves to it; Enter/Esc do not dismiss; typed `SAFE` + 3 s hold for mark-safe | macOS Quartz event tap (`CGEventTapCreate`, key-down and key-up) swallows key events unless Callguard's own process is frontmost |
-| Needs | `pywebview` window on top (`SRV-11`); falls back to a browser window | Accessibility permission for the Python process; `pyobjc-framework-Quartz` |
+| Needs | `pywebview` window on top (`SRV-11`); `--browser` dev fallback only | Accessibility permission for the Python process; `pyobjc-framework-Quartz` |
 | If unavailable | Still shows overlay in the narrow window plus notification and sound | Falls back to soft gate; `status.gate` reports `"soft"` |
 
 ### 7.4 State machine
@@ -754,7 +753,7 @@ flowchart LR
     loop <--> t5
 ```
 
-pywebview needs the main thread on macOS, so `python -m callguard.server --window` starts uvicorn in a background thread and the window on the main thread. Without `--window` it runs uvicorn normally and you open `http://localhost:8000` in a browser (soft gate only).
+pywebview needs the main thread on macOS, so `python -m callguard.server` starts uvicorn in a background thread and the window on the main thread. The app never opens in a browser for users or the demo. For development only, `--browser` runs uvicorn normally so you can open `http://localhost:8000` (and `ui/dev/replay.html`) in a browser.
 
 ### 10.8 Branch and merge flow
 
@@ -889,7 +888,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 |---|---|---|---|
 | LEAD-1 | P0 | Apply contracts v2 ([12](#12-contract-changes-v2)) to `contracts.py` and AGENTS.md §3 | Merged to `main` before lanes build on new fields; lanes rebase |
 | LEAD-2 | P0 | Sign off `prompt.md` v1, `rules.json` wording, scenario scripts | Approved in review of DET-1, DET-4, DET-8 |
-| LEAD-3 | P0 | Collect deps from lanes' **Needs** into `requirements.txt` with pins (expected: `fastapi`, `uvicorn`, `sounddevice`, `numpy`, `faster-whisper`, `httpx` (egress only), `python-dotenv`, `pytest`; P1: `pywebview`, `pyobjc-framework-Quartz`, `pyobjc-framework-Cocoa`) | `pip install -r requirements.txt` works on the demo Mac |
+| LEAD-3 | P0 | Collect deps from lanes' **Needs** into `requirements.txt` with pins (expected: `fastapi`, `uvicorn`, `sounddevice`, `numpy`, `faster-whisper`, `httpx` (egress only), `python-dotenv`, `pytest`; `pywebview`, `pyobjc-framework-Cocoa`; P1: `pyobjc-framework-Quartz`) | `pip install -r requirements.txt` works on the demo Mac |
 | LEAD-4 | P0 | `hack1984/setup.md`: one-time setup (BlackHole, Ollama pull, Whisper model download to a local path, Accessibility permission) | A cold Mac reaches a Wi-Fi-off run by following it |
 | LEAD-5 | P0 | Organizer questions (pre-existing code, demo format), Tavily/Exa keys, friend's consent to use the story | Answers written in `background.md` |
 | LEAD-6 | P0 | Merge lanes at checkpoints, run the integration checklist ([14.3](#143-integration-checklist-per-checkpoint)) | Each checkpoint ticked in the plan |
@@ -934,7 +933,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 
 | ID | P | Requirement | Done when | Depends on |
 |---|---|---|---|---|
-| SRV-1 | P0 | `app.py` / `__main__.py`: FastAPI, serves `ui/` statically, `/ws` broadcasts `{type, data}` to all clients, accepts client messages | `python -m callguard.server` opens the page | — |
+| SRV-1 | P0 | `app.py` / `__main__.py`: FastAPI, serves `ui/` statically, `/ws` broadcasts `{type, data}` to all clients, accepts client messages | `python -m callguard.server --browser` serves the page | — |
 | SRV-2 | P0 | `pipeline.py`: consumes `stream_chunks()`; keeps the speaker-labelled rolling 30 s window; per caller chunk runs `check()` in a worker (and `quick_check` immediately once DET-5 lands, P1) (skip if busy, run once more after it finishes if new chunks arrived); pushes `transcript` and `check`; logs latency (no text) | Fake S1 replay pushes the expected sequence | Fakes of AUD/DET |
 | SRV-3 | P0 | `egress.py`: the only network module. `search(org)` stub, `online()` probe, `EgressEntry` recorded **before** each call and pushed as `egress`; `offline` status without raising. Plus `local_ollama_post()` for Detection (localhost only, asserts host) | Unit tests with a fake transport | — |
 | SRV-4 | P0 | `--fake SCRIPT` flag (and `--fake-speed`) using `audio.fake_stream()` | Full demo flow without a call | AUD-5 (or own fake) |
@@ -944,11 +943,11 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
 | SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. Soft mode needs no OS hooks | Unit tests for every transition | SRV-7 |
 | SRV-10 | P1 | `gate_macos.py`: Quartz event tap on a background CFRunLoop thread; swallow key events unless frontmost PID is ours; re-enable on timeout once; fall back to soft; **no key code access** | Manual test on the demo Mac; Coco line review | SRV-9 |
-| SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; go full-screen on gate lock/danger, restore on release | Window covers a browser on danger | SRV-1 |
+| SRV-11 | P0 | `window.py`: pywebview native window is the **default** (no browser, no address bar), titled "Callguard", always on top, narrow; go full-screen on gate lock/danger, restore on release. `--browser` skips the window (dev and tests only) | `python -m callguard.server` opens the Callguard window, never a browser tab; window covers a browser on danger | SRV-1 |
 | SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines | Green in `pytest` | — |
 | SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
 
-**Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned; P1 `pywebview`, `pyobjc-framework-Quartz`, `pyobjc-framework-Cocoa`; Tavily/Exa keys in `.env` on the demo Mac.
+**Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned, plus `pywebview` and `pyobjc-framework-Cocoa` (P0); P1 `pyobjc-framework-Quartz`; Tavily/Exa keys in `.env` on the demo Mac.
 
 ### 13.5 UI · `ui/`, `tests/ui/`
 
