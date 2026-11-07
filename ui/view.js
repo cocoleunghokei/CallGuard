@@ -4,6 +4,9 @@
 import { plainWords, shortWords, sayThis, signsWords } from "./copy.js";
 import { send } from "./ws.js";
 
+/** How long the verify line says "Checking…" before it gives up and hides. */
+export const VERIFY_WAIT_MS = 5000;
+
 const $ = (id) => document.getElementById(id);
 
 // Level: colour + icon + one word (colour is never alone).
@@ -238,7 +241,9 @@ function verifyInfo(state) {
   const status = v ? v.status || (v.phone ? "ok" : "error") : null;
   let note = "";
   let phone = "";
-  if (org && !v) note = `Checking ${org}'s public number…`;
+  const w = state.verifyWait;
+  const waited = !w || w.org !== org || Date.now() - w.since >= VERIFY_WAIT_MS;
+  if (org && !v && !waited) note = `Checking ${org}'s public number…`;
   else if (v && status === "ok" && v.phone) phone = v.phone;
   else if (v && status === "offline") note = "Offline, search skipped. Use the number on file.";
   else if (v) note = "Couldn't find a public number, use the one on file.";

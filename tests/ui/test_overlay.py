@@ -155,3 +155,16 @@ def test_same_tactics_do_not_reopen(ui_server, browser):
     assert f.is_visible("#overlay")
     assert f.evaluate("window.__tones") == 1, "reopening by hand is not a new alert"
     page.close()
+
+
+def test_verify_line_hides_when_no_lookup_arrives(ui_server, browser):
+    """S3/S4 claim internal identities the Server never searches: "Checking…" must not stay forever."""
+    page = browser.new_page()
+    r = Replay(page, ui_server, "s3_it_code")
+    f = r.frame
+    r.until(is_danger)
+    r.one()
+    assert "Checking" in f.inner_text("#ov-verify")
+    page.wait_for_timeout(5300)
+    assert not f.is_visible("#ov-verify")
+    page.close()

@@ -8,7 +8,7 @@
 // current check's evidence quotes. Both are deleted on `call ended`.
 
 import { connect } from "./ws.js";
-import { render, bindView } from "./view.js";
+import { render, bindView, VERIFY_WAIT_MS } from "./view.js";
 
 const TAIL_LINES = 3;
 
@@ -22,6 +22,10 @@ export const state = {
   check: null, // latest ScamCheck
   verify: null,
   gate: null, // {state, reason, release_in} while not "off"
+  // Verify line: when we started waiting for the claimed org's number. The
+  // Server never looks up some identities (an internal team, a partner), so
+  // the "Checking…" line hides after VERIFY_WAIT_MS with no answer.
+  verifyWait: null, // {org, since}
   egress: [], // EgressEntry[] + {seq, call}, newest first, kept for the session (org names only)
   // Danger overlay (T6). Sticky: opens on danger, closes only on call end, mark
   // safe, a release (T7), or the local "Hang up and call back" button.
@@ -53,6 +57,12 @@ const handlers = {
   },
   check(data) {
     state.check = data || null;
+    const org = data && data.claimed_identity;
+    const shown = data && (data.risk === "watch" || data.risk === "danger"); // the verify line is on screen
+    if (org && shown && (!state.verifyWait || state.verifyWait.org !== org)) {
+      state.verifyWait = { org, since: Date.now() };
+      setTimeout(() => render(state), VERIFY_WAIT_MS + 50);
+    }
     if (state.inCall && data && data.risk === "danger") openOverlayFor(data.tactics || []);
   },
   verify(data) {
@@ -89,6 +99,7 @@ function wipeCall() {
   state.tail.length = 0;
   state.check = null;
   state.verify = null;
+  state.verifyWait = null;
   state.gate = null;
   state.ui.expanded = null;
   state.ui.view = "panel";
