@@ -1,0 +1,37 @@
+[
+  {
+    "id": "no_bank_changes_by_phone",
+    "text": "We never change vendor or client bank details because of a phone call. Call back on the number on file.",
+    "tactics": ["bank_change"],
+    "keywords": ["new account", "switched banks", "changed banks", "new routing number"],
+    "enabled": true
+  },
+  {
+    "id": "it_never_asks_for_codes",
+    "text": "IT will never ask you for a code or password.",
+    "tactics": ["credential_request"],
+    "keywords": ["read me the code", "read the code to me", "tell me the code", "what's your password"],
+    "enabled": true
+  },
+  {
+    "id": "wires_need_two_approvals",
+    "text": "Every wire needs two approvals, no exceptions, no matter who asks.",
+    "tactics": ["bypass_approval"],
+    "keywords": ["skip the second sign-off", "skip the approval", "i'll approve it when"],
+    "enabled": true
+  },
+  {
+    "id": "government_never_calls_for_payment_or_bank_details",
+    "text": "Government agencies do not ask for payment or bank details by phone.",
+    "tactics": ["payment_request", "bank_change", "personal_data_request"],
+    "requires": ["authority"],
+    "enabled": true
+  },
+  {
+    "id": "never_keep_calls_secret",
+    "text": "No one at this firm will ask you to keep a call secret from your colleagues.",
+    "tactics": ["secrecy"],
+    "keywords": ["do not tell your colleagues", "don't tell your colleagues", "keep this between us"],
+    "enabled": true
+  }
+]
