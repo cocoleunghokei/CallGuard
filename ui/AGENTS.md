@@ -27,8 +27,5 @@ A local web page (`ui/index.html` plus plain JS and CSS, no build step) served b
 - Never show or keep more transcript than the current call needs
 - No external fonts, CDNs or analytics. The page must work with the Wi-Fi off
 
-## Requests from other lanes
-- (none yet)
-
 ## Status
 - (none yet)

@@ -1,11 +1,12 @@
 # AGENTS.md: Callguard (HACK1984)
 
-Every coding agent and every teammate reads this file first, then the `AGENTS.md` in the lane they work in.
+Every coding agent reads this file first, then the `AGENTS.md` of its lane.
+**Team:** Coco is the only human and acts as Lead. Every other lane is run by a coding agent in its own git worktree. Agents never merge into `main`; Coco reviews and merges.
 Why we're building this: [hack1984/background.md](hack1984/background.md). What and when: [hack1984/project-plan.md](hack1984/project-plan.md).
 
 **Callguard** is a Mac desktop app. It listens to work calls, transcribes them on the laptop, detects scam scripts, checks them against the firm's own rules, and warns the user. **Everything runs locally.**
 
-Code freeze: **Sun Nov 8, 11:00 ET**. After that, only the Lead merges.
+Code freeze: **Sun Nov 8, 11:00 ET**.
 
 ---
 
@@ -13,13 +14,13 @@ Code freeze: **Sun Nov 8, 11:00 ET**. After that, only the Lead merges.
 
 Each lane owns one folder. Work only in your own lane.
 
-| Lane | Folder | Owner (plan role) | Branch | Delivers |
+| Lane | Folder | Run by | Branch | Delivers |
 |---|---|---|---|---|
-| Audio | `callguard/audio/` | Audio + transcription | `lane/audio` | Call audio in, `TranscriptChunk`s out |
-| Detection | `callguard/detection/` | Model + backend (Lead owns the prompt and rules text) | `lane/detection` | Transcript in, `ScamCheck` out |
-| Server | `callguard/server/` | Model + backend | `lane/server` | Pipeline, WebSocket, search lookup, egress log |
-| UI | `ui/` | Screen + demo | `lane/ui` | Risk meter, warnings, "what left this device" log |
-| Lead | `hack1984/`, `AGENTS.md`, `callguard/shared/` | Lead / product (Coco) | `lane/lead` | Plan, demo script, test scripts, contracts |
+| Audio | `callguard/audio/` | Agent + Coco (hardware tests need hands on the Mac) | `lane/audio` | Call audio in, `TranscriptChunk`s out |
+| Detection | `callguard/detection/` | Agent (Coco signs off on the prompt and rules text) | `lane/detection` | Transcript in, `ScamCheck` out |
+| Server | `callguard/server/` | Agent | `lane/server` | Pipeline, WebSocket, search lookup, egress log |
+| UI | `ui/` | Agent | `lane/ui` | Risk meter, warnings, "what left this device" log |
+| Lead | `hack1984/`, `AGENTS.md`, `callguard/shared/`, `requirements.txt` | Coco | `main` | Plan, demo script, test scripts, contracts |
 
 Each lane folder has its own `AGENTS.md` with its tasks, its rules and a **Status** section.
 
@@ -33,14 +34,14 @@ Each lane folder has its own `AGENTS.md` with its tasks, its rules and a **Statu
 5. The model runs on Ollama at `localhost`. Never call a cloud LLM from app code.
 
 **Collaboration**
-6. Edit only your own lane's folder. If you need something from another lane, add it to that lane's **Requests** list in its `AGENTS.md` and to your own Status.
-7. The contracts in `callguard/shared/contracts.py` and section 3 below are the only shared interfaces. To change them, the Lead edits both, then posts a note in every lane's Status. Adding a new optional field is fine; never rename or remove one.
+6. Edit only your own lane's folder (and `tests/<lane>/`). If you need something from another lane, write it under **Needs** in your own Status. Coco passes it on. Never edit another lane's files, including its `AGENTS.md`.
+7. The contracts in `callguard/shared/contracts.py` and section 3 below are the only shared interfaces. Agents never edit them: write the change you need under **Needs**, and Coco updates both. Adding a new optional field is fine; never rename or remove one.
 8. Until another lane is ready, build against fakes of its contract (a fake transcript stream, a fixed `ScamCheck`). Never block on another lane.
-9. Small commits and merges: pull with `git pull --rebase origin main`, then merge into `main` at least every 2 hours. Never force-push `main`.
+9. Commit small and often on your lane branch. Before starting a task, run `git rebase main` to pick up the other lanes' merged work. Never commit to, merge into or push `main`; Coco does that.
 10. Never commit API keys. Keys go in `.env` (ignored by git): `TAVILY_API_KEY`, `EXA_API_KEY`.
 
 **Code**
-11. Python 3.11+. Dependencies go in `requirements.txt` (append only, one per line, pinned with `==`).
+11. Python 3.11+. To add a dependency, put it under **Needs** with its pinned version (`pkg==x.y`); Coco adds it to `requirements.txt`.
 12. Tests go in `tests/<lane>/`, and the whole suite runs with `pytest`. Tests must pass without network, without Ollama and without audio devices, so use fakes.
 13. Keep it simple. This is a 24-hour demo: no extra frameworks, no abstraction layers we don't need yet.
 
@@ -99,11 +100,11 @@ Whoever first makes one of these work, or changes one, updates this section.
 
 ## 5. How to report status
 
-At the end of every work block, and whenever you're blocked, update the **Status** section in **your own lane's** `AGENTS.md` (never another lane's):
+After every task, and whenever you're blocked, add a line to the **Status** section of **your own lane's** `AGENTS.md`, then commit:
 ```
-- [Sat 16:40] Done: … | Next: … | Blocked on: … (lane)
+- [Sat 16:40] Done: … | Next: … | Needs: … (from which lane, or from Coco)
 ```
-Before starting work, read the Status of every lane you depend on.
+Then stop and tell Coco what's ready to review. Before starting work, read the Status of every lane you depend on (on `main`).
 
 ## 6. Checkpoints (from the plan)
 

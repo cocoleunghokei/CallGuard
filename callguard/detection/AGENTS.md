@@ -1,7 +1,7 @@
 # Lane: Detection (scam check + firm rules)
 
 Read the root [AGENTS.md](../../AGENTS.md) first. You own `callguard/detection/` and `tests/detection/` only.
-The Lead owns the wording of `prompt.md` and `rules.json`. Others may suggest changes under Requests.
+Coco owns the wording of `prompt.md` and `rules.json`. Coco signs off on changes to them.
 
 ## Delivers
 `check(transcript: str, rules: list[Rule]) -> ScamCheck`, where `transcript` is the rolling last ~30 s of text. It always returns a valid `ScamCheck`, even if the model fails, in which case it returns `risk: "low"` with a reason saying the check failed.
@@ -23,9 +23,6 @@ The Lead owns the wording of `prompt.md` and `rules.json`. Others may suggest ch
 - Localhost Ollama only. No cloud models
 - Unit tests use a fake model response. Only the eval script needs Ollama running
 - Warnings say "verify first," never "this is fraud"
-
-## Requests from other lanes
-- (none yet)
 
 ## Status
 - (none yet)

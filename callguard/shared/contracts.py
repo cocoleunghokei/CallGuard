@@ -1,4 +1,4 @@
-"""Shared contracts between lanes. Owned by the Lead.
+"""Shared contracts between lanes. Owned by Coco (Lead). Agents never edit this file.
 
 Change rules (root AGENTS.md, guardrail 7): adding an optional field is fine;
 never rename or remove one. Update AGENTS.md section 3 in the same commit.

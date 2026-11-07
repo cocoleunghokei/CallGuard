@@ -21,8 +21,5 @@ Read the root [AGENTS.md](../../AGENTS.md) first. You own `callguard/audio/` and
 - Never print full transcripts
 - Target: words appear within ~3 s of being spoken
 
-## Requests from other lanes
-- (none yet)
-
 ## Status
 - (none yet)

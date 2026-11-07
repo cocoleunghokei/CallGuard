@@ -25,8 +25,5 @@ audio.stream_chunks() → rolling 30 s transcript → detection.check() → WebS
 - Localhost Ollama traffic doesn't go through `egress.py`, but nothing else may skip it
 - Never send transcript text to search, only `claimed_identity`
 
-## Requests from other lanes
-- (none yet)
-
 ## Status
 - (none yet)
