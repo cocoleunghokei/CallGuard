@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import socket
 import threading
 import time
@@ -100,6 +101,70 @@ def online(force: bool = False) -> bool:
     result = _probe()
     _online_cache = (now, result)
     return result
+
+
+# ---------------------------------------------------------------- safe_org (prd §11.1)
+MAX_ORG_WORDS = 6
+MAX_ORG_CHARS = 60
+ORG_WORDS = {
+    "department", "dept", "agency", "bank", "inc", "llc", "llp", "ltd", "corp", "corporation",
+    "company", "co", "office", "service", "services", "police", "court", "bureau", "administration",
+    "commission", "authority", "ministry", "treasury", "revenue", "security", "justice", "university",
+    "group", "partners", "federal", "national", "state", "county", "city", "government",
+    "support", "microsoft", "apple", "google", "amazon", "paypal",
+}
+PERSON_TITLES = {
+    "agent", "officer", "detective", "sergeant", "sgt", "inspector", "mr", "mrs", "ms", "miss",
+    "dr", "sir", "madam", "lieutenant", "captain", "special",
+}
+_BAD_CHARS = re.compile(r"[0-9@,;:/\\|<>{}\[\]#$%*=+?!\"]")
+_DOMAIN = re.compile(r"\b[\w-]+\.(?:com|org|net|gov|edu|io|co|us|uk|info|biz|ai|app)\b", re.I)
+_WS = re.compile(r"\s+")
+
+
+def _norm(text: str) -> str:
+    return _WS.sub(" ", text).strip().lower()
+
+
+def _contains_phrase(haystack: str, needle: str) -> bool:
+    return re.search(r"(?<!\w)" + re.escape(needle) + r"(?!\w)", haystack) is not None
+
+
+def never_search_from_env() -> list[str]:
+    """CALLGUARD_NEVER_SEARCH: comma-separated names (optional; P1 moves this to the UI)."""
+    raw = os.environ.get("CALLGUARD_NEVER_SEARCH", "")
+    return [n.strip() for n in raw.split(",") if n.strip()]
+
+
+def org_refusal(org: Any, caller_lines: list[str], never_search: list[str] | None = None) -> str:
+    """Why `org` may not be searched, or "" if it may. Reasons never contain the name."""
+    if not isinstance(org, str) or not org.strip():
+        return "empty"
+    name = _WS.sub(" ", org).strip()
+    low = name.lower()
+    if _BAD_CHARS.search(name) or "http" in low or "www." in low or _DOMAIN.search(name):
+        return "digits, links or punctuation"
+    words = name.split(" ")
+    if len(words) > MAX_ORG_WORDS or len(name) > MAX_ORG_CHARS:
+        return "too long"
+    if not _contains_phrase(_norm("\n".join(caller_lines)), low):
+        return "not said by the caller"
+    for blocked in never_search or []:
+        b = _norm(blocked)
+        if b and (_contains_phrase(low, b) or _contains_phrase(b, low)):
+            return "on the never-search list"
+    bare = [w.strip(".'-()&").lower() for w in words]
+    if any(w in PERSON_TITLES for w in bare):
+        return "looks like a person"
+    is_org_word = [w in ORG_WORDS or (raw.isupper() and 2 <= len(raw) <= 5)
+                   for w, raw in zip(bare, (x.strip(".'-()&") for x in words))]
+    if 2 <= len(words) <= 3 and all(w[:1].isupper() for w in words) and not any(is_org_word):
+        return "looks like a person"
+    return ""
+
+
+def safe_org(org: Any, caller_lines: list[str], never_search: list[str] | None = None) -> bool:
+    return org_refusal(org, caller_lines, never_search) == ""
 
 
 # ---------------------------------------------------------------- search
