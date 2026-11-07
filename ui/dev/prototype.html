@@ -5,23 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Callguard panel prototype</title>
 <!--
-  Static visual mock for sign-off (not the app). Every panel state at 360 px,
-  light row and dark row. No JS, no network. Copy and data are from the
-  fixtures in ui/dev/fixtures/ (S1 government call).
+  Static visual mock for sign-off (v2, not the app). Every panel state at 360 px,
+  light row and dark row. No network. Data from ui/dev/fixtures/ (S1 call).
+  v2 rules: the status block is the only loud thing; one sentence per state;
+  everything else is one muted line.
 -->
 <style>
-/* ---------- tokens (these move to ui/styles.css in T2) ---------- */
+/* ---------- tokens (move to ui/styles.css in T2) ---------- */
 :root, .light {
-  --bg: #f4f4f3;
+  --bg: #f6f6f5;
   --surface: #ffffff;
-  --surface-2: #f7f7f6;
   --text: #1c1c1e;
   --muted: #5d5d63;
-  --border: #dedee1;
-  --low: #1d7a3b;      --low-tint: #e8f5ec;
-  --watch: #8a5800;    --watch-tint: #fdf3dd;
-  --danger: #b3261e;   --danger-tint: #fcebea;  --danger-band: #b3261e;
-  --idle: #6b6b70;     --idle-tint: #efeff0;
+  --faint: #8a8a90;      /* decoration only, never text */
+  --border: #e2e2e5;
+  --low: #1d7a3b;      --low-tint: #e9f5ed;
+  --watch: #8a5800;    --watch-tint: #fdf1d6;  --watch-edge: #e9b949;
+  --danger: #b3261e;   --danger-tint: #fcebea; --danger-band: #b3261e;
+  --idle: #6b6b70;     --idle-tint: #ededee;
   --on-danger: #ffffff;
   --primary: #1f5fbf;  --on-primary: #ffffff;
   --focus: #0a64d6;
@@ -31,15 +32,15 @@
   color-scheme: light;
 }
 .dark {
-  --bg: #141416;
-  --surface: #1e1e21;
-  --surface-2: #26262a;
+  --bg: #161618;
+  --surface: #1f1f22;
   --text: #f2f2f3;
   --muted: #a6a6ad;
-  --border: #36363c;
+  --faint: #5c5c62;
+  --border: #303035;
   --low: #5cc77f;      --low-tint: #17291d;
-  --watch: #f0b440;    --watch-tint: #33270f;
-  --danger: #ff7a70;   --danger-tint: #3a1917;  --danger-band: #b8312a;
+  --watch: #f0b440;    --watch-tint: #2f240e;  --watch-edge: #8a6418;
+  --danger: #ff7a70;   --danger-tint: #3a1917; --danger-band: #b8312a;
   --idle: #9c9ca3;     --idle-tint: #2a2a2e;
   --on-danger: #ffffff;
   --primary: #5b9bff;  --on-primary: #0b1a33;
@@ -47,7 +48,7 @@
   color-scheme: dark;
 }
 
-/* ---------- page that holds the mocks ---------- */
+/* ---------- page holding the mocks ---------- */
 * { box-sizing: border-box; }
 body { margin: 0; font-family: var(--font); background: #d9d9dc; color: #1c1c1e; }
 .page-head { padding: 24px 24px 8px; }
@@ -56,305 +57,233 @@ body { margin: 0; font-family: var(--font); background: #d9d9dc; color: #1c1c1e;
 .row { padding: 16px 24px 32px; }
 .row > h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #4a4a50; margin: 0 0 12px; }
 .row.dark-row { background: #0d0d0f; }
-.row.dark-row > h2 { color: #b4b4ba; }
+.row.dark-row > h2, .dark-row .cell > .label { color: #b4b4ba; }
 .strip { display: flex; gap: 24px; align-items: flex-start; overflow-x: auto; padding-bottom: 8px; }
-.cell { flex: 0 0 auto; }
 .cell > .label { font-size: 12px; font-weight: 600; color: #4a4a50; margin-bottom: 6px; }
-.dark-row .cell > .label { color: #b4b4ba; }
 
-/* ---------- the panel (360 px window) ---------- */
+/* ---------- window ---------- */
 .win {
-  width: 360px; min-height: 640px; position: relative; overflow: hidden;
+  width: 360px; height: 600px; position: relative; overflow: hidden;
   background: var(--bg); color: var(--text); font: 13px/1.4 var(--font);
   border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.18);
   display: flex; flex-direction: column;
 }
-.titlebar { height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
-.titlebar i { width: 11px; height: 11px; border-radius: 50%; background: var(--border); display: block; }
-.titlebar span { margin-left: auto; margin-right: auto; font-size: 12px; color: var(--muted); padding-right: 40px; }
+.titlebar { flex: none; height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-bottom: 1px solid var(--border); }
+.titlebar i { width: 11px; height: 11px; border-radius: 50%; background: var(--border); }
+svg { display: block; }
 
-/* A header */
-.hdr { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); padding: var(--s3) var(--s4); background: var(--surface); border-bottom: 1px solid var(--border); }
-.badge { display: flex; align-items: center; gap: var(--s2); font-weight: 600; }
-.badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--low); }
-.badge small { font-weight: 400; color: var(--muted); font-size: 12px; }
-.badge.off .dot { background: var(--idle); }
-.net { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.net .dot { width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--low); }
-.net.offline .dot { border-color: var(--idle); background: transparent; }
-.net.offline { color: var(--text); font-weight: 600; }
+/* A: one muted line */
+.hdr { flex: none; display: flex; justify-content: space-between; align-items: center; padding: var(--s2) var(--s4); font-size: 12px; color: var(--muted); }
+.hdr .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--low); margin-right: 6px; vertical-align: 1px; }
+.hdr .ring { display: inline-block; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--low); margin-right: 6px; vertical-align: 0; }
+.hdr .offline { color: var(--text); font-weight: 600; }
+.hdr .offline .ring { border-color: var(--idle); }
 
-.consent { display: flex; gap: var(--s2); align-items: flex-start; padding: var(--s2) var(--s4); font-size: 12px; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); }
-.consent a { color: var(--primary); text-decoration: underline; }
-.consent .x { margin-left: auto; border: 0; background: none; color: var(--muted); font-size: 14px; line-height: 1; padding: 0 2px; }
+.consent { flex: none; margin: 0 var(--s4) var(--s2); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: var(--s2); }
+.consent button { border: 0; background: none; color: var(--muted); font-size: 14px; line-height: 1; padding: 0; }
 
-/* B banners */
-.banner { margin: var(--s3) var(--s4) 0; padding: var(--s2) var(--s3); border-radius: var(--r-sm); font-size: 12px; display: flex; gap: var(--s2); align-items: center; }
-.banner.watch { background: var(--watch-tint); color: var(--text); border: 1px solid var(--watch); }
-.banner.watch b { color: var(--watch); }
-.banner.idle { background: var(--idle-tint); color: var(--text); border: 1px solid var(--border); }
+.banner { flex: none; margin: 0 var(--s4) var(--s2); padding: 6px var(--s3); border-radius: var(--r-sm); background: var(--idle-tint); font-size: 12px; display: flex; gap: var(--s2); align-items: center; }
 
-.body { padding: var(--s3) var(--s4) var(--s4); display: flex; flex-direction: column; gap: var(--s3); flex: 1; }
+/* C: the hero. The only loud thing on the panel. */
+.hero { flex: none; margin: 0 var(--s3); padding: var(--s4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); }
+.hero .top { display: flex; align-items: center; gap: var(--s3); }
+.hero .ico { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.hero .word { font-size: 22px; font-weight: 700; line-height: 1.1; }
+.hero .top > div:last-child { flex: 1; }
+.hero .how { white-space: nowrap; margin-top: 4px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: var(--s2); }
+.bar { display: inline-flex; gap: 3px; }
+.bar i { width: 14px; height: 6px; border-radius: 3px; background: var(--border); }
+.hero .act { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--border); font-size: 15px; font-weight: 600; line-height: 1.35; }
+.hero .act .num { white-space: nowrap; }
+.hero .act small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }
 
-/* C meter */
-.meter { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3); display: grid; grid-template-columns: 36px 1fr; column-gap: var(--s3); align-items: center; }
-.meter .ico { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 700; }
-.meter .word { font-size: 15px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
-.meter .how { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: var(--s2); margin-top: 2px; }
-.bar { display: inline-flex; gap: 2px; }
-.bar i { width: 9px; height: 8px; border-radius: 2px; background: var(--border); display: block; }
-.lvl-idle .ico { background: var(--idle-tint); color: var(--idle); }
-.lvl-idle .word { color: var(--idle); }
-.lvl-low .ico { background: var(--low-tint); color: var(--low); }
-.lvl-low .word { color: var(--low); }
-.lvl-low .bar i.on { background: var(--low); }
-.lvl-watch { border-color: var(--watch); background: var(--watch-tint); }
-.lvl-watch .ico { background: var(--surface); color: var(--watch); }
-.lvl-watch .word { color: var(--watch); }
-.lvl-watch .bar i.on { background: var(--watch); }
-.lvl-watch .how { color: var(--text); }
+.h-idle .ico { background: var(--idle-tint); color: var(--idle); }
+.h-idle .word { color: var(--idle); }
+.h-low .ico { background: var(--low-tint); color: var(--low); }
+.h-low .word { color: var(--text); }
+.h-low .bar i.on { background: var(--low); }
+.h-watch { background: var(--watch-tint); border-color: var(--watch-edge); }
+.h-watch .ico { background: var(--watch); color: var(--watch-tint); }
+.h-watch .word { color: var(--watch); }
+.h-watch .how { color: var(--text); }
+.h-watch .bar i { background: var(--watch-edge); opacity: .35; }
+.h-watch .bar i.on { background: var(--watch); opacity: 1; }
+.h-watch .act { border-top-color: var(--watch-edge); }
 
-/* D watch note */
-.note { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
-.note .reason { margin: 0; }
-.note .reason.grey { color: var(--muted); }
+/* D: chips and quiet actions, under the hero */
+.under { flex: none; padding: var(--s3) var(--s4) 0; display: flex; flex-direction: column; gap: var(--s3); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { font: inherit; font-size: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 999px; padding: 3px 10px; display: inline-flex; gap: 6px; align-items: center; }
-.chip .caret { color: var(--muted); font-size: 10px; }
-.chip[aria-expanded="true"] { border-color: var(--watch); background: var(--watch-tint); }
-.quote { margin: 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--watch); background: var(--surface-2); font-style: italic; border-radius: 0 var(--r-sm) var(--r-sm) 0; }
-.quote small { display: block; font-style: normal; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
-.rule { font-size: 12px; display: flex; gap: 6px; }
-.rule b { white-space: nowrap; }
-.verify { font-size: 12px; display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; padding-top: var(--s2); border-top: 1px solid var(--border); }
-.verify .num { white-space: nowrap; font-weight: 700; font-size: 13px; }
-.verify .src { color: var(--muted); }
-.verify.off { color: var(--text); }
-.next { font-size: 13px; font-weight: 600; }
-.next::before { content: "→ "; color: var(--muted); }
+.chip { font: inherit; font-size: 12px; min-height: 28px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 4px 12px; }
+.links { display: flex; gap: var(--s4); }
+.link { font: inherit; font-size: 12px; border: 0; background: none; color: var(--primary); padding: 4px 0; }
 
-.side-actions { display: flex; gap: var(--s2); }
-.btn { font: inherit; font-size: 13px; border-radius: var(--r-sm); padding: 7px 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
-.btn.quiet { flex: 1; }
+.spacer { flex: 1; }
 
-/* E transcript tail */
-.sect-h { font-size: 12px; color: var(--muted); font-weight: 600; margin: 0 0 6px; display: flex; justify-content: space-between; }
-.tail { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3); }
-.tail p { margin: 0 0 4px; display: grid; grid-template-columns: 48px 1fr; gap: var(--s2); }
-.tail p:last-child { margin-bottom: 0; }
-.tail .who { font-size: 12px; color: var(--muted); font-weight: 600; }
-.tail .you .who { color: var(--primary); }
-.tail .empty { display: block; color: var(--muted); }
+/* E + F: bottom rail, one line each */
+.rail { flex: none; border-top: 1px solid var(--border); }
+.rail-row { display: flex; align-items: center; gap: var(--s2); padding: 10px var(--s4); font-size: 12px; color: var(--muted); min-height: 40px; }
+.rail-row + .rail-row { border-top: 1px solid var(--border); }
+.rail-row .who { font-weight: 600; color: var(--muted); flex: none; }
+.rail-row .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail-row.eg { color: var(--text); }
+.rail-row.eg .ok { color: var(--low); flex: none; }
+.rail-row.eg .up { color: var(--muted); flex: none; }
+.rail-row.eg b { font-weight: 600; }
+.rail-row .go { margin-left: auto; color: var(--muted); }
+.rail-row.flash { background: var(--idle-tint); }
 
-/* F egress */
-.egress { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
-.egress .sect-h { padding: var(--s2) var(--s3); margin: 0; background: var(--surface-2); border-bottom: 1px solid var(--border); color: var(--text); }
-.egress .sect-h.flash { background: var(--watch-tint); }
-.egress .count { color: var(--muted); font-weight: 400; }
-.eg-empty { padding: var(--s4) var(--s3); display: grid; grid-template-columns: 28px 1fr; gap: var(--s2); align-items: center; }
-.eg-empty .shield { width: 28px; height: 28px; border-radius: 50%; background: var(--low-tint); color: var(--low); display: grid; place-items: center; font-weight: 700; }
-.eg-empty b { display: block; }
-.eg-empty span { font-size: 12px; color: var(--muted); }
-.eg-row { padding: var(--s2) var(--s3); font-size: 12px; display: grid; grid-template-columns: auto 1fr auto; gap: var(--s2); align-items: baseline; border-bottom: 1px solid var(--border); }
-.eg-row:last-child { border-bottom: 0; }
-.eg-row time { color: var(--muted); font-variant-numeric: tabular-nums; }
-.eg-row .sent { font-weight: 600; }
-.eg-row .dest { color: var(--muted); display: block; font-weight: 400; }
-.st { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; }
-.st.ok { color: var(--low); }
-.st.offline { color: var(--idle); }
-.eg-foot { padding: var(--s2) var(--s3); font-size: 12px; color: var(--muted); background: var(--surface-2); border-top: 1px solid var(--border); }
-
-/* ---------- danger overlay (covers the whole window) ---------- */
-.ovl { position: absolute; inset: 28px 0 0 0; background: var(--surface); display: flex; flex-direction: column; }
-.ovl-head { background: var(--danger-band); color: var(--on-danger); padding: var(--s4); }
-.ovl-head h3 { margin: 0; font-size: 22px; line-height: 1.15; display: flex; gap: var(--s2); align-items: flex-start; }
-.ovl-head .how { margin-top: var(--s2); font-size: 12px; display: flex; gap: var(--s2); align-items: center; }
-.ovl-head .bar i { background: rgba(255,255,255,.35); }
-.ovl-head .bar i.on { background: #fff; }
-.ovl-body { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); overflow: auto; flex: 1; }
-.claims { font-size: 13px; }
-.claims b { font-size: 15px; display: block; }
-.tlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
-.tlist li { padding-left: var(--s3); border-left: 3px solid var(--danger); }
-.tlist b { display: block; }
-.tlist q { color: var(--muted); font-style: italic; }
-.rules-box { background: var(--danger-tint); border-radius: var(--r-sm); padding: var(--s2) var(--s3); font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
-.realnum { border: 1px solid var(--border); border-radius: var(--r-sm); padding: var(--s2) var(--s3); display: flex; justify-content: space-between; align-items: center; }
-.realnum small { color: var(--muted); font-size: 12px; display: block; }
-.realnum .n { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.gate { background: var(--surface-2); border: 1px dashed var(--danger); border-radius: var(--r-sm); padding: var(--s2) var(--s3); font-size: 12px; display: flex; gap: var(--s2); }
-.gate time { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-.exits { border-top: 1px solid var(--border); padding: var(--s3) var(--s4) var(--s4); display: flex; flex-direction: column; gap: var(--s2); background: var(--surface); }
-.btn.primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); font-weight: 700; font-size: 15px; padding: 11px 14px; width: 100%; }
-.btn.secondary { width: 100%; padding: 9px 14px; }
+/* ---------- danger overlay ---------- */
+.ovl { position: absolute; inset: 28px 0 0 0; background: var(--bg); display: flex; flex-direction: column; }
+.band { flex: none; background: var(--danger-band); color: var(--on-danger); padding: var(--s4); }
+.band .t { display: flex; align-items: center; gap: var(--s2); font-size: 26px; font-weight: 700; line-height: 1.1; }
+.band .how { margin-top: var(--s2); font-size: 12px; display: flex; gap: var(--s2); align-items: center; }
+.band .bar i { background: rgba(255,255,255,.35); }
+.band .bar i.on { background: #fff; }
+.ovl-body { flex: 1; padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
+.why1 { font-size: 15px; font-weight: 600; line-height: 1.35; margin: 0; }
+.numcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3); }
+.numcard small { font-size: 12px; color: var(--muted); display: block; }
+.numcard .n { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.lock { font-size: 12px; display: flex; align-items: center; gap: var(--s2); color: var(--text); }
+.lock time { font-weight: 700; font-variant-numeric: tabular-nums; }
+.btn { font: inherit; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); width: 100%; padding: 10px 14px; font-size: 14px; }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 16px; padding: 13px 14px; }
 .focus { outline: 2px solid var(--focus); outline-offset: 2px; }
-.safe { display: grid; grid-template-columns: 1fr auto; gap: var(--s2); align-items: center; margin-top: var(--s1); }
-.safe label { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
-.safe input { font: inherit; padding: 6px 8px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); text-transform: uppercase; letter-spacing: .1em; width: 100%; }
-.hold { position: relative; overflow: hidden; font-size: 12px; white-space: nowrap; }
-.hold .fill { position: absolute; inset: 0 auto 0 0; width: 40%; background: var(--low-tint); }
-.hold span { position: relative; }
+.ovl-foot { flex: none; padding: 0 var(--s4) var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
+.disclose { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; padding: var(--s2) 0; border-top: 1px solid var(--border); }
+.safe { display: flex; gap: var(--s2); align-items: center; font-size: 12px; color: var(--muted); }
+.safe input { font: inherit; font-size: 12px; width: 64px; padding: 4px 6px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); letter-spacing: .1em; }
+.safe .hold { margin-left: auto; position: relative; overflow: hidden; font: inherit; font-size: 12px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); color: var(--text); padding: 4px 10px; }
+.safe .hold::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 40%; background: var(--low-tint); }
+.safe .hold span { position: relative; }
 
-/* exit result card */
-.callback { background: var(--surface); border: 2px solid var(--primary); border-radius: var(--r-lg); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
-.callback h4 { margin: 0; font-size: 15px; }
-.callback .n { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.callback small { color: var(--muted); font-size: 12px; }
-.toast { background: var(--text); color: var(--bg); border-radius: var(--r-sm); padding: var(--s2) var(--s3); font-size: 12px; }
+.ok-note { font-size: 12px; color: var(--muted); text-align: center; }
 </style>
 </head>
 <body>
 
+<!-- icons (inline SVG, same weight in every state) -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-idle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></symbol>
+  <symbol id="i-low" viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-watch" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 4.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></symbol>
+  <symbol id="i-danger" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></symbol>
+</svg>
+
 <div class="page-head">
-  <h1>Callguard: panel prototype</h1>
-  <p>Static mock for sign-off. Each frame is the 360 px window beside Zoom. Data from the S1 government-call fixture. Top row light, bottom row dark (the real app follows the Mac setting).</p>
+  <h1>Callguard: panel prototype v2</h1>
+  <p>One loud thing per state (the status block), one sentence of copy, everything else a single muted line. 360 px window beside Zoom, S1 government-call data. Light on top, dark below.</p>
 </div>
 
-<!-- The same strip is rendered twice; the second copy has class "dark". -->
 <template id="strip">
 <div class="strip">
 
   <!-- 1 IDLE -->
-  <div class="cell"><div class="label">1 · Idle / first open (F0)</div>
+  <div class="cell"><div class="label">1 · Idle (F0)</div>
   <div class="win">
-    <div class="titlebar"><i></i><i></i><i></i><span>Callguard</span></div>
-    <div class="hdr">
-      <div class="badge"><span class="dot"></span><span>Listening locally<br><small>nothing stored</small></span></div>
-      <div class="net"><span class="dot"></span>Online</div>
-    </div>
-    <div class="consent">
-      <span>Callguard checks this call on your laptop. Nothing is recorded or sent. <a href="#">Why?</a></span>
-      <button class="x" aria-label="Dismiss">×</button>
-    </div>
-    <div class="body">
-      <div class="meter lvl-idle"><div class="ico">○</div><div><div class="word">Not on a call</div><div class="how">Callguard starts when a call does</div></div></div>
-      <div>
-        <div class="sect-h">On this call</div>
-        <div class="tail"><span class="empty">The last few lines of the call show here, then are deleted when it ends.</span></div>
-      </div>
-      <div class="egress">
-        <div class="sect-h">What left this device <span class="count">0</span></div>
-        <div class="eg-empty"><div class="shield">✓</div><div><b>Nothing has left this device</b><span>Your call audio and words stay on this laptop.</span></div></div>
-      </div>
+    <div class="titlebar"><i></i><i></i><i></i></div>
+    <div class="hdr"><span><span class="dot"></span>Local only · nothing stored</span><span><span class="ring"></span>Online</span></div>
+    <div class="consent"><span>Checks run on this laptop. Nothing is recorded or sent.</span><button aria-label="Dismiss">×</button></div>
+    <div class="hero h-idle"><div class="top"><div class="ico"><svg width="24" height="24"><use href="#i-idle"/></svg></div><div><div class="word">Not on a call</div></div></div></div>
+    <div class="spacer"></div>
+    <div class="rail">
+      <div class="rail-row eg"><svg class="ok" width="16" height="16"><use href="#i-low"/></svg><b>Nothing has left this device</b></div>
     </div>
   </div></div>
 
   <!-- 2 LOW -->
-  <div class="cell"><div class="label">2 · Low: normal call stays quiet (F1)</div>
+  <div class="cell"><div class="label">2 · Low (F1)</div>
   <div class="win">
-    <div class="titlebar"><i></i><i></i><i></i><span>Callguard</span></div>
-    <div class="hdr">
-      <div class="badge"><span class="dot"></span><span>Listening locally<br><small>nothing stored</small></span></div>
-      <div class="net"><span class="dot"></span>Online</div>
-    </div>
-    <div class="body">
-      <div class="meter lvl-low"><div class="ico">✓</div><div><div class="word">Low</div><div class="how">No clear signs <span class="bar"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div></div></div>
-      <div>
-        <div class="sect-h">On this call</div>
-        <div class="tail">
-          <p><span class="who">Caller</span><span>Can we push the 3pm? I need the draft by five.</span></p>
-          <p class="you"><span class="who">You</span><span>No problem, I'll move it to 4 and send the draft before five.</span></p>
-        </div>
-      </div>
-      <div class="egress">
-        <div class="sect-h">What left this device <span class="count">0</span></div>
-        <div class="eg-empty"><div class="shield">✓</div><div><b>Nothing has left this device</b><span>Your call audio and words stay on this laptop.</span></div></div>
-      </div>
+    <div class="titlebar"><i></i><i></i><i></i></div>
+    <div class="hdr"><span><span class="dot"></span>Local only · nothing stored</span><span><span class="ring"></span>Online</span></div>
+    <div class="hero h-low"><div class="top"><div class="ico"><svg width="24" height="24"><use href="#i-low"/></svg></div><div><div class="word">Low</div><div class="how">No clear signs <span class="bar"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div></div></div></div>
+    <div class="spacer"></div>
+    <div class="rail">
+      <div class="rail-row"><span class="who">You</span><span class="txt">No problem, I'll move it to 4 and send the draft before five.</span></div>
+      <div class="rail-row eg"><svg class="ok" width="16" height="16"><use href="#i-low"/></svg><b>Nothing has left this device</b></div>
     </div>
   </div></div>
 
   <!-- 3 WATCH -->
-  <div class="cell"><div class="label">3 · Watch: verify first (F2, F6, F10)</div>
+  <div class="cell"><div class="label">3 · Watch (F2, F6, F10)</div>
   <div class="win">
-    <div class="titlebar"><i></i><i></i><i></i><span>Callguard</span></div>
-    <div class="hdr">
-      <div class="badge"><span class="dot"></span><span>Listening locally<br><small>nothing stored</small></span></div>
-      <div class="net"><span class="dot"></span>Online</div>
+    <div class="titlebar"><i></i><i></i><i></i></div>
+    <div class="hdr"><span><span class="dot"></span>Local only · nothing stored</span><span><span class="ring"></span>Online</span></div>
+    <div class="hero h-watch">
+      <div class="top"><div class="ico"><svg width="24" height="24"><use href="#i-watch"/></svg></div><div><div class="word">Watch</div><div class="how">Some signs <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div></div></div>
+      <div class="act">Verify first: call the Department of Justice on <span class="num">(202) 514-2000</span><small>Public number from justice.gov</small></div>
     </div>
-    <div class="body">
-      <div class="meter lvl-watch"><div class="ico">◐</div><div><div class="word">Watch</div><div class="how">Some signs <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div></div></div>
-      <div class="note">
-        <p class="reason">Caller claims to be a government official and says you are under investigation.</p>
-        <div class="chips">
-          <button class="chip">Claims to be an official or someone senior <span class="caret">▸</span></button>
-          <button class="chip" aria-expanded="true">Threatens you or the firm <span class="caret">▾</span></button>
-        </div>
-        <blockquote class="quote"><small>Caller said</small>“You're under investigation and could face extradition.”</blockquote>
-        <div class="verify"><span>Department of Justice public number:</span><span class="num">(202) 514-2000</span><span class="src">· justice.gov</span></div>
-        <div class="next">Verify first: don't share anything until you've called the Department of Justice on its public number.</div>
-        <div class="side-actions"><button class="btn quiet">Check with a colleague</button><button class="btn quiet">Mark as safe</button></div>
-      </div>
-      <div>
-        <div class="sect-h">On this call</div>
-        <div class="tail">
-          <p><span class="who">Caller</span><span>Hi, this is Officer Chen from the Department of Justice.</span></p>
-          <p class="you"><span class="who">You</span><span>Okay. What is this about?</span></p>
-          <p><span class="who">Caller</span><span>…money-laundering case. You're under investigation and could face extradition.</span></p>
-        </div>
-      </div>
-      <div class="egress">
-        <div class="sect-h flash">What left this device <span class="count">1</span></div>
-        <div class="eg-row"><time>19:02:11</time><span><span class="sent">“Department of Justice”</span><span class="dest">to api.tavily.com, to look up its public number</span></span><span class="st ok">ok</span></div>
-        <div class="eg-foot">Only the name above was sent. Your call audio and words never leave this laptop.</div>
-      </div>
+    <div class="under">
+      <div class="chips"><button class="chip">Claims authority</button><button class="chip">Threatens you</button></div>
+      <div class="links"><button class="link">Ask a colleague</button><button class="link">Mark as safe</button></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="rail">
+      <div class="rail-row"><span class="who">Caller</span><span class="txt">…under investigation and could face extradition.</span></div>
+      <div class="rail-row eg flash"><svg class="up" width="16" height="16" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>1 item left: <b>“Department of Justice”</b></span><span class="go">›</span></div>
     </div>
   </div></div>
 
   <!-- 4 DANGER + GATE -->
-  <div class="cell"><div class="label">4 · Danger overlay + typing paused (F3, F4)</div>
+  <div class="cell"><div class="label">4 · Danger + typing paused (F3, F4)</div>
   <div class="win">
-    <div class="titlebar"><i></i><i></i><i></i><span>Callguard</span></div>
+    <div class="titlebar"><i></i><i></i><i></i></div>
     <div class="ovl" role="alertdialog" aria-label="Stop and verify this call">
-      <div class="ovl-head">
-        <h3><span>⚠</span><span>Stop and verify this call</span></h3>
-        <div class="how"><b>Strong signs</b> <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+      <div class="band">
+        <div class="t"><svg width="28" height="28"><use href="#i-danger"/></svg>Stop and verify</div>
+        <div class="how">Strong signs <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
       </div>
       <div class="ovl-body">
-        <div class="claims">The caller claims to be:<b>Department of Justice</b></div>
-        <ul class="tlist">
-          <li><b>Threatens you or the firm</b><q>You're under investigation and could face extradition.</q></li>
-          <li><b>Asks you to keep it secret</b><q>Do not tell your colleagues or your firm</q></li>
-          <li><b>Asks for client or personal data</b><q>I need to verify your bank account number and routing number</q></li>
-        </ul>
-        <div class="rules-box">
-          <div><b>Firm rule:</b> Government agencies do not ask for payment or bank details by phone.</div>
-          <div><b>Firm rule:</b> No one at this firm will ask you to keep a call secret from your colleagues.</div>
-        </div>
-        <div class="realnum"><div><small>Real public number · justice.gov</small><span class="n">(202) 514-2000</span></div></div>
-        <div class="gate"><span>🔒</span><span>Typing is paused while this call asks for bank details</span><time>1:54</time></div>
-        <div class="next">Hang up. Don't share bank details. Call the Department of Justice on its public number.</div>
-      </div>
-      <div class="exits">
+        <p class="why1">Caller says they're the Department of Justice and wants your bank details.</p>
+        <div class="numcard"><small>Real number · justice.gov</small><span class="n">(202) 514-2000</span></div>
+        <div class="lock">🔒 Typing paused <time>1:54</time></div>
+        <div class="spacer"></div>
         <button class="btn primary focus">Hang up and call back</button>
-        <button class="btn secondary">Check with a colleague</button>
-        <div class="safe">
-          <label for="safe1">Already verified? Type SAFE, then hold the button for 3 s</label>
-          <input id="safe1" value="saf" aria-label="Type SAFE">
-          <button class="btn hold"><span class="fill"></span><span>Hold: it's safe</span></button>
-        </div>
+        <button class="btn">Ask a colleague</button>
+      </div>
+      <div class="ovl-foot">
+        <div class="disclose"><span>Why? 3 warning signs · 2 firm rules</span><span>▸</span></div>
+        <div class="safe">Verified? Type <input value="SAF" aria-label="Type SAFE"><button class="hold"><span>Hold 3 s</span></button></div>
       </div>
     </div>
   </div></div>
 
-  <!-- 5 EXIT: HANG UP -->
+  <!-- 4b DANGER: WHY OPEN -->
+  <div class="cell"><div class="label">4b · “Why?” opened</div>
+  <div class="win">
+    <div class="titlebar"><i></i><i></i><i></i></div>
+    <div class="ovl">
+      <div class="band">
+        <div class="t"><svg width="28" height="28"><use href="#i-danger"/></svg>Stop and verify</div>
+        <div class="how">Strong signs <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+      </div>
+      <div class="ovl-body" style="gap:10px">
+        <div class="disclose" style="border:0;padding:0;color:var(--text);font-weight:600"><span>Why? 3 warning signs · 2 firm rules</span><span>▾</span></div>
+        <div style="font-size:12px;display:flex;flex-direction:column;gap:8px">
+          <div><b>Threatens you</b><br><span style="color:var(--muted)">“You're under investigation and could face extradition.”</span></div>
+          <div><b>Keep it secret</b><br><span style="color:var(--muted)">“Do not tell your colleagues or your firm”</span></div>
+          <div><b>Asks for data</b><br><span style="color:var(--muted)">“I need to verify your bank account number…”</span></div>
+          <div style="border-top:1px solid var(--border);padding-top:8px"><b>Firm rule</b><br>Government agencies do not ask for payment or bank details by phone.</div>
+          <div><b>Firm rule</b><br>No one at this firm will ask you to keep a call secret.</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn primary">Hang up and call back</button>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- 5 AFTER HANG UP -->
   <div class="cell"><div class="label">5 · After “Hang up and call back” (F5)</div>
   <div class="win">
-    <div class="titlebar"><i></i><i></i><i></i><span>Callguard</span></div>
+    <div class="titlebar"><i></i><i></i><i></i></div>
     <div class="ovl">
-      <div class="ovl-head">
-        <h3><span>⚠</span><span>Stop and verify this call</span></h3>
-        <div class="how"><b>Strong signs</b> <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
-      </div>
+      <div class="band"><div class="t"><svg width="28" height="28"><use href="#i-danger"/></svg>Hang up now</div></div>
       <div class="ovl-body">
-        <div class="callback">
-          <h4>Hang up now, then call back on the real number</h4>
-          <small>Department of Justice · public number from justice.gov</small>
-          <span class="n">(202) 514-2000</span>
-          <button class="btn secondary">Copy number</button>
-        </div>
-        <div class="next">Don't use any number the caller gave you.</div>
-        <div class="toast">Typing is back on. This window closes when the call ends.</div>
+        <p class="why1">Then call back on the real number:</p>
+        <div class="numcard"><small>Department of Justice · justice.gov</small><span class="n">(202) 514-2000</span></div>
+        <button class="btn">Copy number</button>
+        <div class="spacer"></div>
+        <div class="ok-note">Typing is back on. This closes when the call ends.</div>
       </div>
     </div>
   </div></div>
@@ -362,54 +291,33 @@ body { margin: 0; font-family: var(--font); background: #d9d9dc; color: #1c1c1e;
   <!-- 6 OFFLINE -->
   <div class="cell"><div class="label">6 · Wi-Fi off (F7)</div>
   <div class="win">
-    <div class="titlebar"><i></i><i></i><i></i><span>Callguard</span></div>
-    <div class="hdr">
-      <div class="badge"><span class="dot"></span><span>Listening locally<br><small>nothing stored</small></span></div>
-      <div class="net offline"><span class="dot"></span>Offline</div>
+    <div class="titlebar"><i></i><i></i><i></i></div>
+    <div class="hdr"><span><span class="dot"></span>Local only · nothing stored</span><span class="offline"><span class="ring"></span>Offline</span></div>
+    <div class="hero h-watch">
+      <div class="top"><div class="ico"><svg width="24" height="24"><use href="#i-watch"/></svg></div><div><div class="word">Watch</div><div class="how">Some signs <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div></div></div>
+      <div class="act">Verify first: call the Department of Justice on the number you have on file<small>Offline, so the public number wasn't looked up</small></div>
     </div>
-    <div class="body">
-      <div class="meter lvl-watch"><div class="ico">◐</div><div><div class="word">Watch</div><div class="how">Some signs <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div></div></div>
-      <div class="note">
-        <p class="reason">Caller claims to be a government official and says you are under investigation.</p>
-        <div class="chips">
-          <button class="chip">Claims to be an official or someone senior <span class="caret">▸</span></button>
-          <button class="chip">Threatens you or the firm <span class="caret">▸</span></button>
-        </div>
-        <div class="verify off"><span>Offline, search skipped. Use the number on file.</span></div>
-        <div class="next">Verify first: don't share anything until you've called the Department of Justice on its public number.</div>
-      </div>
-      <div class="egress">
-        <div class="sect-h flash">What left this device <span class="count">1</span></div>
-        <div class="eg-row"><time>19:02:11</time><span><span class="sent">“Department of Justice”</span><span class="dest">to api.tavily.com · not sent, you're offline</span></span><span class="st offline">offline</span></div>
-        <div class="eg-foot">Only the name above was tried. Your call audio and words never leave this laptop.</div>
-      </div>
+    <div class="under">
+      <div class="chips"><button class="chip">Claims authority</button><button class="chip">Threatens you</button></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="rail">
+      <div class="rail-row"><span class="who">Caller</span><span class="txt">…under investigation and could face extradition.</span></div>
+      <div class="rail-row eg"><svg class="ok" width="16" height="16"><use href="#i-low"/></svg><b>Nothing has left this device</b><span class="go">1 skipped ›</span></div>
     </div>
   </div></div>
 
   <!-- 7 MODEL DOWN -->
   <div class="cell"><div class="label">7 · Local model down (F8)</div>
   <div class="win">
-    <div class="titlebar"><i></i><i></i><i></i><span>Callguard</span></div>
-    <div class="hdr">
-      <div class="badge"><span class="dot"></span><span>Listening locally<br><small>nothing stored</small></span></div>
-      <div class="net"><span class="dot"></span>Online</div>
-    </div>
-    <div class="banner watch"><b>◐</b><span>Basic checks only, local model unavailable</span></div>
-    <div class="body">
-      <div class="meter lvl-low"><div class="ico">✓</div><div><div class="word">Low</div><div class="how">No clear signs <span class="bar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div></div></div>
-      <div class="note">
-        <p class="reason grey">Couldn't run the full check. Basic checks only.</p>
-      </div>
-      <div>
-        <div class="sect-h">On this call</div>
-        <div class="tail">
-          <p><span class="who">Caller</span><span>Hi, this is Officer Chen from the Department of Justice.</span></p>
-        </div>
-      </div>
-      <div class="egress">
-        <div class="sect-h">What left this device <span class="count">0</span></div>
-        <div class="eg-empty"><div class="shield">✓</div><div><b>Nothing has left this device</b><span>Your call audio and words stay on this laptop.</span></div></div>
-      </div>
+    <div class="titlebar"><i></i><i></i><i></i></div>
+    <div class="hdr"><span><span class="dot"></span>Local only · nothing stored</span><span><span class="ring"></span>Online</span></div>
+    <div class="banner"><span>Basic checks only, local model unavailable</span></div>
+    <div class="hero h-low"><div class="top"><div class="ico"><svg width="24" height="24"><use href="#i-low"/></svg></div><div><div class="word">Low</div><div class="how">No clear signs <span class="bar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div></div></div></div>
+    <div class="spacer"></div>
+    <div class="rail">
+      <div class="rail-row"><span class="who">Caller</span><span class="txt">Hi, this is Officer Chen from the Department of Justice.</span></div>
+      <div class="rail-row eg"><svg class="ok" width="16" height="16"><use href="#i-low"/></svg><b>Nothing has left this device</b></div>
     </div>
   </div></div>
 
