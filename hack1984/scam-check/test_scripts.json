@@ -1,0 +1,16 @@
+[
+  {"id": 1, "name": "Fake government official", "expected": ["danger"],
+   "transcript": "Caller: Good afternoon, this is Officer Chen with the Department of Justice. Am I speaking with the attorney handling the Harbor Capital matter?\nYou: Yes, who is this?\nCaller: You are currently under investigation for assisting money laundering on that case. This is very serious, you could be detained and transferred overseas.\nYou: What? I don't understand.\nCaller: Do not tell your colleagues or your supervisor, that would be obstruction. To clear your name we need to verify your bank account. Please read me your account and routing number now."},
+  {"id": 2, "name": "Fake vendor bank change", "expected": ["danger"],
+   "transcript": "Caller: Hi, it's Mark from Brightline Office Supplies, accounts receivable.\nYou: Hi Mark.\nCaller: Quick one. We moved banks last week, so before Friday's payment run can you update our details? New account is at First Coastal, routing 211274450, account 8820193. Our old account is closed so the payment will bounce otherwise.\nYou: Can you email that?\nCaller: Email's been down, which is why I'm calling. If you can just change it now while we're on the phone that'd be great."},
+  {"id": 3, "name": "Fake IT support", "expected": ["danger"],
+   "transcript": "Caller: Hey, this is Jason from the IT help desk. We're seeing suspicious logins on your Microsoft account from overseas.\nYou: Oh no.\nCaller: Don't worry, I can lock it down. I just sent a six-digit code to your phone. Can you read it back to me so I can verify it's you?\nYou: It says 4 8 1...\nCaller: Perfect, keep going, quickly, before they get in."},
+  {"id": 4, "name": "Real vendor invoice question", "expected": ["low"],
+   "transcript": "Caller: Hi, this is Priya from Brightline Office Supplies. I'm looking at invoice 4471 from October and it shows two cases of paper but the delivery note says three.\nYou: Let me check. Yes, we got three.\nCaller: Great, I'll send a corrected invoice by email for your records. Nothing changes on the payment side. Thanks!"},
+  {"id": 5, "name": "Real colleague scheduling", "expected": ["low"],
+   "transcript": "Caller: Hey, it's Sam from the tax team. The Henderson filing is due Monday so we need to meet before the weekend.\nYou: How about Thursday at 2?\nCaller: Thursday at 2 works. I'll send a calendar invite. Bring the draft schedules if you have them. Thanks."},
+  {"id": 6, "name": "Real bank fraud alert", "expected": ["low", "watch"],
+   "transcript": "Caller: Hello, this is the fraud department at Chase. We noticed a charge of $412 at an electronics store yesterday on the firm's card ending 2290. Did you make that purchase?\nYou: I'm not sure.\nCaller: No problem. Please don't share any details with me. Hang up and call the number on the back of your card so we can review it together."},
+  {"id": 7, "name": "Fake official (Mandarin)", "expected": ["danger"],
+   "transcript": "来电者：你好，我是公安局的陈警官。你涉嫌参与一宗洗钱案件，现在正在接受调查。\n你：什么？\n来电者：这件事是保密的，不要告诉你的同事和家人，否则就是妨碍调查，你可能会被遣送回中国。为了证明你的清白，请现在把你的银行账号和密码告诉我。"}
+]
