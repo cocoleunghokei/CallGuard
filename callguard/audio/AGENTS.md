@@ -21,4 +21,4 @@ Read the root [AGENTS.md](../../AGENTS.md) first. You own `callguard/audio/` and
 - Target: words appear within ~3 s of being spoken
 
 ## Status
-- (none yet)
+- [Sat 16:50] Done: AUD-5 fake_stream with 3 s call slots, instant replay, fixtures, and 5 passing offline tests | Next: AUD-2 capture.py after Coco reviews this checkpoint | Needs: Coco to pin sounddevice==0.5.6, numpy==2.3.5, faster-whisper==1.2.1 in requirements.txt and pre-download the Whisper small model
