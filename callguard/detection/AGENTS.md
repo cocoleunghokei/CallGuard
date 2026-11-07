@@ -12,11 +12,10 @@ Coco owns the wording of `prompt.md` and `rules.json`. Coco signs off on changes
 - [ ] `ollama_client.py`: call `http://localhost:11434` with `qwen2.5:7b` (`format: "json"`, temperature 0). Allow switching to `qwen2.5:3b` with the `CALLGUARD_MODEL` env var
 - [ ] `parse.py`: validate the model's JSON against `ScamCheck`, drop unknown tactics, never crash
 - [ ] `rules.json` with 3–5 firm rules, plus `rules.py` to load them and add matching `rules_broken`
-- [ ] `tests/detection/scripts/`: the 7 test scripts from [plan section 6](../../hack1984/project-plan.md), with expected risk levels
+- [ ] `tests/detection/scripts/`: the 6 English test scripts from [plan section 6](../../hack1984/project-plan.md) (scenario details in [prd.md §4](../../hack1984/prd.md)), with expected risk levels
 - [ ] Eval script: run all 7 scripts against the live model and print a pass/fail table. Target: at least 5 of 6 English scripts correct
 
 **P1**
-- [ ] Mandarin script 7 passes
 - [ ] Tune so urgency alone is never "danger" (script 5)
 
 ## Rules for this lane

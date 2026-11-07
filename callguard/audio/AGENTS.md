@@ -13,7 +13,6 @@ Read the root [AGENTS.md](../../AGENTS.md) first. You own `callguard/audio/` and
 - [ ] `stream_chunks()` combining both, plus `fake_stream(script_path)` that replays a written script, for the other lanes and for tests
 
 **P1**
-- [ ] Mandarin: let Whisper detect the language and set `language`
 - [ ] Continuity calls, only if the test passed
 
 ## Rules for this lane

@@ -89,7 +89,7 @@ That makes these requirements **protected**: they are not cut at the Sun 02:00 P
 - **G5. Verify the claim (Surge).** Show the claimed organization's real public number from Tavily or Exa.
 
 ### 3.2 Non-goals
-iPhone or Android apps, a browser extension, voice/deepfake detection (a crowded space whose signal fades as clones improve, see 2.4), caller-ID lookup, storing audio or transcripts, an employer-side transcript view, cloud LLMs, multi-user accounts, Windows support, production installer/signing.
+iPhone or Android apps, a browser extension, languages other than English (Mandarin was removed), voice/deepfake detection (a crowded space whose signal fades as clones improve, see 2.4), caller-ID lookup, storing audio or transcripts, an employer-side transcript view, cloud LLMs, multi-user accounts, Windows support, production installer/signing.
 
 ### 3.3 Success measures
 
@@ -172,7 +172,6 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 
 | IDs | Why it is out |
 |---|---|
-| AUD-7, DET-10, UI-12, C11, S1-zh (Mandarin) | Not part of the winning strategy or the demo; the `scam-check` harness work already dropped it from the plan; Whisper `small` adds accuracy risk in Mandarin |
 | UI-10 (post-call summary card) | Nice after-call touch; judges score the during-call moment |
 | C13 (known-contact check, encrypted contact list) | Needs setup UI and encrypted storage; Surge already supplies a real number |
 | Training mode, admin anonymous counts, Phonon coach line | Roadmap for the Startup pitch (training mode can partner with KnowBe4/Adaptive), not this weekend |
@@ -191,7 +190,6 @@ Every scam scenario has a **benign twin**: a real call that shares surface featu
 | ID | Scenario | Caller claims | What they want | Tactics | Rules broken | Expected | Plan # |
 |---|---|---|---|---|---|---|---|
 | **S1** | Government official (the friend's case) | DOJ / police / "China Public Security Bureau" | Bank details, a "verification" transfer | authority, threat, secrecy, inside_knowledge, personal_data_request or bank details | `government_never_calls_for_payment_or_bank_details`, `never_keep_calls_secret` | danger | 1 |
-| **S1-zh** | S1 in Mandarin | 公安局 / 检察院 | Same | Same | Same | danger (P2) | 7 |
 | **S2** | Vendor bank change | Known vendor's accounts team | Update bank details before Friday's payment | bank_change, urgency | `no_bank_changes_by_phone` | danger | 2 |
 | **S3** | IT support code | Firm's IT / Microsoft | The MFA code "we just sent you" | authority, urgency, credential_request | `it_never_asks_for_codes` | danger | 3 |
 | **S4** | Cloned partner wire | Managing partner (cloned voice) | Urgent escrow wire, skip the usual sign-off | payment_request, urgency, bypass_approval, secrecy | `wires_need_two_approvals` | danger | — |
@@ -209,7 +207,7 @@ Every scam scenario has a **benign twin**: a real call that shares surface featu
 | **B6** | Client confirming in writing | Client | "I emailed the new details, please call me back on the number you have" | bank_change (+ safe signals) | — | watch | — |
 | **B7** | You say the scary words | You (the employee) | "Don't tell anyone, it's a surprise party for Sam" | secrecy, but said by **you** | — | low | — |
 
-**Scenario priority.** P0 set (must pass to win, and is what the demo uses): **S1, S2, S3, S4** and twins **B1, B2, B3, B7**. P1 set (broader coverage for judge Q&A): S5–S10, B4–B6. P2: S1-zh.
+**Scenario priority.** P0 set (must pass to win, and is what the demo uses): **S1, S2, S3, S4** and twins **B1, B2, B3, B7**. P1 set (broader coverage for judge Q&A): S5–S10, B4–B6.
 
 ### 4.2 Scenario details
 
@@ -226,10 +224,6 @@ Each scenario lists the beats of the script in order, with the expected risk aft
 | 4 🔒 | "To clear your name I need to verify your bank account number and routing number." | danger + gate | 1.00 |
 
 *Next step:* "Hang up. Don't share bank details. Call the Department of Justice on its public number: …" *Verify:* `Department of Justice`.
-
-#### S1-zh. Mandarin version (P2, scoped out)
-"你好，我是公安局的陈警官。" → "你涉嫌一宗洗钱案，正在接受调查，可能会被引渡回国。" → ⚡ "这件事是机密，不要告诉你的同事，否则算妨碍调查。" → 🔒 "为了证明你的清白，请提供你的银行账号。"
-Same expected levels. `reason` and `next_step` may be returned in English for the demo; the UI shows the language badge `中文`.
 
 #### S2. Vendor bank change
 *Why it works:* routine-sounding admin, a real vendor name, a real upcoming payment, and a deadline.
@@ -305,7 +299,7 @@ Callguard runs a stack of checks. Some run on every 3-second chunk, some on the 
 |---|---|---|---|---|---|
 | **C1** | Speaker attribution | Each chunk is labelled `caller` or `you` by its audio source (BlackHole vs mic). Tactic evidence only counts when the **caller** said it | Every chunk | Audio (labels), Detection (filters) | P0 |
 | **C2** | Silence / noise gate | Skip chunks below an RMS threshold or with no words, so the model isn't called on silence | Every chunk | Audio | P0 |
-| **C3** | Fast phrase check | Local keyword and regex match (English and Mandarin) for each tactic: "don't tell", "read me the code", "gift cards", "new account", "不要告诉" … Gives an early `watch` within ~1 s of the chunk. **Can never raise `danger` alone** | Every caller chunk | Detection (`quick_check`) | P1 |
+| **C3** | Fast phrase check | Local keyword and regex match (English) for each tactic: "don't tell", "read me the code", "gift cards", "new account" … Gives an early `watch` within ~1 s of the chunk. **Can never raise `danger` alone** | Every caller chunk | Detection (`quick_check`) | P1 |
 | **C4** | Model tactic check | Ollama `qwen2.5:7b` reads the speaker-labelled rolling 30 s window and returns tactics, evidence quotes with strength, claimed identity, safe signals, reason and next step as JSON | Every new caller chunk, skipped if one is still running | Detection (`check`) | P0 |
 | **C5** | Output validation | Validate model JSON against `ScamCheck`; drop unknown tactics; drop evidence quotes that don't appear in the window (hallucination guard); never crash | Every model call | Detection (`parse`) | P0 |
 | **C6** | Firm rules check | Match detected tactics (and optional rule keywords) to `rules.json`; fill `rules_broken` | Every check | Detection (`rules`) | P0 |
@@ -313,7 +307,6 @@ Callguard runs a stack of checks. Some run on every 3-second chunk, some on the 
 | **C8** | Safe-signal check | Signs of a legitimate call lower the score: sends you to a known number, follows the normal approval, no money or data asked, asks for it in writing | Every check | Detection (prompt + `score`) | P0 |
 | **C9** | Confidence score and guards | Combine C3–C8 into a 0–1 `confidence` and a risk level, applying the guard rules (urgency alone never danger, danger needs an ask or a strong combo) | Every check | Detection (`score`) | P0 |
 | **C10** | Call-level smoothing | Turn a stream of per-window checks into a stable meter: rises immediately, `danger` is sticky until the user acts or the call ends, `watch` decays after ~10 s of low | Every check | Server (`pipeline`) | P0 |
-| **C11** | Language check | Whisper detects `en`/`zh`; chunk carries `language`; Mandarin keywords and prompt line used when `zh` is present | Every chunk | Audio, Detection | P2 |
 | **C12** | Claimed-identity verify (Surge) | Once per organization per call, when `confidence ≥ 0.40` and `claimed_identity` is set, send **only the org name** through `egress.search()`; return the public phone and source URL | Once per org | Server | P0 |
 | **C13** | Known-contact check | Compare `claimed_identity` with the firm's local contact list and show "Number on file: …" | Once per org | Server (lookup), Detection (none) | P2 |
 | **C14** | Gate eligibility | Decide whether the keyboard gate should lock (see [7](#7-the-keyboard-gate)) | Every check | Server (`gate`) | P0 soft, P1 hard |
@@ -498,7 +491,7 @@ Rules are what make Callguard about *this firm*, not generic scam advice. They l
 | `wires_need_two_approvals` | Every wire needs two approvals, no exceptions, no matter who asks. | bypass_approval, payment_request | P0 |
 | `government_never_calls_for_payment_or_bank_details` | Government agencies do not ask for payment or bank details by phone. | payment_request, bank_change, personal_data_request (when `authority` is also present) | P0 |
 | `never_keep_calls_secret` | No one at this firm will ask you to keep a call secret from your colleagues. | secrecy | P0 |
-| `no_gift_card_or_crypto_payments` | We never pay anyone with gift cards or cryptocurrency. | payment_request (+ keywords: gift card, bitcoin, crypto, 礼品卡, 比特币) | P1 |
+| `no_gift_card_or_crypto_payments` | We never pay anyone with gift cards or cryptocurrency. | payment_request (+ keywords: gift card, bitcoin, crypto) | P1 |
 | `no_payments_to_new_accounts_by_phone` | We never send money to a new account because of a call. | payment_request + bank_change | P1 |
 | `no_remote_access_from_callers` | Never install software or share your screen because a caller asked. | remote_access | P1 |
 | `never_share_client_data_by_phone` | Client data is only shared through approved, written channels. | personal_data_request | P1 |
@@ -532,7 +525,6 @@ The `government_…` rule needs a co-occurrence condition (`requires: ["authorit
 - Every warning ends with one concrete next step, with a number if we have one.
 - Plain words for every tactic (table in [6.3](#63-tactic-weights)).
 - Colour is never the only signal: every level has a word and an icon.
-- Mandarin calls get a `中文` badge; overlay copy stays in English for the demo.
 
 ### 9.4 The overlay layout (danger)
 
@@ -590,12 +582,12 @@ flowchart LR
 flowchart TB
     subgraph AUD["Audio lane · callguard/audio/"]
         cap["capture.py<br/>BlackHole → caller<br/>mic → you<br/>16 kHz mono, 3 s"]
-        tr["transcribe.py<br/>faster-whisper, VAD,<br/>language detect"]
+        tr["transcribe.py<br/>faster-whisper, VAD,<br/>English"]
         sc["stream_chunks()<br/>fake_stream(path)"]
         cap --> tr --> sc
     end
     subgraph DET["Detection lane · callguard/detection/"]
-        qc["quick_check()<br/>phrases en/zh"]
+        qc["quick_check()<br/>phrases"]
         oc["ollama_client.py"]
         pr["prompt.md"]
         pa["parse.py"]
@@ -911,11 +903,10 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 |---|---|---|---|---|
 | AUD-1 | P0 | Continuity test (plan §5), all four routes, **plus a Teams route** (desktop or web, Mac speakers) so "any call app" is shown, not claimed. Coco adds the Teams row to the plan's results table | Results table filled in the plan (Coco commits it) | Hardware |
 | AUD-2 | P0 | `capture.py`: two input streams (BlackHole → `caller`, default mic → `you`), 16 kHz mono float32, 3 s chunks onto a queue. Device names overridable with `CALLGUARD_CALLER_DEVICE`, `CALLGUARD_MIC_DEVICE` | Prints per-source RMS for 10 s without errors | — |
-| AUD-3 | P0 | `transcribe.py`: faster-whisper `small` int8 loaded once from a local path (`CALLGUARD_WHISPER_DIR`), `HF_HUB_OFFLINE=1`; VAD filter on; skip chunks under RMS threshold (C2) | A 3 s chunk transcribes in < 1.5 s on the demo Mac | AUD-2 |
+| AUD-3 | P0 | `transcribe.py`: faster-whisper `small` int8 loaded once from a local path (`CALLGUARD_WHISPER_DIR`), `HF_HUB_OFFLINE=1`; `language="en"` fixed (no detection); VAD filter on; skip chunks under RMS threshold (C2) | A 3 s chunk transcribes in < 1.5 s on the demo Mac | AUD-2 |
 | AUD-4 | P0 | `stream_chunks()`: generator of `TranscriptChunk` for both speakers with `start`/`end` relative to call start | Server can consume it | AUD-2, AUD-3 |
 | AUD-5 | P0 | `fake_stream(path, speed=1.0)`: replays a scenario script ([15.2](#152-script-file-format)) as `TranscriptChunk`s with realistic timing; `speed=0` for instant in tests | All `tests/detection/scripts/*.txt` replay | Script format |
 | AUD-6 | P0 | Tests: fake_stream parsing, silence skip, no file writes (patch `open`, `soundfile.write`) | `pytest tests/audio` green offline | — |
-| AUD-7 | P2 | Mandarin: language detection per chunk, `language` field set; handle mixed en/zh | S1-zh replay via mic shows `zh` | AUD-3 |
 | AUD-8 | P1 | Continuity route, only if AUD-1 passed | Real iPhone call transcribes | AUD-1 |
 | AUD-9 | P1 | `audio_ok()` health: both devices present and producing sound; Server shows it in `status` | Unplugging BlackHole shows a warning instead of a crash | — |
 
@@ -929,12 +920,11 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | DET-2 | P0 | `ollama_client.py`: POST `http://localhost:11434/api/chat`, `format: "json"`, `temperature: 0`, `num_ctx` sized for 30 s of text, timeout 8 s; model from `CALLGUARD_MODEL` (default `qwen2.5:7b`). Guardrail 2 bans network imports outside `egress.py`, so call Ollama through `egress.local_ollama_post()` (SRV-3), which only accepts `localhost` and is not logged as egress because nothing leaves the device. Build against a fake client until SRV-3 merges | Calls Ollama through the approved path | SRV-3 (or exemption) |
 | DET-3 | P0 | `parse.py`: validate model JSON into `ScamCheck`; drop unknown tactics; drop evidence whose quote isn't in the window (C5); truncate strings; never raise | Fuzz test with 20 malformed outputs passes | LEAD-1 |
 | DET-4 | P0 | `rules.json` (P0 rules from [8](#8-firm-rules)) + `rules.py` loader and matcher with `requires` and `keywords` | Unit tests per rule | LEAD-1 |
-| DET-5 | P1 | `quick_check(text, speaker) -> list[Evidence]`: phrase lists per tactic in English and Mandarin ([18.2](#182-starter-phrase-lists-for-quick_check)) | Hits every ⚡ line in S1–S10; no hits on B1–B4 | — |
+| DET-5 | P1 | `quick_check(text, speaker) -> list[Evidence]`: phrase lists per tactic in English ([18.2](#182-starter-phrase-lists-for-quick_check)) | Hits every ⚡ line in S1–S10; no hits on B1–B4 | — |
 | DET-6 | P0 | `score.py`: confidence formula, thresholds, guards G1–G5 ([6](#6-confidence-score-and-risk-levels)); weights as module constants | `test_score.py` reproduces the table in [6.6](#66-worked-examples-computed-with-the-formula-above) | DET-3 |
 | DET-7 | P0 | `check(window, rules) -> ScamCheck`: window is speaker-labelled lines; combines C4–C9 (and C3 phrase evidence once DET-5 lands); always returns a valid `ScamCheck` (`source` set) | Unit tests with a fake model client | DET-2, 3, 4, 6 |
 | DET-8 | P0 | Scenario scripts in `tests/detection/scripts/`: the **P0 set first** (S1–S4, B1–B3, B7), then the P1 set (S5–S10, B4–B6), with expected risk per beat in a header | Coco signs off | — |
 | DET-9 | P0 | `python -m callguard.detection.eval`: runs every script beat by beat against live Ollama; prints risk, confidence, tactics, latency, pass/fail against [3.3](#33-success-measures) | Table pasted in Status | DET-7, DET-8 |
-| DET-10 | P2 | Mandarin: prompt line for `zh`, Mandarin phrase list, S1-zh passes | S1-zh = danger | DET-9 |
 | DET-11 | P0 | Tune prompt and weights until the P0 success measures hold on 7b (3b is not a fallback: it scored 3/7 on the Mac in the `scam-check` harness test) | Eval table meets targets | DET-9 |
 | DET-12 | P1 | P1 rules from [8](#8-firm-rules) | Tests | DET-4 |
 
@@ -975,7 +965,6 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-9 | P1 | "Check with a colleague" and "Mark as safe" in the side panel too (outside danger) | Sends client messages | SRV-13 |
 | UI-10 | P2 | Post-call summary card: scenario guess from tactics, count of signs, what you did; no transcript; dismiss clears it | Fixture | — |
 | UI-11 | P0 | `ui/DEMO.md` (demo machine steps) and the backup video by **Sun 09:00** | Video file exists off-repo | All |
-| UI-12 | P2 | `中文` badge when any chunk has `language: zh` | Fixture | AUD-7 |
 | UI-13 | P1 | "Your firm's rules" panel: read-only list of the loaded rules (from the `rules` message), with a count of how many fired this call | Fixture | LEAD-1, SRV-1 |
 
 **Needs (to Coco):** none for P0 (plain HTML/JS/CSS, no CDN).
@@ -1043,7 +1032,7 @@ you: Sorry, who is this?
 caller: This is confidential. Do not tell your colleagues or your firm, or it will be treated as obstruction.
 caller: To clear your name I need to verify your bank account number and routing number.
 ```
-`expect` lists the expected call risk after each **caller** line. `gate` is the caller line where the gate must lock (omit if never). Lines can carry `[zh]` at the start to set `language`.
+`expect` lists the expected call risk after each **caller** line. `gate` is the caller line where the gate must lock (omit if never). Every line is English (`language: "en"`).
 
 ### 15.3 Eval output (what DET-9 prints)
 ```
@@ -1110,18 +1099,18 @@ SUMMARY  scams danger 10/10 · twins danger 0/7 · twins low 6/7 · p95 latency 
 
 ### 18.2 Starter phrase lists for `quick_check`
 
-| Tactic | English | Mandarin |
-|---|---|---|
-| authority | department of justice, police, officer, irs, marshal, federal, fraud department, it support, microsoft support | 公安局, 警官, 检察院, 法院, 公安, 警察 |
-| secrecy | don't tell, do not tell, keep this between us, confidential, don't mention, stay on the line, don't hang up | 不要告诉, 保密, 不要跟别人说, 不要挂电话 |
-| threat | under investigation, warrant, arrest, extradition, lawsuit, suspended, penalty, obstruction | 调查, 逮捕, 通缉, 引渡, 冻结 |
-| urgency | right now, immediately, before five, today, within the hour, urgent | 马上, 立刻, 今天之内, 紧急 |
-| credential_request | read me the code, verification code, one-time code, password, the code we sent | 验证码, 密码 |
-| bank_change | new account, changed banks, update our bank details, routing number, new bank | 新账户, 更换银行, 账号 |
-| bypass_approval | skip the approval, no need for sign-off, I'll approve it later, don't loop in | 不用审批, 先转账 |
-| payment_request | wire, transfer, gift cards, bitcoin, crypto, pay the fine, safe account, bond | 转账, 汇款, 礼品卡, 比特币, 安全账户 |
-| remote_access | anydesk, teamviewer, remote access, share your screen, install this | 远程, 共享屏幕 |
-| personal_data_request | social security, ssn, client list, date of birth, passport | 身份证, 社保号, 客户名单 |
+| Tactic | English phrases |
+|---|---|
+| authority | department of justice, police, officer, irs, marshal, federal, fraud department, it support, microsoft support |
+| secrecy | don't tell, do not tell, keep this between us, confidential, don't mention, stay on the line, don't hang up |
+| threat | under investigation, warrant, arrest, extradition, lawsuit, suspended, penalty, obstruction |
+| urgency | right now, immediately, before five, today, within the hour, urgent |
+| credential_request | read me the code, verification code, one-time code, password, the code we sent |
+| bank_change | new account, changed banks, update our bank details, routing number, new bank |
+| bypass_approval | skip the approval, no need for sign-off, I'll approve it later, don't loop in |
+| payment_request | wire, transfer, gift cards, bitcoin, crypto, pay the fine, safe account, bond |
+| remote_access | anydesk, teamviewer, remote access, share your screen, install this |
+| personal_data_request | social security, ssn, client list, date of birth, passport |
 
 ### 18.3 Glossary
 - **Window**: the last ~30 s of transcript, speaker-labelled, in memory.
