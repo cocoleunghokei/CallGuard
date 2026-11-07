@@ -12,6 +12,7 @@ def test_silence_never_loads_model(monkeypatch):
     transcribe.get_model.cache_clear()
     monkeypatch.delenv("CALLGUARD_WHISPER_DIR", raising=False)
     assert transcribe.transcribe_chunk(np.zeros(48_000, dtype=np.float32)) == ""
+    assert transcribe.transcribe_chunk(np.full(48_000, 0.002, dtype=np.float32)) == ""
 
 
 def test_model_is_local_loaded_once_and_english_vad_is_fixed(monkeypatch, tmp_path):
