@@ -918,7 +918,7 @@ Contracts are Lead-owned (guardrail 7). This section is the change Coco applies 
 |---|---|
 | `gate` | `{"state": "off | armed | locked", "reason": "…", "release_in": 120}` |
 | `call` | `{"state": "started | ended"}` |
-| `rules` | `[Rule]`, sent once on connect and again after every save or reset (for UI-13, UI-14). P1: optional `"source": "default | custom"` |
+| `rules` | `[Rule]`, sent once on connect and again after every save or reset (for UI-13, UI-14). P1: the message gets an optional top-level `"source": "default | custom"` |
 | `rules_saved` | P1: `{"ok": true}` or `{"ok": false, "errors": ["…"]}`, the reply to `save_rules` / `reset_rules` |
 
 `status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | on"`. `verify` gets optional `"status": "ok | offline | not_found | error"`, and P1 (C17) optional `"report": {"summary": "…", "source_url": "…", "date": "2026-10"}` (omitted when nothing recent is found). `EgressEntry.status` gets `refused` (the query failed `safe_org()`, nothing was sent, `sent` is empty). `EgressEntry.sent` is the exact query sent, so a C17 search shows `"Department of Justice" impersonation scam`.

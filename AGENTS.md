@@ -47,34 +47,43 @@ Each lane folder has its own `AGENTS.md` with its tasks, its rules and a **Statu
 
 ## 3. Contracts
 
-The code version is `callguard/shared/contracts.py`; this section is the readable version.
+The code version is `callguard/shared/contracts.py`; this section is the readable version (v2, from [prd.md §12](hack1984/prd.md#12-contract-changes-v2)). Fields marked *optional* may be missing; code must cope.
 
 **`TranscriptChunk`** (Audio → Server), one every ~3 s:
 ```json
 {"speaker": "caller | you", "text": "…", "start": 12.0, "end": 15.0, "language": "en | zh"}
 ```
 
-**`Rule`** (loaded from `callguard/detection/rules.json`):
+**`Rule`** (loaded from `callguard/detection/rules.json`, or the firm's custom file, see prd.md §8.1):
 ```json
-{"id": "no_bank_changes_by_phone", "text": "We never change vendor bank details by phone.", "tactics": ["bank_change"]}
+{"id": "no_bank_changes_by_phone", "text": "We never change vendor bank details by phone.", "tactics": ["bank_change"],
+ "keywords": ["new account"], "requires": ["authority"], "enabled": true}
 ```
+`keywords`, `requires` and `enabled` (default `true`) are optional.
 
 **`ScamCheck`** (Detection → Server → UI), the model's output:
 ```json
 {
   "risk": "low | watch | danger",
-  "tactics": ["authority", "secrecy", "urgency", "threat", "credential_request", "bank_change", "bypass_approval"],
+  "tactics": ["authority", "secrecy", "urgency", "threat", "credential_request", "bank_change", "bypass_approval",
+              "payment_request", "remote_access", "personal_data_request", "inside_knowledge"],
   "claimed_identity": "Department of Justice | null",
   "rules_broken": ["no_bank_changes_by_phone"],
   "reason": "Caller claims to be a government official and asked you not to tell colleagues.",
-  "next_step": "Hang up and call the agency's public number."
+  "next_step": "Hang up and call the agency's public number.",
+  "confidence": 0.99,
+  "evidence": [{"tactic": "secrecy", "quote": "do not tell your colleagues", "strength": "clear | hint | phrase", "speaker": "caller"}],
+  "safe_signals": ["callback_known_number | follows_normal_approval | no_money_or_data_asked | asks_in_writing"],
+  "source": "model | fast | fallback"
 }
 ```
+`confidence`, `evidence`, `safe_signals` and `source` are optional. `evidence.quote` is at most 80 characters, copied verbatim.
 
-**`EgressEntry`** (Server → UI), one for every network call:
+**`EgressEntry`** (Server → UI), one for every network call, including refused ones:
 ```json
-{"time": "2026-11-07T19:02:11", "destination": "api.tavily.com", "sent": "Department of Justice", "status": "ok | offline | error"}
+{"time": "2026-11-07T19:02:11", "destination": "api.tavily.com", "sent": "\"Department of Justice\" impersonation scam", "status": "ok | offline | error | refused"}
 ```
+`sent` is the exact query. `refused` means the name failed `egress.safe_org()` (prd.md §11.1): nothing was sent and `sent` is `""`.
 
 **WebSocket** `ws://localhost:8000/ws`. Every message from the Server to the UI is `{"type": …, "data": …}`:
 
@@ -82,11 +91,24 @@ The code version is `callguard/shared/contracts.py`; this section is the readabl
 |---|---|
 | `transcript` | `TranscriptChunk` |
 | `check` | `ScamCheck` |
-| `verify` | `{"org": "…", "phone": "…", "source_url": "…"}`, or `{"org": "…", "status": "offline"}` |
+| `verify` | `{"org": "…", "phone": "…", "source_url": "…", "status": "ok | offline | not_found | error", "report": {"summary": "…", "source_url": "…", "date": "2026-10"}}`. Only `org` is required; `report` (P1) is omitted when nothing recent is found |
 | `egress` | `EgressEntry` |
-| `status` | `{"listening": true, "online": false}` |
+| `status` | `{"listening": true, "online": false, "model": "ok | degraded | offline", "gate": "off | on"}` (`model`, `gate` optional) |
+| `gate` | `{"state": "off | armed | locked", "reason": "…", "release_in": 120}`. The safe-path pause; it never blocks typing |
+| `call` | `{"state": "started | ended"}` |
+| `rules` | `[Rule]`, sent on connect and after every save or reset. The message also has an optional top-level `"source": "default | custom"` |
+| `rules_saved` | `{"ok": true}` or `{"ok": false, "errors": ["…"]}` (P1) |
 
-UI → Server: `{"type": "colleague"}` for "Check with a colleague", and `{"type": "mark_safe"}`.
+UI → Server:
+
+| `type` | Extra fields | Meaning |
+|---|---|---|
+| `colleague` | | "Check with a colleague" |
+| `mark_safe` | | "Mark as safe" |
+| `gate_release` | `"how": "hang_up | colleague | mark_safe"` | User chose a way out of the pause |
+| `end_call` | | User ended the call in Callguard |
+| `save_rules` | `"data": [Rule]` | P1: save the firm's custom rules (refused during a call) |
+| `reset_rules` | | P1: delete the custom rules, back to defaults |
 
 ## 4. Commands
 
