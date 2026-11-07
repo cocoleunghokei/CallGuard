@@ -96,7 +96,7 @@ The code version is `callguard/shared/contracts.py`; this section is the readabl
 | `status` | `{"listening": true, "online": false, "model": "ok | degraded | offline", "gate": "off | on"}` (`model`, `gate` optional) |
 | `gate` | `{"state": "off | armed | locked", "reason": "…", "release_in": 120}`. The safe-path pause; it never blocks typing |
 | `call` | `{"state": "started | ended"}` |
-| `rules` | `[Rule]`, sent on connect and after every save or reset. The message also has an optional top-level `"source": "default | custom"` |
+| `rules` | `[Rule]`, sent on connect and after every save or reset. The message also has optional top-level `"source": "default | custom"`, `"never_search": ["…"]` (app-edited names, P1) and `"never_search_env": 2` (count from `.env`, P1) |
 | `rules_saved` | `{"ok": true}` or `{"ok": false, "errors": ["…"]}` (P1) |
 
 UI → Server:
@@ -107,8 +107,8 @@ UI → Server:
 | `mark_safe` | | "Mark as safe" |
 | `gate_release` | `"how": "hang_up | colleague | mark_safe"` | User chose a way out of the pause |
 | `end_call` | | User ended the call in Callguard |
-| `save_rules` | `"data": [Rule]` | P1: save the firm's custom rules (refused during a call) |
-| `reset_rules` | | P1: delete the custom rules, back to defaults |
+| `save_rules` | `"data": [Rule]`, optional `"never_search": ["…"]` | P1: save the firm's custom rules and never-search list (refused during a call) |
+| `reset_rules` | | P1: delete the custom rules, back to defaults (keeps the never-search list) |
 
 ## 4. Commands
 
