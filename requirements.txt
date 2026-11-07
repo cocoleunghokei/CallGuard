@@ -1,0 +1,14 @@
+# Server
+fastapi==0.162.2
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+python-dotenv==1.2.3
+# Native window (macOS pulls the pyobjc frameworks)
+pywebview==6.2.1
+pyobjc-framework-Cocoa; sys_platform == "darwin"
+# Audio: capture + on-laptop transcription
+sounddevice==0.5.6
+numpy==2.3.5
+faster-whisper==1.2.1
+# Tests (browser tests skip cleanly without playwright)
+pytest==9.2.0

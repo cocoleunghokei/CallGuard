@@ -101,6 +101,8 @@ class Status(TypedDict):
     online: bool
     model: NotRequired[Literal["ok", "degraded", "offline"]]
     gate: NotRequired[Literal["off", "on"]]
+    audio_ok: NotRequired[bool]  # live mode only: both inputs open (AUD-9)
+    audio_message: NotRequired[str]  # plain words, e.g. "No caller sound heard…"
 
 
 class Gate(TypedDict):

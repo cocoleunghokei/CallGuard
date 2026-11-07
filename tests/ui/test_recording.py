@@ -1,22 +1,16 @@
-"""T9: the backup-video recording mode of the replay harness (ui/DEMO.md §6)."""
+"""T9: the backup-video recording mode of the replay harness (documented in dev/replay.html)."""
 import pathlib
 import re
 
 UI = pathlib.Path(__file__).resolve().parents[2] / "ui"
 
 
-def test_demo_md_recording_url_uses_real_fixtures():
-    demo = (UI / "DEMO.md").read_text(encoding="utf-8")
-    url = re.search(r"replay\.html\?clean=1&f=([\w,]+)&exit=hang_up", demo)
-    assert url, "DEMO.md must give the hands-free recording URL"
+def test_recording_mode_is_documented_in_the_harness():
+    html = (UI / "dev" / "replay.html").read_text(encoding="utf-8")
+    url = re.search(r"\?clean=1&f=([\w,]+)&exit=hang_up", html)
+    assert url, "replay.html must document the hands-free recording URL"
     for name in url.group(1).split(","):
         assert (UI / "dev" / "fixtures" / f"{name}.json").exists(), name
-
-
-def test_demo_md_script_path_exists():
-    demo = (UI / "DEMO.md").read_text(encoding="utf-8")
-    for path in re.findall(r"--fake (\S+\.txt)", demo):
-        assert (UI.parent / path).exists(), path
 
 
 def test_clean_playlist_and_auto_exit(ui_server, browser):

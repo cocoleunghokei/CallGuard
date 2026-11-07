@@ -86,7 +86,7 @@ def test_b_fake_s1_call_writes_nothing(monkeypatch):
     async def sink(msg_type, data, **extra):
         sent.append(msg_type)
         if msg_type == "check" and data.get("claimed_identity"):
-            egress.search(data["claimed_identity"])  # offline in tests
+            egress.search(data["claimed_identity"], [data["claimed_identity"]])  # offline in tests
 
     async def call():
         p = Pipeline(sink, check_fn=fakes.fake_check, rules=[])
@@ -105,7 +105,7 @@ def test_c_search_refuses_long_or_multiline(bad, monkeypatch):
     monkeypatch.setattr(egress, "_probe", lambda *a, **k: True)
     monkeypatch.setattr(egress, "_transport", httpx.MockTransport(lambda r: seen.append(r) or httpx.Response(200, json={})))
     monkeypatch.setenv("TAVILY_API_KEY", "k")
-    egress.search(bad)
+    egress.search(bad, [bad])
     assert seen == []
     assert egress.entries[-1]["status"] == "refused" and egress.entries[-1]["sent"] == ""
 

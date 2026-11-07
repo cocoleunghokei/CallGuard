@@ -1,105 +1,73 @@
-# Callguard demo: machine setup, stage run, backup video
+# Callguard demo: machine setup and click-by-click path
 
-For whoever runs the demo, including someone who has never seen the app. Every state is listed with the exact step that shows it in [SCREENS.md](SCREENS.md). Pitch timing is in [project-plan.md §7](../hack1984/project-plan.md#7-demo-script-3-minutes).
+For whoever runs the demo or records the backup video. Someone who has never seen the app should be able to follow this top to bottom.
+Screens and the fixture step that shows each one: [SCREENS.md](SCREENS.md). Flows: [hack1984/ui-flows.md](../hack1984/ui-flows.md) §5.
 
-> **Status (Sun 04:40).** These two routes are ready: **B (scripted call in the real app)** and **C (replay in a browser, no Server)**. **A (live Zoom call)** still needs the Audio lane's `capture.py` (AUD-2), which isn't merged yet. There is also no `requirements.txt` yet (LEAD-3), and the native window has not been tried on a Mac (see the SRV-11 note). Update this box when they land.
+## 1. One-time setup (demo Mac)
 
----
-
-## 1. One-time setup on the demo Mac
-
-1. **Python 3.11+** and the repo:
-   ```bash
-   git clone https://github.com/cocoleunghokei/scam-call-detecter.git && cd scam-call-detecter
-   ```
+1. Python 3.11+ and a fresh venv in the repo root:
    ```bash
    python3 -m venv .venv && source .venv/bin/activate
-   ```
-   ```bash
    pip install -r requirements.txt
    ```
-   If `requirements.txt` isn't there yet, install what the lanes listed under **Needs**: `fastapi`, `uvicorn[standard]`, `httpx`, `python-dotenv`, `pywebview`, `pyobjc-framework-Cocoa`, `pytest`, plus the Audio lane's packages (`sounddevice`, `numpy`, `faster-whisper`) for route A.
-2. **Local model.** Install Ollama, then:
+2. Local model: install Ollama, then `ollama pull qwen2.5:7b` (slow laptop: `qwen2.5:3b` and `CALLGUARD_MODEL=qwen2.5:3b` in `.env`).
+3. Whisper model, downloaded once while online (the app never downloads anything):
    ```bash
-   ollama pull qwen2.5:7b
+   python -c "from huggingface_hub import snapshot_download; print(snapshot_download('Systran/faster-whisper-small'))"
    ```
-   Fallback model: `qwen2.5:3b` (set `CALLGUARD_MODEL=qwen2.5:3b`). It runs on `localhost`, so it keeps working with the Wi-Fi off.
-3. **Search key.** Create `.env` at the repo root (git ignores it): `TAVILY_API_KEY=…`. Optional: `CALLGUARD_NEVER_SEARCH=Firm name,Client name` (names never sent to search).
-4. **Call audio (route A only).** Install **BlackHole 2ch**. In *Audio MIDI Setup*, create a **Multi-Output Device** with BlackHole 2ch + your headphones. In Zoom, set **Speaker** to that Multi-Output Device and **Microphone** to the built-in mic. Callguard reads the caller from BlackHole and you from the mic. Override the device names with `CALLGUARD_CALLER_DEVICE` / `CALLGUARD_MIC_DEVICE` if needed.
-5. **Notifications.** Callguard's danger notification is posted by the app through macOS (`osascript`). Run route B once and allow the notification when macOS asks. If none appears, check *System Settings → Notifications* for the entry that posted it (usually "Script Editor") and allow banners + sound.
-6. **Rehearse offline without touching Wi-Fi:** prefix any run with `CALLGUARD_OFFLINE=1` to force "Offline".
+   Put the printed folder in `.env` as `CALLGUARD_WHISPER_DIR=…`.
+4. Audio route: install BlackHole 2ch. In Audio MIDI Setup make a **Multi-Output Device** = your speakers/headphones + BlackHole 2ch, and set Zoom's speaker to it (you still hear the caller; Callguard hears them through BlackHole). Your mic stays your normal mic. Device names differ? set `CALLGUARD_CALLER_DEVICE` / `CALLGUARD_MIC_DEVICE` in `.env`.
+5. `.env` (never committed): `TAVILY_API_KEY=…` (optional `EXA_API_KEY=…`), plus the two lines above.
+6. Check it all:
+   ```bash
+   python -m callguard.audio.health     # "Audio inputs are ready."
+   ollama list                          # qwen2.5 is there
+   pytest                               # green, offline
+   ```
 
-## 2. Fifteen minutes before going on stage
+## 2. Before going on stage
 
-- [ ] Ollama is running (`ollama list` answers).
-- [ ] Wi-Fi **on**. You know where the toggle is: the Wi-Fi icon in the menu bar (or Control Centre). Practise turning it off with one click.
-- [ ] **Do Not Disturb / Focus off**, or the danger notification won't show.
-- [ ] Volume up: the warning plays one short tone.
-- [ ] Close everything else. Zoom on the left, the Callguard window (400 × 760, always on top) against the right edge of the screen. On a 13" display, leave Zoom at least 900 px wide.
-- [ ] Dismiss the consent line once ("Checks run on this laptop…" ×) only if you're short on space. It's a good line to read out, though.
-- [ ] Backup video open in QuickTime, paused on the first frame, on a second desktop (Ctrl → to switch).
+- Ollama running (`ollama serve` or the menu-bar app). Warm the model once: `ollama run qwen2.5:7b "hi"`.
+- Wi-Fi **on** to start. The Wi-Fi toggle is in Control Center (top-right menu bar); have it one click away.
+- Do Not Disturb **off** (the danger notification has to show), but quit Slack/Mail so nothing else pops up.
+- Start the app:
+  ```bash
+  python -m callguard.server                 # live: listens to the Zoom call
+  ```
+  The Callguard window opens on top (400 × 760). Put it at the right edge of the screen, Zoom on the left.
+- Check the header: "Listening locally · nothing stored", "Online", "Safe pause on". No yellow banner. A banner "Basic checks only, local model unavailable" means Ollama isn't answering; an audio banner means the mic or BlackHole isn't heard.
 
-## 3. Three ways to run it (most real first)
-
-**A. Live Zoom call** (needs AUD-2):
-```bash
-python -m callguard.server
-```
-The Callguard window opens on top. A teammate calls you on Zoom and reads S1 from [prd.md §4.2](../hack1984/prd.md) (the "Department of Justice" script).
-
-**B. Scripted call in the real app** (no second person, no audio). The Server plays the script into the real pipeline and model:
+**No caller available / audio trouble?** Play a scripted call through the real pipeline instead (same window, same model, no mic):
 ```bash
 python -m callguard.server --fake tests/detection/scripts/s1_government.txt
 ```
-The call starts when the window connects. To replay (for example after turning Wi-Fi off), close the window and run the command again. `--fake-speed 2` plays twice as fast.
+It starts as soon as the window connects. `--fake-speed 2` plays twice as fast.
 
-**C. Fallback: replay in a browser** (no Server, no Ollama, no network, nothing to fail):
+**Model or laptop trouble?** The replay harness needs nothing but a browser (no Server, no Ollama, no network):
 ```bash
 cd ui && python3 -m http.server 8080
 ```
-Then open `http://localhost:8080/dev/replay.html?clean=1&f=s1_government,offline` in Safari or Chrome, and narrow the browser window to sit next to Zoom. A browser tab can't stay always-on-top. Without `clean=1` you get the dev controls (Step, speed, message logs).
+Open `http://localhost:8080/dev/replay.html?f=s1_government&autoplay=1&speed=1`.
 
-## 4. The demo path, click by click (≈ 70 s of the 3 min)
+## 3. The demo path (3 min, ui-flows.md §5)
 
-| Pitch time | You do / say | Callguard shows |
+| # | Say / do | Callguard shows |
 |---|---|---|
-| 0:50 | Point at the window: "Listening locally, nothing stored. Nothing has left this device." | Grey ○ "Not on a call", green "Listening locally · nothing stored", footer "Nothing has left this device" |
-| 0:55 | Call starts (A: answer Zoom · B: run the command) | Green ✓ "Low · No clear signs", last three lines under "Latest" |
-| ~1:10 | Caller: "…you're under investigation…" | Amber ◐ "Watch · Some signs", pills "Claims authority", "Threatens you" (click one: the caller's exact words), Say line |
-| ~1:12 | "The only thing that leaves the laptop is the name they claimed." Click the footer | Footer flashes: `1 item left: "Department of Justice"`. Panel: 19:02:11 · api.tavily.com · "Department of Justice" · Sent |
-| ~1:20 | Caller: "…do not tell your colleagues…" | Mac notification "Callguard: verify this call before you act" + one tone. The red warning opens over the panel: claimed identity, each sign with the caller's words, firm rule, "Real public number: (202) 514-2000 · source: justice.gov" |
-| ~1:30 | Caller asks for bank details. Try typing in Zoom chat: it still works, and Callguard only keeps focus | "This call is asking for bank details…", "🔒 Pause ends in 2:00" counting down. Enter and Esc do nothing |
-| ~1:40 | Click **Hang up and call back** | "Hang up now", the real number big, "Copy number" |
-| 1:50 | Call ends | Panel wipes back to grey. No transcript anywhere |
-| 2:00 | **Turn Wi-Fi off.** Rerun (B: close the window and run the command again) | Header "Offline". Same call is still caught; verify line "Offline, search skipped. Use the number on file."; footer "Nothing has left this device · 1 skipped" |
-| 2:15 | Click the footer: "Even the name didn't go out." | Entry "Offline, not sent" |
+| 1 | Show the window before the call. Click the footer "Nothing has left this device" | Grey "Not on a call"; the empty "What left this device (0)" panel. Click it again to close |
+| 2 | Caller ("David from the Department of Justice") opens politely | Call starts, green "Low · No clear signs", last 3 lines under "Latest" |
+| 3 | Caller: "…your firm is under investigation…" | Amber "Watch": the reason, "Claims authority" / "Threatens you" pills (click one: the exact words), a "Say this" line, "Checking Department of Justice's public number…" |
+| 4 | Point at the footer | It flashes once: `1 item left: "Department of Justice"`. Click it: that name is the **only** thing sent, to api.tavily.com |
+| 5 | Caller: "…don't tell your colleagues…" | Red warning fills the window, one short tone, the Mac notification (fixed text, no caller words). Tactics with their quotes, the firm rule, the real public number |
+| 6 | Caller asks for bank details; presenter tries to type | "Typing is paused while this call asks for…" with a countdown. Callguard keeps focus |
+| 7 | Click **Hang up and call back** | "Hang up now": the verified number, big, with Copy number |
+| 8 | Hang up in Zoom, click **End call** (or wait 45 s of silence) | Panel wipes: no lines, no quotes left on screen or in memory |
+| 9 | **Wi-Fi off**, run the call again | Header "Offline". Everything works the same, the lookup says "Offline, search skipped. Use the number on file." and the egress entry reads "Offline, not sent" |
 
-Other exits, if a judge asks: **Check with a colleague** (shows the fixed heads-up IT and the manager would get, marked "Demo: not sent") and **Verified it's safe?** (type SAFE, then hold the button for 3 s; a single click never does it).
+The other two exits, if asked: **Check with a colleague** (toast + a local Mac notification), and **Type SAFE + hold 3 s** (meter back to green, "Marked safe").
 
-## 5. If something breaks on stage
+## 4. Backup video (due Sun 09:00, file stays off-repo)
 
-| Symptom | Do this |
-|---|---|
-| Window shows "Connecting to Callguard…" | The Server isn't running. Rerun the command. It reconnects every 2 s by itself |
-| Banner "Basic checks only, local model unavailable" | Ollama is down. Carry on: phrase checks still reach Watch. Or switch to the backup video |
-| No notification at danger | Focus mode is on. Carry on, the warning in the window is the real thing |
-| Live audio silent (route A) | Switch to route B with the same script. Say "here's the same call, scripted" |
-| Anything else | Ctrl → to the backup video desktop and press Space |
-
-## 6. Recording the backup video (UI-11, due Sun 09:00)
-
-The video file stays **off the repo** (put it in the team drive).
-
-1. Route C server: `cd ui && python3 -m http.server 8080`.
-2. In Chrome or Safari, open:
-   ```
-   http://localhost:8080/dev/replay.html?clean=1&f=s1_government,offline&exit=hang_up
-   ```
-   This plays S1 in real time. "Hang up and call back" is clicked by itself 4 s after the pause locks. Then a title card "Wi-Fi off. Same call again." appears and the offline run plays (≈ 1 min 45 s in all, hands-free).
-   - `exit=` leave it out to click the exits yourself; `exit=colleague` shows the other exit.
-   - `exit_after=6` waits longer before the click; `gap=6` holds the title card longer.
-   - `autoplay=0` waits for you to press Play (the controls are hidden in clean mode, so leave `autoplay` out for recording).
-3. Record with QuickTime (*File → New Screen Recording*, record a selected area around the window), or ⇧⌘5.
-4. **Sound:** QuickTime doesn't record system audio on its own. To capture the warning tone, pick BlackHole as the recording input with the Multi-Output Device as the system output, or add the tone in editing.
-5. Before you cut: check the take shows the footer flash, the warning tone moment, the countdown and the call-back number. Record one light-mode and one dark-mode take (*System Settings → Appearance*), and keep the better one.
-6. Optionally put the Gradium "David" voice clip (LEAD-9) at the start in editing.
+1. Wi-Fi on. `python -m callguard.server --fake tests/detection/scripts/s1_government.txt`
+2. QuickTime → New Screen Recording, select the Callguard window plus a little of the desktop. Start, then let the replay play steps 1–8 above (click the egress footer at step 4, Hang up and call back at step 7).
+3. Wi-Fi off, restart the same command, record step 9.
+4. Save outside the repo.

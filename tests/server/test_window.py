@@ -62,6 +62,26 @@ def test_notify_is_noop_off_mac(monkeypatch):
     window.notify_macos(window.NOTIFY_DEFAULT)
 
 
+def test_colleague_notification_is_fixed_and_local(monkeypatch):
+    ran = []
+    monkeypatch.setattr(window.sys, "platform", "darwin")
+    monkeypatch.setattr(window.shutil, "which", lambda n: "/usr/bin/osascript")
+    monkeypatch.setattr(window.subprocess, "Popen", lambda cmd, **kw: ran.append((cmd, kw)))
+    window.notify_colleague_macos()
+    command, kwargs = ran[0]
+    assert command[:2] == ["osascript", "-e"]
+    assert window.COLLEAGUE_BODY in command[2]
+    assert window.COLLEAGUE_TITLE in command[2]
+    assert "caller words" not in command[2] and "Department of Justice" not in command[2]
+    assert kwargs["stdout"] == window.subprocess.DEVNULL
+
+
+def test_colleague_notification_is_noop_off_mac(monkeypatch):
+    monkeypatch.setattr(window.sys, "platform", "linux")
+    monkeypatch.setattr(window.subprocess, "Popen", lambda *a, **k: pytest.fail("ran osascript"))
+    window.notify_colleague_macos()
+
+
 def free_port():
     with _socket_for_free_port.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -86,7 +106,7 @@ def test_run_window_serves_in_a_thread_and_opens_on_top(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "webview", types.SimpleNamespace(create_window=create_window, start=start))
     port = free_port()
-    app, runtime = build_app(parse_args(["--port", str(port)]))
+    app, runtime = build_app(parse_args(["--port", str(port), "--no-audio"]))
     window.run_window(app, runtime, "127.0.0.1", port)
     assert opened["title"] == "Callguard" and opened["on_top"] is True
     assert opened["width"] <= 420 and opened["main_thread"] and opened["status"] == 200
