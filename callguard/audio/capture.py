@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 SAMPLE_RATE = 16_000
 CHUNK_SECONDS = 3
 CHUNK_FRAMES = SAMPLE_RATE * CHUNK_SECONDS
+_peak_rms: dict[Speaker, float | None] = {"caller": None, "you": None}
 
 
 @dataclass(frozen=True)
@@ -32,7 +33,7 @@ def _input_device(sd: object, name: str | None, source: str) -> int:
     devices = sd.query_devices()
     if name is None:
         device = sd.default.device[0]
-        if device is None or device < 0 or devices[device]["max_input_channels"] < 1:
+        if device is None or device < 0 or device >= len(devices) or devices[device]["max_input_channels"] < 1:
             raise RuntimeError("No default input microphone is available")
         return device
 
@@ -40,6 +41,17 @@ def _input_device(sd: object, name: str | None, source: str) -> int:
         if name.casefold() in device["name"].casefold() and device["max_input_channels"] >= 1:
             return index
     raise RuntimeError(f"{source} input device matching {name!r} was not found")
+
+
+def _selected_input_devices(sd: object) -> tuple[int, int]:
+    caller_name = os.environ.get("CALLGUARD_CALLER_DEVICE") or "BlackHole 2ch"
+    mic_name = os.environ.get("CALLGUARD_MIC_DEVICE") or None
+    return _input_device(sd, caller_name, "Caller"), _input_device(sd, mic_name, "Mic")
+
+
+def signal_peaks() -> dict[Speaker, float | None]:
+    """Return peak RMS since capture started; no audio samples are retained."""
+    return _peak_rms.copy()
 
 
 def capture_chunks(duration: float | None = None) -> Iterator[AudioChunk]:
@@ -50,10 +62,8 @@ def capture_chunks(duration: float | None = None) -> Iterator[AudioChunk]:
     """
     import sounddevice as sd  # local import: offline tests and script replay need no device
 
-    caller_name = os.environ.get("CALLGUARD_CALLER_DEVICE") or "BlackHole 2ch"
-    mic_name = os.environ.get("CALLGUARD_MIC_DEVICE") or None
-    caller_device = _input_device(sd, caller_name, "Caller")
-    mic_device = _input_device(sd, mic_name, "Mic")
+    caller_device, mic_device = _selected_input_devices(sd)
+    _peak_rms.update(caller=None, you=None)
     chunks: Queue[AudioChunk] = Queue(maxsize=4)
     frames_seen = {"caller": 0, "you": 0}
 
@@ -91,7 +101,11 @@ def capture_chunks(duration: float | None = None) -> Iterator[AudioChunk]:
             if remaining is not None and remaining <= 0:
                 return
             try:
-                yield chunks.get(timeout=0.5 if remaining is None else min(0.5, remaining))
+                chunk = chunks.get(timeout=0.5 if remaining is None else min(0.5, remaining))
+                level = rms(chunk.samples)
+                previous = _peak_rms[chunk.speaker]
+                _peak_rms[chunk.speaker] = level if previous is None else max(previous, level)
+                yield chunk
             except Empty:
                 continue
 

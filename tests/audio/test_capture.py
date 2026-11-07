@@ -52,6 +52,7 @@ def test_capture_uses_two_16khz_mono_float32_streams(monkeypatch):
     assert all(stream.kwargs["dtype"] == "float32" for stream in FakeInputStream.opened)
     assert all(stream.kwargs["blocksize"] == 48_000 for stream in FakeInputStream.opened)
     assert capture.rms(chunks[0].samples) == pytest.approx(1.0)
+    assert capture.signal_peaks() == {"caller": pytest.approx(1.0), "you": pytest.approx(1.0)}
 
 
 def test_device_name_overrides(monkeypatch):
