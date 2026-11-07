@@ -8,8 +8,8 @@ Hacking: **Sat 11:00 → Sun 11:00 (code freeze)**. Judging Sun 12:00.
 ## 1. What we ship
 
 ### P0: must work for the demo
-- [ ] Capture call audio on the Mac (caller via BlackHole, you via mic)
-- [ ] Live local transcription (faster-whisper), English
+- [x] Capture call audio on the Mac (caller via BlackHole, you via mic). Tested on Google Meet
+- [ ] Live local transcription (faster-whisper), English. One-shot transcription works; live 3s loop not built yet
 - [ ] Local scam check (Ollama + Qwen 2.5 7B; 3B tested and too inaccurate), returning risk level, tactic and reason
 - [ ] Firm rules check (3–5 rules from a JSON file)
 - [ ] Warning screen: risk meter, plain-language reason, full-screen warning on danger
@@ -161,6 +161,7 @@ Write the results here:
 | Route | Caller heard? | You heard? | Transcript OK? | Notes |
 |---|---|---|---|---|
 | `say` on the Mac (solo check, no call) | ✅ level 0.046 | ✅ level 0.004 (low) | Caller word-perfect. Mic side: Whisper made up "Thank you" on silence (fixed with `vad_filter`) and picked up speaker echo | Sat 15:50, Python 3.14, Whisper base |
+| Google Meet in Chrome (Mac speakers) | ✅ level 0.071 | ✅ level 0.004 | Both sides clean and separate, no echo, no made-up words (VAD on) | Sat ~16:00, real call, Whisper base |
 | Continuity (Mac speakers) | | | | |
 | Zoom (Mac speakers) | | | | |
 | Speakerphone next to laptop | | | | |
