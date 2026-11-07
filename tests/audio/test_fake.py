@@ -40,3 +40,18 @@ def test_fake_stream_scales_replay_delay_without_changing_timestamps(monkeypatch
 def test_fake_stream_rejects_invalid_speed(speed):
     with pytest.raises(ValueError, match="speed"):
         list(fake_stream(FIXTURES / "one_caller.txt", speed=speed))
+
+
+def test_every_detection_scenario_replays_without_delay():
+    scripts = sorted((Path(__file__).parents[1] / "detection" / "scripts").glob("*.txt"))
+    assert len(scripts) >= 8
+
+    for script in scripts:
+        utterances = [
+            line for line in script.read_text(encoding="utf-8").splitlines()
+            if line.startswith(("caller:", "you:"))
+        ]
+        chunks = list(fake_stream(script, speed=0))
+        assert len(chunks) == len(utterances), script.name
+        assert [chunk["start"] for chunk in chunks] == [3.0 * i for i in range(len(chunks))]
+        assert all(chunk["language"] == "en" for chunk in chunks)
