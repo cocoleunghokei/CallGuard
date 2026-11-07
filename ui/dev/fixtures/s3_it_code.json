@@ -10,7 +10,7 @@
           "listening": true,
           "online": true,
           "model": "ok",
-          "gate": "soft"
+          "gate": "on"
         }
       }
     },
@@ -60,7 +60,8 @@
               "secrecy"
             ]
           }
-        ]
+        ],
+        "source": "default"
       }
     },
     {
@@ -187,8 +188,7 @@
         "type": "gate",
         "data": {
           "state": "locked",
-          "mode": "soft",
-          "reason": "this call asks for a code",
+          "reason": "This call is asking for a code. Verify before you share anything.",
           "release_in": 120
         }
       }
@@ -199,7 +199,6 @@
         "type": "gate",
         "data": {
           "state": "off",
-          "mode": "soft",
           "reason": "",
           "release_in": 0
         }

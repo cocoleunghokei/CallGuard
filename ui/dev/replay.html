@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callguard replay</title>
+<!--
+  Dev harness (UI-8). Serve ui/ and open /dev/replay.html:
+      cd ui && python3 -m http.server 8080
+      open http://localhost:8080/dev/replay.html
+  Optional query: ?f=s1_government&speed=4&autoplay=0
+  No Server, no Ollama, no network.
+-->
+<style>
+  :root { --font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 var(--font); background: Canvas; color: CanvasText; display: flex; height: 100vh; }
+  .stage { flex: none; width: 392px; padding: 12px 16px; background: color-mix(in srgb, CanvasText 6%, Canvas); display: flex; justify-content: center; }
+  iframe { width: 360px; height: calc(100vh - 24px); max-height: 760px; border: 0; border-radius: 12px; background: Canvas; box-shadow: 0 6px 24px rgba(0,0,0,.2); }
+  .side { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow: hidden; }
+  h1 { font-size: 16px; margin: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  select, button { font: inherit; padding: 5px 10px; border-radius: 6px; }
+  button:focus-visible, select:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  .speed button[aria-pressed="true"] { font-weight: 700; outline: 2px solid currentColor; }
+  .meta { font-size: 12px; opacity: .8; }
+  .clock { font-variant-numeric: tabular-nums; }
+  .logs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; flex: 1; min-height: 0; }
+  .log { display: flex; flex-direction: column; min-height: 0; border: 1px solid color-mix(in srgb, CanvasText 15%, Canvas); border-radius: 8px; }
+  .log h2 { font-size: 12px; margin: 0; padding: 8px 10px; border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, Canvas); display: flex; justify-content: space-between; }
+  .log ol { list-style: none; margin: 0; padding: 6px 10px; overflow: auto; font: 12px/1.5 ui-monospace, Menlo, monospace; flex: 1; }
+  .log li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log li.drop { opacity: .5; text-decoration: line-through; }
+  .log li.sys { opacity: .6; font-style: italic; }
+  .sent li { font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <iframe id="ui" title="Callguard UI under replay"></iframe>
+  </div>
+  <div class="side">
+    <h1>Callguard replay</h1>
+    <p id="desc" class="meta"></p>
+    <div class="controls">
+      <label>Fixture <select id="fixture"></select></label>
+      <button id="play" type="button">Pause</button>
+      <button id="step" type="button">Step</button>
+      <button id="restart" type="button">Restart</button>
+      <button id="drop" type="button" title="Close the socket; the UI should reconnect in 2 s">Drop connection</button>
+    </div>
+    <div class="controls speed" role="group" aria-label="Speed">
+      Speed
+      <button type="button" data-speed="0.5">0.5×</button>
+      <button type="button" data-speed="1">1×</button>
+      <button type="button" data-speed="4">4×</button>
+      <span class="meta clock" id="clock"></span>
+    </div>
+    <div class="logs">
+      <section class="log"><h2>Server → UI <span id="fed-n" class="meta"></span></h2><ol id="fed"></ol></section>
+      <section class="log sent"><h2>UI → Server <span id="sent-n" class="meta"></span></h2><ol id="sent"></ol></section>
+    </div>
+  </div>
+  <script type="module" src="replay.js"></script>
+</body>
+</html>
