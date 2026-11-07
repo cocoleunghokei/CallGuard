@@ -157,7 +157,7 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 
 | Rank | IDs | Lane | Why it is a stretch, not must-ship |
 |---|---|---|---|
-| 1 | SRV-11 | Server | Always-on-top window that goes full-screen on danger. Biggest visual upgrade to the key moment; P0 fallback is the overlay filling the Callguard window plus sound and a notification |
+| 1 | SRV-11 | Server | Always-on-top side panel window that comes to the front on danger (no full-screen). Keeps the meter visible beside Zoom; P0 is the browser tab plus the danger notification ([9.5](#95-the-danger-notification)) |
 | 2 | SRV-10 | Server | Hard keyboard gate. A memorable beat ("try typing, nothing appears"), but needs Accessibility permission and native code; the soft gate already covers the idea |
 | 3 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
 | 4 | UI-13, UI-14, SRV-14, DET-13 | UI, Server, Detection | Firm rules panel, then the editor that lets a company write its own rules. Strengthens the "firm rules" differentiator ([2.4](#24-competitive-position-and-what-it-protects-in-scope)); the P0 rules already appear in the warnings |
@@ -418,7 +418,7 @@ Per-window checks jump around as the 30 s window slides. The Server keeps a smal
 |---|---|
 | any | Transcript and meter update |
 | ≥ 0.40 (`watch`) | Watch note with tactic chips. Claimed identity, if any, is verified once (C12). This keeps egress to calls that look suspicious |
-| ≥ 0.75 (`danger`) | Full-screen danger overlay, sound, macOS notification |
+| ≥ 0.75 (`danger`) | Danger notification and sound; the Callguard window switches to the danger overlay, which the notification opens on click ([9.5](#95-the-danger-notification)) |
 | ≥ 0.85 **and** an "ask" tactic | Keyboard gate locks (hard gate if available, soft gate otherwise) |
 
 ---
@@ -430,7 +430,7 @@ The background says "a full-screen warning that a bank or login window can't hid
 
 ### 7.2 What it does
 When the gate locks:
-1. The Callguard window goes full-screen and on top (the danger overlay).
+1. A danger notification appears with a sound ([9.5](#95-the-danger-notification)). Clicking it brings the Callguard window to the front, showing the danger overlay. Nothing goes full-screen.
 2. **Hard gate (P1):** typing into any app other than Callguard is paused system-wide. The mouse still works, so the user can always hang up the call.
 3. The overlay offers three ways out, ordered so the safe path is easiest:
    - **"Hang up and call back"** (primary, one click): shows the verified or on-file number, releases the gate.
@@ -443,9 +443,9 @@ When the gate locks:
 | | Soft gate (P0) | Hard gate (P1) |
 |---|---|---|
 | Owner | UI (overlay and unlock) + Server (state) | Server (`callguard/server/gate_macos.py`) + UI (unlock) |
-| Mechanism | Danger overlay in the always-on-top window; focus moves to it; Enter/Esc do not dismiss; typed `SAFE` + 3 s hold for mark-safe | macOS Quartz event tap (`CGEventTapCreate`, key-down and key-up) swallows key events unless Callguard's own process is frontmost |
-| Needs | `pywebview` window on top (`SRV-11`); falls back to a browser window | Accessibility permission for the Python process; `pyobjc-framework-Quartz` |
-| If unavailable | Still shows overlay in the narrow window plus notification and sound | Falls back to soft gate; `status.gate` reports `"soft"` |
+| Mechanism | Danger notification + sound; clicking it opens the danger overlay in the Callguard window; Enter/Esc do not dismiss the overlay; typed `SAFE` + 3 s hold for mark-safe. It does not stop typing in other apps: it is a warning, not a lock | macOS Quartz event tap (`CGEventTapCreate`, key-down and key-up) swallows key events unless Callguard's own process is frontmost |
+| Needs | Notification permission for the Callguard page, granted once during setup (UI-11 `DEMO.md`) | Accessibility permission for the Python process; `pyobjc-framework-Quartz` |
+| If unavailable | Permission denied: the tab title flashes, the sound plays and the overlay is already open in the Callguard window | Falls back to soft gate; `status.gate` reports `"soft"` |
 
 ### 7.4 State machine
 
@@ -476,7 +476,7 @@ stateDiagram-v2
 - **Escape hatch phrase is not secret.** Typing `SAFE` is visible on screen. We accept that a scammer could coach it; the 3 s hold and the visible warning text are the friction that matters.
 
 ### 7.6 Demo beat
-During S1, at beat 4 ("verify your bank account number"), the presenter clicks into a browser tab with a fake bank form and tries to type. Nothing appears. The overlay shows "Typing is paused while this call asks for bank details," the DOJ's real number from search, and the three buttons.
+During S1, at beat 4 ("verify your bank account number"), the danger notification appears. The presenter ignores it, clicks into a browser tab with a fake bank form and tries to type. Nothing appears. They click the notification: the overlay shows "Typing is paused while this call asks for bank details," the DOJ's real number from search, and the three buttons. (Without the hard gate, skip the typing attempt and go straight to clicking the notification.)
 
 ---
 
@@ -515,8 +515,9 @@ Every firm has different policies, so a company can edit its rules from the app 
 
 ### 9.1 Surfaces
 1. **Side panel** (narrow, always on top beside Zoom): "Listening locally" badge, online/offline dot, risk meter, watch note, live transcript tail, "What left this device" panel, two buttons.
-2. **Danger overlay** (full-screen): the headline, the tactics in plain words with the quote that triggered each, the rule broken, the real number, the next step, the three exits, the gate status.
-3. **Post-call summary card** (P1): "Possible government-impersonation scam · 3 warning signs · you called back." No transcript. Kept in memory for the session only.
+2. **Danger notification** ([9.5](#95-the-danger-notification)): a macOS notification with a sound; clicking it opens the overlay.
+3. **Danger overlay** (fills the Callguard window, not the screen): the headline, the tactics in plain words with the quote that triggered each, the rule broken, the real number, the next step, the three exits, the gate status.
+4. **Post-call summary card** (P1): "Possible government-impersonation scam · 3 warning signs · you called back." No transcript. Kept in memory for the session only.
 
 ### 9.2 States of the side panel
 
@@ -525,7 +526,7 @@ Every firm has different policies, so a company can edit its rules from the app 
 | Idle | "Not on a call" · grey meter · "Nothing has left this device" |
 | Listening, low | Green meter, "Listening locally · nothing stored", transcript tail (last ~3 lines) |
 | Watch | Amber meter, "How sure: some signs (6/10)", one line: `reason`, tactic chips ("Claims to be an official", "Threatens you") |
-| Danger | Red, overlay opens, sound, macOS notification |
+| Danger | Red, danger notification and sound, overlay opens in the Callguard window |
 | Model down | Meter still works on phrases, banner "Basic checks only, local model unavailable" |
 | Offline | Grey dot "Offline", verify line says "Offline, search skipped" |
 
@@ -557,6 +558,16 @@ Every firm has different policies, so a company can edit its rules from the app 
 │  Type SAFE and hold to continue: [____]  ( hold 3 s )          │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+### 9.5 The danger notification
+
+On `danger` the user gets a notification instead of a full-screen takeover. The details are one click away.
+
+- **How.** The UI page sends it with the browser Notification API (`new Notification(…)`), so it needs no extra dependency and no native code. Clicking it calls `window.focus()` and shows the overlay. The page asks for permission once, during setup.
+- **Text.** Title "Callguard: verify this call before you act". Body is one fixed line chosen by the ask tactic, e.g. "The caller is asking for bank details. Click for details." Ends with "Click for details".
+- **Privacy.** macOS keeps notification history on disk, so the notification **never** contains the caller's words, the transcript, the claimed identity or a number. Only the fixed copy above (guardrail 1).
+- **How often.** Once when call risk first reaches `danger`, and again only for a new ask tactic in the same call (same rule as the gate's no re-nagging, [7.5](#75-safety-rules-for-the-gate-these-are-hard-requirements)). Uses `tag: "callguard-danger"` so a new one replaces the old one instead of stacking.
+- **Ignoring it.** The overlay is already open in the Callguard window, the side panel stays red, and danger stays sticky ([6.7](#67-call-level-smoothing-server-c10)), so the warning is still there when the user looks back.
 
 ---
 
@@ -957,7 +968,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-8 | P0 | Surge: `egress.search(org)` via Tavily (Exa fallback) with keys from `.env`; query = org name only; extract phone + source URL; cache per call; only at confidence ≥ 0.40 | 5 real org names return a plausible number; offline returns `offline` | SRV-3 |
 | SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. Soft mode needs no OS hooks | Unit tests for every transition | SRV-7 |
 | SRV-10 | P1 | `gate_macos.py`: Quartz event tap on a background CFRunLoop thread; swallow key events unless frontmost PID is ours; re-enable on timeout once; fall back to soft; **no key code access** | Manual test on the demo Mac; Coco line review | SRV-9 |
-| SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; go full-screen on gate lock/danger, restore on release | Window covers a browser on danger | SRV-1 |
+| SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; comes to the front on danger (no full-screen). The danger notification must still work in this window (fall back to `osascript` with the same fixed copy if the web Notification API is unavailable) | Window stays on top beside Zoom; danger brings it forward | SRV-1 |
 | SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines | Green in `pytest` | — |
 | SRV-14 | P1 | Rules editing ([8.1](#81-customizing-the-rules-p1)): handle `save_rules` (validate with `validate_rules`, write the custom file atomically, reload, broadcast `rules` and `rules_saved`) and `reset_rules` (delete the custom file, reload defaults); refuse both while a call is active (`rules_saved` with an error); never log rule edits as egress | Unit tests with a temp directory: save, invalid save, reset, refused during a call | DET-13, SRV-5 |
 | SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
@@ -971,7 +982,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-1 | P0 | Side panel shell: "Listening locally · nothing stored" badge, online/offline dot, model-status banner, consent line | Renders from a `status` fixture | — |
 | UI-2 | P0 | Risk meter with level word, icon and the 10-point confidence bar with words ([9.2](#92-states-of-the-side-panel)) | Fixture replay shows low → watch → danger | — |
 | UI-3 | P0 | Watch note: `reason` + tactic chips in plain words; chip expands to show `evidence.quote`; if `rules_broken` is not empty, show the rule text here too, not only in the danger overlay | Fixture | LEAD-1 |
-| UI-4 | P0 | Danger overlay ([9.4](#94-the-overlay-layout-danger)): claimed identity, tactics with quotes, rule text, verify line (number, or "Offline, search skipped", or "Looking up…"), `next_step`, sound on open | Fixture | — |
+| UI-4 | P0 | Danger notification ([9.5](#95-the-danger-notification)): fixed copy only, click focuses the page and shows the overlay, once per new ask tactic, permission request on first load. Danger overlay ([9.4](#94-the-overlay-layout-danger)): claimed identity, tactics with quotes, rule text, verify line (number, or "Offline, search skipped", or "Looking up…"), `next_step`, sound on open | Fixture | — |
 | UI-5 | P0 | Soft gate unlock: primary "Hang up and call back", "Check with a colleague", and `SAFE` + 3 s hold; Enter/Esc never dismiss; focus starts on the primary button; countdown from `gate.release_in`; sends `gate_release` | Keyboard-only test of every exit | SRV-9 contract |
 | UI-6 | P0 | "What left this device" panel: every `egress` entry (time, destination, exactly what was sent, status); empty state "Nothing has left this device" | Fixture | — |
 | UI-7 | P0 | Transcript tail: last ~3 lines, speaker-tagged, cleared on `call ended`; never kept beyond the current call | Fixture | — |
