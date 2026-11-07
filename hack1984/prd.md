@@ -66,7 +66,7 @@ That makes these requirements **protected**: they are not cut at the Sun 02:00 P
 | Differentiator | Answers which competitor | Protected requirements | Demo moment |
 |---|---|---|---|
 | Script, not voice | Pindrop, Reality Defender, Polygraf, Hiya, Truecaller | DET-1..9 | Gradium clone opener, then the script gets caught |
-| Firm rules | Everyone (no one checks firm policy) | DET-4, UI-3, UI-4 (rules panel UI-13 is P1) | "This breaks your firm's rule" on S2 |
+| Firm rules | Everyone (no one checks firm policy) | DET-4, UI-3, UI-4 (rules panel UI-13 and rules editor UI-14 are P1) | "This breaks your firm's rule" on S2 |
 | Provable privacy | Microsoft and cloud deepfake tools | SRV-3, SRV-12, UI-6 | Wi-Fi off + egress log |
 | Any call app | Microsoft (Teams only) | AUD-1 (Zoom + Teams routes) | "Same app on Zoom and Teams" |
 | Explains itself | Google (beeps without explaining) | UI-3, UI-4 (tactic, caller's words, rule, number) | Overlay with quotes |
@@ -160,7 +160,7 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 | 1 | SRV-11 | Server | Always-on-top window that goes full-screen on danger. Biggest visual upgrade to the key moment; P0 fallback is the overlay filling the Callguard window plus sound and a notification |
 | 2 | SRV-10 | Server | Hard keyboard gate. A memorable beat ("try typing, nothing appears"), but needs Accessibility permission and native code; the soft gate already covers the idea |
 | 3 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
-| 4 | UI-13 | UI | Firm rules panel. Shows the rules exist; the rule already appears in the warnings |
+| 4 | UI-13, UI-14, SRV-14, DET-13 | UI, Server, Detection | Firm rules panel, then the editor that lets a company write its own rules. Strengthens the "firm rules" differentiator ([2.4](#24-competitive-position-and-what-it-protects-in-scope)); the P0 rules already appear in the warnings |
 | 5 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
 | 6 | AUD-9, SRV-6 (model health, C15) | Audio, Server | Plain-language errors when BlackHole or Ollama is missing. Helps setup; the backup video covers a stage failure |
 | 7 | UI-9 | UI | Colleague and safe buttons outside the danger screen |
@@ -497,6 +497,17 @@ Rules are what make Callguard about *this firm*, not generic scam advice. They l
 | `never_share_client_data_by_phone` | Client data is only shared through approved, written channels. | personal_data_request | P1 |
 
 The `government_…` rule needs a co-occurrence condition (`requires: ["authority"]`, an optional v2 field). Without it, a vendor asking for a bank change would also "break" the government rule.
+
+### 8.1 Customizing the rules (P1)
+
+Every firm has different policies, so a company can edit its rules from the app instead of editing JSON (UI-14, SRV-14, DET-13).
+
+- **Where it lives.** The shipped rules in `callguard/detection/rules.json` are the defaults and are never overwritten. The company's own rules are saved to `~/Library/Application Support/Callguard/rules.json`. If that file exists and is valid, it is loaded instead of the defaults. "Reset to defaults" deletes it.
+- **What can be edited.** For each rule: the text shown to the user, the tactics that break it (picked from the fixed tactic list in [6.3](#63-tactic-weights), never free text), optional `requires` tactics, optional `keywords`, and on/off (`enabled`). New rules get an `id` generated from the text (`custom_` + slug). Rules can be added, edited, switched off and deleted.
+- **What cannot be edited.** Tactic weights, the score per broken rule (+0.15, cap 0.30) and the guards. A custom rule changes *which* calls count as breaking firm policy, not how the score works.
+- **Validation (DET-13).** At least one tactic; only known tactics; unique ids; text 1–200 characters; at most 10 keywords of at most 40 characters each; at most 30 rules. An invalid save is rejected with the reason, and the previous rules stay in force.
+- **When changes apply.** Editing is only possible when no call is active. Rules don't change halfway through a call, and the no-write privacy test (SRV-12b) stays true during calls. Saved rules apply from the next call.
+- **Privacy.** Rules are firm policy, not call content. They are stored locally and never sent anywhere, so saving them creates no egress entry.
 
 ---
 
@@ -864,18 +875,19 @@ Contracts are Lead-owned (guardrail 7). This section is the change Coco applies 
 ```
 `SafeSignal = callback_known_number | follows_normal_approval | no_money_or_data_asked | asks_in_writing`.
 
-**`Rule`**: add optional `keywords: list[str]` and `requires: list[str]` (tactics that must also be present).
+**`Rule`**: add optional `keywords: list[str]` and `requires: list[str]` (tactics that must also be present). P1 (UI-14): add optional `enabled: bool` (default `true`; disabled rules are loaded but never matched).
 
 **WebSocket, Server → UI**: add
 | `type` | `data` |
 |---|---|
 | `gate` | `{"state": "off | armed | locked", "mode": "soft | hard", "reason": "…", "release_in": 120}` |
 | `call` | `{"state": "started | ended"}` |
-| `rules` | `[Rule]`, sent once on connect (for UI-13) |
+| `rules` | `[Rule]`, sent once on connect and again after every save or reset (for UI-13, UI-14). P1: optional `"source": "default | custom"` |
+| `rules_saved` | P1: `{"ok": true}` or `{"ok": false, "errors": ["…"]}`, the reply to `save_rules` / `reset_rules` |
 
 `status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | soft | hard"`. `verify` gets optional `"status": "ok | offline | not_found | error"`.
 
-**WebSocket, UI → Server**: add `{"type": "gate_release", "how": "hang_up | colleague | mark_safe"}` and `{"type": "end_call"}`.
+**WebSocket, UI → Server**: add `{"type": "gate_release", "how": "hang_up | colleague | mark_safe"}` and `{"type": "end_call"}`. P1 (UI-14): add `{"type": "save_rules", "data": [Rule]}` and `{"type": "reset_rules"}`.
 
 ---
 
@@ -927,6 +939,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | DET-9 | P0 | `python -m callguard.detection.eval`: runs every script beat by beat against live Ollama; prints risk, confidence, tactics, latency, pass/fail against [3.3](#33-success-measures) | Table pasted in Status | DET-7, DET-8 |
 | DET-11 | P0 | Tune prompt and weights until the P0 success measures hold on 7b (3b is not a fallback: it scored 3/7 on the Mac in the `scam-check` harness test) | Eval table meets targets | DET-9 |
 | DET-12 | P1 | P1 rules from [8](#8-firm-rules) | Tests | DET-4 |
+| DET-13 | P1 | Custom rules ([8.1](#81-customizing-the-rules-p1)): `validate_rules(list) -> list[str]` (error messages, empty if valid), `load_rules()` that prefers the custom file and falls back to the defaults if it is missing or invalid, honours `enabled` | Unit tests for every validation error and for the fallback | DET-4 |
 
 **Needs (to Coco):** LEAD-1 contracts; decision on how Ollama localhost calls satisfy guardrail 2 (see DET-2; recommended: `egress.local_ollama_post()` that skips the egress log because nothing leaves the device).
 
@@ -946,6 +959,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-10 | P1 | `gate_macos.py`: Quartz event tap on a background CFRunLoop thread; swallow key events unless frontmost PID is ours; re-enable on timeout once; fall back to soft; **no key code access** | Manual test on the demo Mac; Coco line review | SRV-9 |
 | SRV-11 | P1 | `window.py` + `--window`: pywebview window, always on top, narrow; go full-screen on gate lock/danger, restore on release | Window covers a browser on danger | SRV-1 |
 | SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines | Green in `pytest` | — |
+| SRV-14 | P1 | Rules editing ([8.1](#81-customizing-the-rules-p1)): handle `save_rules` (validate with `validate_rules`, write the custom file atomically, reload, broadcast `rules` and `rules_saved`) and `reset_rules` (delete the custom file, reload defaults); refuse both while a call is active (`rules_saved` with an error); never log rule edits as egress | Unit tests with a temp directory: save, invalid save, reset, refused during a call | DET-13, SRV-5 |
 | SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
 
 **Needs (to Coco):** `fastapi`, `uvicorn`, `httpx`, `python-dotenv` pinned; P1 `pywebview`, `pyobjc-framework-Quartz`, `pyobjc-framework-Cocoa`; Tavily/Exa keys in `.env` on the demo Mac.
@@ -966,6 +980,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-10 | P2 | Post-call summary card: scenario guess from tactics, count of signs, what you did; no transcript; dismiss clears it | Fixture | — |
 | UI-11 | P0 | `ui/DEMO.md` (demo machine steps) and the backup video by **Sun 09:00** | Video file exists off-repo | All |
 | UI-13 | P1 | "Your firm's rules" panel: read-only list of the loaded rules (from the `rules` message), with a count of how many fired this call | Fixture | LEAD-1, SRV-1 |
+| UI-14 | P1 | Rules editor in the UI-13 panel ([8.1](#81-customizing-the-rules-p1)): "Edit rules" (disabled during a call, with a line saying why); per rule an on/off switch, text field, tactic checkboxes in plain words, optional "only when the caller also…" (`requires`) and keywords; add and delete (with confirm); "Save" sends `save_rules` and shows `rules_saved` errors next to the fields; "Reset to defaults" (with confirm) sends `reset_rules`; a "Custom rules" or "Default rules" label from `rules.source` | Fixture: edit, invalid save shows errors, reset, editor locked during a call | UI-13, SRV-14 contract |
 
 **Needs (to Coco):** none for P0 (plain HTML/JS/CSS, no CDN).
 
@@ -1080,6 +1095,7 @@ SUMMARY  scams danger 10/10 · twins danger 0/7 · twins low 6/7 · p95 latency 
 | Q9 | Using the friend's story | Coco | Get her OK; no identifying details (the "Harmon" case name in S1 is invented) |
 | Q10 | Google (Scam Detection in Meet/Chrome) or Microsoft (transcript checks in Teams) closes the "reads the script" lead | Coco | Protect the lasting edge in scope: firm rules, egress log, any call app ([2.4](#24-competitive-position-and-what-it-protects-in-scope)) |
 | Q11 | BlackHole setup is a hurdle for a non-technical office manager | Coco | Out of scope this weekend (no installer); say it in the pitch as a known gap; AUD-9 at least explains a missing device in plain words |
+| Q12 | Who may edit the firm rules (UI-14)? Anyone at the laptop can change them this weekend | Coco | Fine for the demo; roadmap: an admin PIN, or rules pushed from an admin to every laptop |
 
 ---
 
