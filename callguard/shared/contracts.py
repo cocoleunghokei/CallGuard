@@ -121,7 +121,8 @@ class RulesSaved(TypedDict):
 # WebSocket message: {"type": MessageType, "data": ...}
 # data per type: transcript=TranscriptChunk, check=ScamCheck, verify=Verify,
 # egress=EgressEntry, status=Status, gate=Gate, call=Call,
-# rules=list[Rule] (optional top-level "source": "default" | "custom"),
+# rules=list[Rule] (optional top-level "source": "default" | "custom",
+#   "never_search": list[str] app-edited names, "never_search_env": int, P1),
 # rules_saved=RulesSaved
 MessageType = Literal[
     "transcript", "check", "verify", "egress", "status",
@@ -131,7 +132,8 @@ MessageType = Literal[
 
 # UI -> Server: {"type": ClientMessageType, ...}
 # gate_release carries "how": "hang_up" | "colleague" | "mark_safe";
-# save_rules carries "data": list[Rule]
+# save_rules carries "data": list[Rule], optional "never_search": list[str] (P1);
+# reset_rules resets rules only, never the never-search list
 ClientMessageType = Literal[
     "colleague", "mark_safe",
     # v2

@@ -158,7 +158,7 @@ A requirement is P0 only if one of these breaks without it. Within each tier, ra
 | Rank | IDs | Lane | Why it is a stretch, not must-ship |
 |---|---|---|---|
 | 1 | DET-5 (C3) | Detection | Phrase check: an earlier hint and a fallback if the model stalls. The model alone meets the latency target |
-| 2 | UI-13, UI-14, SRV-14, DET-13 | UI, Server, Detection | Firm rules panel, then the editor that lets a company write its own rules. Strengthens the "firm rules" differentiator ([2.4](#24-competitive-position-and-what-it-protects-in-scope)); the P0 rules already appear in the warnings |
+| 2 | UI-13, UI-14, SRV-14, DET-13 | UI, Server, Detection | Firm rules panel, then the editor that lets a company write its own rules and its own "Never search for" list ([8.2](#82-never-search-list-p1)). Strengthens the "firm rules" differentiator ([2.4](#24-competitive-position-and-what-it-protects-in-scope)); the P0 rules already appear in the warnings |
 | 3 | UI-15 | UI | "Say this" lines: one fixed sentence per tactic that the user can say to the caller ([18.3](#183-say-this-lines)). Cheap, fixed copy, works offline; turns a warning into something the user can act on under pressure |
 | 4 | SRV-15, UI-16 (C17) | Server, UI | Scam-report search: one more search per claimed organization for recent impersonation reports, shown as one line on the overlay. A second real-time use of search for the Surge pitch |
 | 5 | DET-12, DET-8 P1 set | Detection | Four more rules and S5–S10, B4–B6. Wider coverage for Q&A, not needed for the demo |
@@ -509,6 +509,18 @@ Every firm has different policies, so a company can edit its rules from the app 
 - **Validation (DET-13).** At least one tactic; only known tactics; unique ids; text 1–200 characters; at most 10 keywords of at most 40 characters each; at most 30 rules. An invalid save is rejected with the reason, and the previous rules stay in force.
 - **When changes apply.** Editing is only possible when no call is active. Rules don't change halfway through a call, and the no-write privacy test (SRV-12b) stays true during calls. Saved rules apply from the next call.
 - **Privacy.** Rules are firm policy, not call content. They are stored locally and never sent anywhere, so saving them creates no egress entry.
+
+### 8.2 Never-search list (P1)
+
+Names the firm never wants sent to a search provider, even if a caller says them: the firm's own name, its clients, its staff. `egress.safe_org()` refuses any of them ([11.1](#111-searching-without-exposing-the-user-or-the-firm)). P0 reads the list from `.env` only; P1 lets the company edit it in the same panel as the rules (UI-14, SRV-14).
+
+- **Where it lives.** P0: `CALLGUARD_NEVER_SEARCH` in `.env`, comma-separated. P1: entries added in the app are saved to `~/Library/Application Support/Callguard/never_search.json` (a JSON list of strings). `safe_org()` uses the union of both. The UI shows and edits only the app's entries; it says "plus N names from your setup file" when `.env` has any, and cannot remove those.
+- **Matching.** Case-insensitive, after trimming and collapsing spaces. A claimed org is refused if it equals an entry or contains one as whole words ("Acme Capital LLC" is refused when "Acme Capital" is listed).
+- **Validation (SRV-14).** At most 50 entries; each 2–60 characters, no newlines; duplicates dropped. An invalid save is rejected with the reason, and the previous list stays in force.
+- **When changes apply.** Like rules: edit only when no call is active, applies from the next call.
+- **Reset.** "Reset to defaults" resets the rules only. The never-search list is cleared by deleting its entries; we never wipe a firm's privacy list as a side effect.
+- **Privacy.** The list names clients and staff, so it is itself sensitive: stored locally, never sent, never written to the egress log. A refused lookup logs `"status": "refused"` with `sent: ""`, never the name that matched.
+- **Not built (P2).** Pattern entries (e.g. every client in a CRM export), import from a file.
 
 ---
 
@@ -875,7 +887,7 @@ The two searches (C12 verify, C17 scam reports) are the only cloud calls. They m
 | No digits, `@`, `http`, `www.` or `.com`-style domains | Case, account, phone and reference numbers; emails; links the caller gave |
 | At most 6 words and 60 characters | Sentences or extra detail the model folded into `claimed_identity` |
 | Appears word for word in the **caller's** lines of the current window | Names the model made up, and anything the user said about themselves or their firm |
-| Not on the firm's **never-search list** (P0: `CALLGUARD_NEVER_SEARCH` in `.env`, comma-separated: the firm's own name, client names, staff names; P1: edited in the UI-14 rules panel) | The firm, its clients and its people, even if the caller says them |
+| Not on the firm's **never-search list** ([8.2](#82-never-search-list-p1); P0: `CALLGUARD_NEVER_SEARCH` in `.env`, comma-separated: the firm's own name, client names, staff names; P1: also edited in the UI-14 rules panel) | The firm, its clients and its people, even if the caller says them |
 | Not a person's name: reject if it is two or three capitalised words with no org word (Department, Agency, Bank, Inc, LLC, Office, Service, Police, Court, IRS, FBI…) | "Agent John Miller" |
 
 The query is then the org name alone (C12) or inside the fixed template `"{org}" impersonation scam` (C17). Nothing else is added: no user name, firm name, location, phone number or date.
@@ -917,12 +929,12 @@ Contracts are Lead-owned (guardrail 7). This section is the change Coco applies 
 |---|---|
 | `gate` | `{"state": "off | armed | locked", "reason": "…", "release_in": 120}` |
 | `call` | `{"state": "started | ended"}` |
-| `rules` | `[Rule]`, sent once on connect and again after every save or reset (for UI-13, UI-14). P1: the message gets an optional top-level `"source": "default | custom"` |
+| `rules` | `[Rule]`, sent once on connect and again after every save or reset (for UI-13, UI-14). P1: the message gets optional top-level `"source": "default | custom"`, `"never_search": ["…"]` (the app-edited entries, [8.2](#82-never-search-list-p1)) and `"never_search_env": 2` (how many come from `.env`; names are not sent) |
 | `rules_saved` | P1: `{"ok": true}` or `{"ok": false, "errors": ["…"]}`, the reply to `save_rules` / `reset_rules` |
 
 `status` gets optional `"model": "ok | degraded | offline"` and `"gate": "off | on"`. `verify` gets optional `"status": "ok | offline | not_found | error"`, and P1 (C17) optional `"report": {"summary": "…", "source_url": "…", "date": "2026-10"}` (omitted when nothing recent is found). `EgressEntry.status` gets `refused` (the query failed `safe_org()`, nothing was sent, `sent` is empty). `EgressEntry.sent` is the exact query sent, so a C17 search shows `"Department of Justice" impersonation scam`.
 
-**WebSocket, UI → Server**: add `{"type": "gate_release", "how": "hang_up | colleague | mark_safe"}` and `{"type": "end_call"}`. P1 (UI-14): add `{"type": "save_rules", "data": [Rule]}` and `{"type": "reset_rules"}`.
+**WebSocket, UI → Server**: add `{"type": "gate_release", "how": "hang_up | colleague | mark_safe"}` and `{"type": "end_call"}`. P1 (UI-14): add `{"type": "save_rules", "data": [Rule], "never_search": ["…"]}` (`never_search` optional; when present it replaces the app-edited list) and `{"type": "reset_rules"}` (rules only).
 
 ---
 
@@ -993,7 +1005,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | SRV-9 | P0 | `gate.py`: gate state machine ([7.4](#74-state-machine)), eligibility (C14), 120 s timeout, `gate` messages, `gate_release` handling. No OS hooks | Unit tests for every transition | SRV-7 |
 | SRV-11 | P0 | `window.py`: pywebview native window is the **default** (no browser, no address bar), titled "Callguard", always on top, narrow; comes to the front on danger (no full-screen). The danger notification must still work in this window (fall back to `osascript` with the same fixed copy if the web Notification API is unavailable). `--browser` skips the window (dev and tests only) | `python -m callguard.server` opens the Callguard window, never a browser tab; window stays on top beside Zoom; danger brings it forward | SRV-1 |
 | SRV-12 | P0 | Privacy tests: (a) AST scan, no file except `egress.py` imports `requests`, `httpx`, `urllib`, `socket`, `http.client`, `tavily`, `exa_py`; (b) run a fake S1 call with `open`/`os.write` patched for write modes, assert zero writes; (c) `search()` refuses inputs > 80 chars or with newlines; (d) `safe_org()` refuses each of: `"Agent John Miller, DOJ"`, `"DOJ case 4471-22"`, `"Chase, acct ending 8812"`, a name on the never-search list, a name the caller never said, a name only the user said; and accepts `"Department of Justice"` said by the caller | Green in `pytest` | — |
-| SRV-14 | P1 | Rules editing ([8.1](#81-customizing-the-rules-p1)): handle `save_rules` (validate with `validate_rules`, write the custom file atomically, reload, broadcast `rules` and `rules_saved`) and `reset_rules` (delete the custom file, reload defaults); refuse both while a call is active (`rules_saved` with an error); never log rule edits as egress | Unit tests with a temp directory: save, invalid save, reset, refused during a call | DET-13, SRV-5 |
+| SRV-14 | P1 | Rules editing ([8.1](#81-customizing-the-rules-p1)): handle `save_rules` (validate with `validate_rules`, write the custom file atomically, reload, broadcast `rules` and `rules_saved`) and `reset_rules` (delete the custom file, reload defaults); refuse both while a call is active (`rules_saved` with an error); never log rule edits as egress. Never-search list ([8.2](#82-never-search-list-p1)): validate and save the optional `never_search` field of `save_rules` to `never_search.json`, pass the union with `.env` to `safe_org()`, include `never_search` and `never_search_env` in the `rules` message | Unit tests with a temp directory: save, invalid save, reset (keeps the never-search list), refused during a call; a saved never-search name is refused by `safe_org()` on the next call, with `sent: ""` and no egress entry for the save | DET-13, SRV-5 |
 | SRV-15 | P1 | Scam-report search (C17): with the SRV-8 verify, a second `egress.search` with the fixed template `"{org}" impersonation scam` (its own `EgressEntry`); keep the most recent result from the last 12 months; one-line summary ≤ 120 chars from the result title/snippet, never model-generated from the transcript; add `report` to the `verify` message; same cache, offline and error handling as SRV-8 | Fake transport tests: report found, none recent, offline; egress log shows the full query | SRV-8 |
 | SRV-13 | P0 | `colleague` (minimal: local notification only; a real message to a preset contact stays P1): macOS notification (via `osascript` is fine) "Heads-up from {name}: a call looks suspicious, can you check in?" No transcript in the message; `mark_safe` lowers call risk to low and releases the gate | Buttons work in the demo | SRV-9 |
 
@@ -1017,7 +1029,7 @@ How to read this: each lane picks requirements top to bottom within a priority. 
 | UI-15 | P1 | "Say this" line on the watch note and the danger overlay: the sentence from [18.3](#183-say-this-lines) for the top tactic (ask tactics first), fixed copy in `ui/`, no model | Fixture for each tactic | — |
 | UI-16 | P1 | Scam report line on the overlay: "Reported: {summary} · {source domain}, {date}" from `verify.report`; hidden when absent or offline | Fixture: with report, without, offline | SRV-15 contract |
 | UI-13 | P1 | "Your firm's rules" panel: read-only list of the loaded rules (from the `rules` message), with a count of how many fired this call | Fixture | LEAD-1, SRV-1 |
-| UI-14 | P1 | Rules editor in the UI-13 panel ([8.1](#81-customizing-the-rules-p1)), plus a "Never search for" list (firm name, clients, staff; [11.1](#111-searching-without-exposing-the-user-or-the-firm)): "Edit rules" (disabled during a call, with a line saying why); per rule an on/off switch, text field, tactic checkboxes in plain words, optional "only when the caller also…" (`requires`) and keywords; add and delete (with confirm); "Save" sends `save_rules` and shows `rules_saved` errors next to the fields; "Reset to defaults" (with confirm) sends `reset_rules`; a "Custom rules" or "Default rules" label from `rules.source` | Fixture: edit, invalid save shows errors, reset, editor locked during a call | UI-13, SRV-14 contract |
+| UI-14 | P1 | Rules editor in the UI-13 panel ([8.1](#81-customizing-the-rules-p1)), plus a "Never search for" list (firm name, clients, staff; [8.2](#82-never-search-list-p1)): add and remove names, saved with the rules in `save_rules.never_search`, with the line "plus N names from your setup file" from `rules.never_search_env`; "Edit rules" (disabled during a call, with a line saying why); per rule an on/off switch, text field, tactic checkboxes in plain words, optional "only when the caller also…" (`requires`) and keywords; add and delete (with confirm); "Save" sends `save_rules` and shows `rules_saved` errors next to the fields; "Reset to defaults" (with confirm) sends `reset_rules`; a "Custom rules" or "Default rules" label from `rules.source` | Fixture: edit, invalid save shows errors, reset, editor locked during a call | UI-13, SRV-14 contract |
 
 **Needs (to Coco):** none for P0 (plain HTML/JS/CSS, no CDN).
 
