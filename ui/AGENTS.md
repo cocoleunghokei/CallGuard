@@ -38,4 +38,4 @@ Full flows and copy-paste task prompts (T1–T11, design brief): [hack1984/ui-fl
 - No external fonts, CDNs or analytics. The page must work with the Wi-Fi off
 
 ## Status
-- (none yet)
+- [Sat 21:50] Done: visual prototype `ui/dev/prototype.html` (7 states, light + dark) for sign-off; T1 in progress (fixtures in `ui/dev/fixtures/`, `ui/ws.js`; replay.html and tests not yet written) | Next: finish T1 after Coco signs off on the look | Needs: `pytest` pinned in requirements.txt (Coco); rules.json text for S1's "bank details" ask (no bank-details tactic yet; fixtures use personal_data_request) (Detection)

@@ -1,0 +1,282 @@
+{
+  "id": "s4_partner_wire",
+  "description": "S4 cloned partner wire (David). low -> danger 1.00 -> danger + gate locked. Internal identity, so no search (no egress).",
+  "steps": [
+    {
+      "at": 0.0,
+      "msg": {
+        "type": "status",
+        "data": {
+          "listening": true,
+          "online": true,
+          "model": "ok",
+          "gate": "soft"
+        }
+      }
+    },
+    {
+      "at": 0.5,
+      "msg": {
+        "type": "rules",
+        "data": [
+          {
+            "id": "no_bank_changes_by_phone",
+            "text": "We never change vendor or client bank details because of a phone call. Call back on the number on file.",
+            "tactics": [
+              "bank_change"
+            ]
+          },
+          {
+            "id": "it_never_asks_for_codes",
+            "text": "IT will never ask you for a code or password.",
+            "tactics": [
+              "credential_request"
+            ]
+          },
+          {
+            "id": "wires_need_two_approvals",
+            "text": "Every wire needs two approvals, no exceptions, no matter who asks.",
+            "tactics": [
+              "bypass_approval",
+              "payment_request"
+            ]
+          },
+          {
+            "id": "government_never_calls_for_payment_or_bank_details",
+            "text": "Government agencies do not ask for payment or bank details by phone.",
+            "tactics": [
+              "payment_request",
+              "bank_change",
+              "personal_data_request"
+            ],
+            "requires": [
+              "authority"
+            ]
+          },
+          {
+            "id": "never_keep_calls_secret",
+            "text": "No one at this firm will ask you to keep a call secret from your colleagues.",
+            "tactics": [
+              "secrecy"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "at": 1.0,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "started"
+        }
+      }
+    },
+    {
+      "at": 1.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "Hey, it's David. I'm about to board, I've got two minutes.",
+          "start": 0.0,
+          "end": 3.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 6.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "low",
+          "tactics": [
+            "urgency"
+          ],
+          "claimed_identity": "David (managing partner)",
+          "rules_broken": [],
+          "reason": "No clear signs so far.",
+          "next_step": "Keep listening.",
+          "confidence": 0.08,
+          "evidence": [
+            {
+              "tactic": "urgency",
+              "quote": "I've got two minutes.",
+              "strength": "hint",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 6.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "you",
+          "text": "Hi David, sure, go ahead.",
+          "start": 3.5,
+          "end": 5.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 8.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "I need you to wire the Pearson escrow funds before five. Skip the second sign-off, I'll approve it when I land.",
+          "start": 6.0,
+          "end": 11.0,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 15.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "danger",
+          "tactics": [
+            "payment_request",
+            "urgency",
+            "bypass_approval"
+          ],
+          "claimed_identity": "David (managing partner)",
+          "rules_broken": [
+            "wires_need_two_approvals"
+          ],
+          "reason": "Caller wants an urgent wire and asks you to skip the second approval.",
+          "next_step": "Don't send it. Wires need two approvals. Call David back on his saved number.",
+          "confidence": 1.0,
+          "evidence": [
+            {
+              "tactic": "payment_request",
+              "quote": "I need you to wire the Pearson escrow funds before five.",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "urgency",
+              "quote": "before five",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "bypass_approval",
+              "quote": "Skip the second sign-off, I'll approve it when I land.",
+              "strength": "clear",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 15.5,
+      "msg": {
+        "type": "transcript",
+        "data": {
+          "speaker": "caller",
+          "text": "Keep this between us until it closes. I'll text you the account.",
+          "start": 11.5,
+          "end": 15.5,
+          "language": "en"
+        }
+      }
+    },
+    {
+      "at": 21.0,
+      "msg": {
+        "type": "check",
+        "data": {
+          "risk": "danger",
+          "tactics": [
+            "payment_request",
+            "urgency",
+            "bypass_approval",
+            "secrecy"
+          ],
+          "claimed_identity": "David (managing partner)",
+          "rules_broken": [
+            "wires_need_two_approvals",
+            "never_keep_calls_secret"
+          ],
+          "reason": "Caller wants an urgent wire, skips the second approval, and asks you to keep it quiet.",
+          "next_step": "Don't send it. Wires need two approvals. Call David back on his saved number.",
+          "confidence": 1.0,
+          "evidence": [
+            {
+              "tactic": "payment_request",
+              "quote": "I need you to wire the Pearson escrow funds before five.",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "urgency",
+              "quote": "before five",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "bypass_approval",
+              "quote": "Skip the second sign-off, I'll approve it when I land.",
+              "strength": "clear",
+              "speaker": "caller"
+            },
+            {
+              "tactic": "secrecy",
+              "quote": "Keep this between us until it closes.",
+              "strength": "hint",
+              "speaker": "caller"
+            }
+          ],
+          "safe_signals": [],
+          "source": "model"
+        }
+      }
+    },
+    {
+      "at": 21.7,
+      "msg": {
+        "type": "gate",
+        "data": {
+          "state": "locked",
+          "mode": "soft",
+          "reason": "this call asks you to send a wire",
+          "release_in": 120
+        }
+      }
+    },
+    {
+      "at": 36.7,
+      "msg": {
+        "type": "gate",
+        "data": {
+          "state": "off",
+          "mode": "soft",
+          "reason": "",
+          "release_in": 0
+        }
+      }
+    },
+    {
+      "at": 37.2,
+      "msg": {
+        "type": "call",
+        "data": {
+          "state": "ended"
+        }
+      }
+    }
+  ]
+}
