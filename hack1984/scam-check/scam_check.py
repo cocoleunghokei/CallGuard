@@ -37,8 +37,7 @@ Firm rules (report the id of any rule the caller is asking the employee to break
 
 Reply with JSON only, exactly these keys:
 {{"risk": "low|watch|danger", "tactics": [subset of {tactics}], "claimed_identity": string or null,
- "rules_broken": [rule ids], "reason": one plain sentence for the employee, "next_step": one plain sentence}}
-The transcript may be in English or Chinese; always answer in English."""
+ "rules_broken": [rule ids], "reason": one plain sentence for the employee, "next_step": one plain sentence}}"""
 
 
 def load_rules():
@@ -46,10 +45,11 @@ def load_rules():
     return rules, "\n".join(f'- {r["id"]}: {r["text"]}' for r in rules)
 
 
-def check(transcript, model, rules_text, timeout=180):
+def check(transcript, model, rules_text, rule_ids=(), timeout=180):
     body = {
         "model": model,
         "stream": False,
+        "keep_alive": "60m",  # keep the model in memory so the demo never waits for a reload
         "format": "json",
         "options": {"temperature": 0},
         "messages": [
@@ -64,7 +64,7 @@ def check(transcript, model, rules_text, timeout=180):
     # Normalise so the screen never gets junk
     out["risk"] = out.get("risk") if out.get("risk") in ("low", "watch", "danger") else "watch"
     out["tactics"] = [t for t in out.get("tactics") or [] if t in TACTICS]
-    out.setdefault("rules_broken", [])
+    out["rules_broken"] = [r for r in out.get("rules_broken") or [] if r in rule_ids]
     if out["rules_broken"] and out["risk"] != "danger":
         out["risk"] = "danger"  # breaking a firm rule is always danger
     return out
@@ -75,7 +75,8 @@ def main():
     ap.add_argument("--model", default="qwen2.5:7b")
     ap.add_argument("--text", help="check one transcript instead of the test set")
     args = ap.parse_args()
-    _, rules_text = load_rules()
+    rules, rules_text = load_rules()
+    ids = {r["id"] for r in rules}
 
     try:
         urllib.request.urlopen("http://localhost:11434/api/tags", timeout=3)
@@ -83,7 +84,7 @@ def main():
         sys.exit("Ollama is not running. Start the Ollama app, or run `ollama serve` in another terminal.")
 
     if args.text:
-        print(json.dumps(check(args.text, args.model, rules_text), indent=2, ensure_ascii=False))
+        print(json.dumps(check(args.text, args.model, rules_text, ids), indent=2, ensure_ascii=False))
         return
 
     cases = json.loads((HERE / "test_scripts.json").read_text())
@@ -91,7 +92,7 @@ def main():
     for c in cases:
         t0 = time.time()
         try:
-            out = check(c["transcript"], args.model, rules_text)
+            out = check(c["transcript"], args.model, rules_text, ids)
         except urllib.error.HTTPError as e:
             sys.exit(f"Ollama error {e.code}: {e.read().decode()[:200]}\nDid you `ollama pull {args.model}`?")
         ok = out["risk"] in c["expected"]
@@ -100,7 +101,7 @@ def main():
               f'want={"/".join(c["expected"]):<11} {time.time()-t0:4.1f}s  tactics={out["tactics"]} '
               f'rules={out["rules_broken"]}')
         print(f'      reason: {out.get("reason")}')
-    print(f"\n{passed}/{len(cases)} correct with {args.model}  (plan target: at least 5 of 6 on #1-6)")
+    print(f"\n{passed}/{len(cases)} correct with {args.model}  (plan target: at least 5 of 6)")
 
 
 if __name__ == "__main__":
