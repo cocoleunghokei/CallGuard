@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import threading
 import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
@@ -21,6 +23,8 @@ from callguard.shared.contracts import Rule, ScamCheck, TranscriptChunk
 log = logging.getLogger("callguard.server.pipeline")
 
 WINDOW_SECONDS = 30.0
+# Live audio has no "end of script": a call ends after this much silence (or End call).
+CALL_IDLE_S = float(os.environ.get("CALLGUARD_CALL_IDLE_S", "45"))
 CheckFn = Callable[[str, list[Rule]], ScamCheck]
 
 
@@ -184,6 +188,52 @@ class Pipeline:
                         await result
         finally:
             await self.end_call()
+
+    async def run_live(self, make_stream: Callable[[], Iterable[TranscriptChunk]],
+                       idle_s: float = CALL_IDLE_S) -> None:
+        """Consume live audio until the stream stops (device lost, app quit).
+
+        Unlike a replay, `end_call` does not stop the stream: the next chunk
+        starts a new call. A call also ends after `idle_s` with no speech.
+        The audio generator runs in a daemon thread so quitting never waits on it.
+        """
+        loop = asyncio.get_running_loop()
+        queue: asyncio.Queue = asyncio.Queue()
+        end = object()
+
+        def reader() -> None:
+            try:
+                for chunk in make_stream():
+                    loop.call_soon_threadsafe(queue.put_nowait, chunk)
+            except Exception as e:  # missing device, sounddevice not installed, ...
+                log.warning("live audio stopped: %s", type(e).__name__)
+            finally:
+                loop.call_soon_threadsafe(queue.put_nowait, end)
+
+        threading.Thread(target=reader, name="audio", daemon=True).start()
+        try:
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(queue.get(), idle_s if self.active else None)
+                except asyncio.TimeoutError:
+                    log.info("no speech for %.0fs, ending call", idle_s)
+                    await self._finish_stream()
+                    continue
+                if chunk is end:
+                    break
+                await self.feed(chunk)  # type: ignore[arg-type]
+            await self._finish_stream()
+        finally:
+            await self.end_call()
+
+    async def _finish_stream(self) -> None:
+        await self.drain()
+        if self.active:
+            for fn in self.on_stream_end:
+                result = fn()
+                if asyncio.iscoroutine(result):
+                    await result
+        await self.end_call()
 
     async def run_fake(self, path: str | Path, speed: float = 1.0) -> None:
         await self.run(load_fake_stream()(path, speed=speed))

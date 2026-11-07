@@ -87,3 +87,27 @@ export function signsWords(segments) {
   if (segments >= 4) return "Some signs";
   return "No clear signs";
 }
+
+/** What the pause is about, when the Server's gate.reason is missing. */
+export const ASK = {
+  credential_request: "for a code or password",
+  bank_change: "you to change bank details",
+  payment_request: "you to send money",
+  bypass_approval: "you to skip the usual approval",
+  remote_access: "you to install software or share your screen",
+  personal_data_request: "for client or personal data",
+};
+
+/** The pause line (prd 7.6). Prefers the Server's fixed gate.reason. It never
+ *  says typing is blocked: the pause never blocks typing (AGENTS.md 3). */
+export function askLine(gate, tactics) {
+  if (gate && gate.reason) return gate.reason;
+  const ask = SAY_ORDER.find((t) => ASK[t] && (tactics || []).includes(t));
+  return ask ? `This call is asking ${ASK[ask]}. Verify before you act.` : "Verify before you act on anything from this call.";
+}
+
+/** "1:54" from seconds. */
+export function mmss(sec) {
+  const s = Math.max(0, Math.ceil(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}

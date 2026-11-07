@@ -21,7 +21,7 @@
     <!-- A: header -->
     <header class="top">
       <span id="badge" class="badge"><span class="dot"></span><span id="badge-text">Listening locally · nothing stored</span></span>
-      <span id="net" class="net"><span class="dot"></span><span id="net-text">Online</span><span id="pause" class="pause" hidden> · Pause on</span></span>
+      <span id="net" class="net"><span class="dot"></span><span id="net-text">Online</span><span id="pause" class="pause" hidden> · Safe pause on</span></span>
     </header>
 
     <div id="consent" class="consent">
@@ -38,6 +38,7 @@
     <!-- B: banners -->
     <p id="b-conn" class="banner" role="status" hidden>Connecting to Callguard…</p>
     <p id="b-model" class="banner" role="status" hidden>Basic checks only, local model unavailable</p>
+    <p id="b-audio" class="banner" role="status" hidden></p>
 
     <main id="main" class="body">
       <!-- C: status hero -->
@@ -45,6 +46,7 @@
         <div class="ic"><svg width="26" height="26"><use id="hero-icon" href="#i-idle"/></svg></div>
         <h1 id="hero-word">Not on a call</h1>
         <p id="hero-sub" class="sub"><span id="hero-words">Callguard starts when a call does.</span><span id="hero-bar" class="bar" aria-hidden="true"></span></p>
+        <button id="show-warning" class="hero-btn" type="button" hidden>Show the warning</button>
       </section>
 
       <!-- D: why -->
@@ -86,7 +88,6 @@
 
     <!-- G: actions (T7/T10) -->
     <div id="actions" class="actions" hidden>
-      <button id="show-warning" class="btn primary" type="button" hidden>Show the warning</button>
     </div>
 
     <!-- F: what left this device (T5). The empty state is the feature. -->
@@ -114,11 +115,24 @@
       <section class="hero lv-danger ov-hero">
         <div class="ic"><svg width="28" height="28"><use href="#i-danger"/></svg></div>
         <h1 id="ov-h">Stop and verify this call</h1>
-        <p class="sub"><span id="ov-words">Strong signs</span><span id="ov-bar" class="bar" aria-hidden="true"></span></p>
-        <!-- T7: lock line -->
-        <p id="ov-lock" class="ov-lock" hidden></p>
+        <p id="ov-sub" class="sub"><span id="ov-words">Strong signs</span><span id="ov-bar" class="bar" aria-hidden="true"></span></p>
+        <!-- T7: the safe-path pause. It never blocks typing. -->
+        <div id="ov-lock" class="ov-lock" hidden>
+          <p id="ov-ask" class="ov-ask"></p>
+          <p class="ov-count">🔒 Pause ends in <time id="ov-count" aria-live="off"></time></p>
+          <p class="ov-soft">Callguard is keeping focus so you don't type it by accident.</p>
+        </div>
       </section>
-      <div class="ov-body">
+      <!-- After "Hang up and call back" -->
+      <div id="ov-callback" class="ov-callback" hidden>
+        <div class="cb-card">
+          <small>Then call back on</small>
+          <b id="cb-number"></b>
+          <small id="cb-src"></small>
+        </div>
+        <p class="note">Don't use any number the caller gave you.</p>
+      </div>
+      <div id="ov-body" class="ov-body">
         <p id="ov-claim" class="ov-claim" hidden></p>
         <ul id="ov-tactics" class="ov-tactics" aria-label="Signs in this call"></ul>
         <ul id="ov-rules" class="rules"></ul>
@@ -128,9 +142,20 @@
       </div>
       <!-- Sticky foot: the way out and the privacy line are always on screen. -->
       <div class="ov-foot">
-        <!-- T7: exits. For now one primary that only closes the overlay here. -->
+        <p id="ov-toast" class="toast" role="status" hidden></p>
+        <!-- T7: three exits, the safe one easiest. Enter and Esc never take one. -->
         <div id="ov-exits" class="ov-exits">
           <button id="ov-hangup" class="btn primary" type="button" data-exit="hang_up">Hang up and call back</button>
+          <button id="ov-colleague" class="btn" type="button" data-exit="colleague">Check with a colleague</button>
+          <div class="safe">
+            <label for="safe-input">Verified it's safe? Type SAFE</label>
+            <input id="safe-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="8" aria-describedby="safe-hint">
+            <button id="safe-hold" class="hold" type="button" data-exit="mark_safe" disabled aria-describedby="safe-hint"><span id="safe-hold-text">Hold 3 s</span></button>
+            <small id="safe-hint" class="sr-only">Then press and hold the button, or hold Space on it, for 3 seconds.</small>
+          </div>
+        </div>
+        <div id="ov-cb-actions" class="ov-exits" hidden>
+          <button id="cb-copy" class="btn primary" type="button">Copy number</button>
         </div>
         <p id="ov-egress" class="ov-egress"></p>
       </div>

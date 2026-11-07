@@ -1,8 +1,13 @@
 // Draws `state` (see app.js) into ui/index.html. Never logs, never stores.
 // The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
 
-import { plainWords, shortWords, sayThis, signsWords } from "./copy.js";
+import { plainWords, shortWords, sayThis, signsWords, askLine, mmss } from "./copy.js";
 import { send } from "./ws.js";
+
+/** How long the verify line says "Checking…" before it gives up and hides. */
+export const VERIFY_WAIT_MS = 5000;
+
+const NEXT_STEP_FALLBACK = "Verify first: hang up and call back on a number you already have.";
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,6 +24,7 @@ let rerender = () => {};
 
 export function level(state) {
   if (!state.inCall) return "idle";
+  if (state.markedSafe) return "low";
   const r = state.check && state.check.risk;
   return LEVELS[r] ? r : "low";
 }
@@ -55,12 +61,7 @@ export function bindView(state, redraw) {
     $("open-said").focus();
   });
   $("end-call").addEventListener("click", () => send("end_call"));
-  $("ov-hangup").addEventListener("click", () => {
-    // T6 placeholder: closes the overlay here only. T7 sends gate_release.
-    state.overlay.open = false;
-    rerender();
-    $("show-warning").focus();
-  });
+  bindExits(state);
   $("show-warning").addEventListener("click", () => {
     state.overlay.open = true; // not a new open: no tone
     rerender();
@@ -130,6 +131,10 @@ function renderBanners(state) {
   $("b-conn").hidden = state.connected;
   const model = state.status && state.status.model;
   $("b-model").hidden = !(state.connected && (model === "degraded" || model === "offline"));
+  // Live mode: the Server says when the mic or BlackHole input isn't working (AUD-9).
+  const audioBad = !!(state.connected && state.status && state.status.audio_ok === false);
+  $("b-audio").hidden = !audioBad;
+  $("b-audio").textContent = audioBad ? state.status.audio_message || "Callguard can't hear the call. Check the audio inputs." : "";
 }
 
 // ---------------------------------------------------------------- C status hero
@@ -145,6 +150,9 @@ function renderHero(state, lv) {
   const c = state.check && typeof state.check.confidence === "number" ? state.check.confidence : null;
   if (lv === "idle") {
     $("hero-words").textContent = "Callguard starts when a call does.";
+    bar.replaceChildren();
+  } else if (state.markedSafe) {
+    $("hero-words").textContent = "Marked safe";
     bar.replaceChildren();
   } else if (c == null) {
     // No confidence: no bar. The default words still name the level.
@@ -238,7 +246,9 @@ function verifyInfo(state) {
   const status = v ? v.status || (v.phone ? "ok" : "error") : null;
   let note = "";
   let phone = "";
-  if (org && !v) note = `Checking ${org}'s public number…`;
+  const w = state.verifyWait;
+  const waited = !w || w.org !== org || Date.now() - w.since >= VERIFY_WAIT_MS;
+  if (org && !v && !waited) note = `Checking ${org}'s public number…`;
   else if (v && status === "ok" && v.phone) phone = v.phone;
   else if (v && status === "offline") note = "Offline, search skipped. Use the number on file.";
   else if (v) note = "Couldn't find a public number, use the one on file.";
@@ -262,7 +272,8 @@ function renderTodo(state, lv) {
   $("verify-note").hidden = !vi.note;
   $("verify-note").textContent = vi.note;
 
-  $("next-step").textContent = c.next_step || "";
+  // Every warning ends with a concrete next step (prd 9.3), even if the model sent none.
+  $("next-step").textContent = c.next_step || NEXT_STEP_FALLBACK;
 }
 
 // ---------------------------------------------------------------- flagged lines ("See what they said")
@@ -320,6 +331,8 @@ function renderTail(state, lv) {
 
 /** Call content leaves the DOM, not just the screen (UI-7, F9). */
 function clearCallDom() {
+  for (const id of ["ov-ask", "cb-number", "cb-src", "ov-toast"]) $(id).textContent = "";
+  $("safe-input").value = "";
   for (const id of ["pills", "quote", "rules-broken", "flagged", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
   for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step", "ov-claim", "ov-verify", "ov-say-text", "ov-next"]) $(id).textContent = "";
   $("reason").removeAttribute("title");
@@ -495,12 +508,35 @@ function renderOverlay(state, lv) {
   const wasOpen = !$("overlay").hidden;
   $("overlay").hidden = !open;
   $("panel").inert = open;
-  $("actions").hidden = !(lv === "danger" && !open && state.inCall);
-  $("show-warning").hidden = $("actions").hidden;
+  $("show-warning").hidden = !(lv === "danger" && !open && state.inCall);
   if (!o || o.opens < lastOpens) lastOpens = 0; // new call
   if (!open) return;
 
   const c = state.check;
+  const callback = o.mode === "callback";
+  $("ov-h").textContent = callback ? "Hang up now" : "Stop and verify this call";
+  $("ov-sub").hidden = callback;
+  $("ov-body").hidden = callback;
+  $("ov-exits").hidden = callback;
+  $("ov-callback").hidden = !callback;
+  $("ov-cb-actions").hidden = !callback;
+
+  // The pause (gate): its reason, a local countdown, and the soft-focus line.
+  const g = state.gate;
+  const locked = !callback && !!(g && g.state === "locked");
+  $("ov-lock").hidden = !locked;
+  $("ov-ask").textContent = locked ? askLine(g, c.tactics) : "";
+  $("ov-count").textContent = locked && g.until ? mmss((g.until - Date.now()) / 1000) : "";
+  $("ov-count").parentElement.hidden = !(locked && g.until);
+  $("safe-hold").disabled = !isSafe();
+
+  const vi = verifyInfo(state);
+  if (callback) {
+    $("cb-number").textContent = vi.phone || "Use the number on file";
+    $("cb-number").classList.toggle("none", !vi.phone);
+    $("cb-src").textContent = vi.phone ? [c.claimed_identity, vi.host].filter(Boolean).join(" · ") : "";
+    $("cb-copy").hidden = !vi.phone;
+  }
   const conf = typeof c.confidence === "number" ? c.confidence : null;
   const segs = conf == null ? null : Math.max(0, Math.min(10, Math.round(conf * 10)));
   $("ov-words").textContent = segs == null ? "Strong signs" : signsWords(segs);
@@ -519,7 +555,6 @@ function renderOverlay(state, lv) {
   );
   $("ov-rules").replaceChildren(...(c.rules_broken || []).map((id) => h("li", {}, h("b", { text: "Firm rule: " }), ruleText(state, id))));
 
-  const vi = verifyInfo(state);
   const verify = vi.phone ? `Real public number: ${vi.phone}${vi.host ? " · source: " + vi.host : ""}` : vi.note;
   $("ov-verify").hidden = !verify;
   $("ov-verify").textContent = verify;
@@ -528,17 +563,18 @@ function renderOverlay(state, lv) {
   const say = sayThis(c.tactics);
   $("ov-say").hidden = !say;
   $("ov-say-text").textContent = say || "";
-  $("ov-next").textContent = c.next_step || "Hang up and call back on a number you already have.";
+  $("ov-next").textContent = c.next_step || NEXT_STEP_FALLBACK;
 
   // One-line egress summary at the foot (T5 item 5): the privacy proof stays visible.
   $("ov-egress").replaceChildren(privIcon(sentCount(state) === 0), egressSummary(state));
 
+  const primary = callback ? (vi.phone ? $("cb-copy") : $("overlay")) : $("ov-hangup");
   if (o.opens > lastOpens) {
     lastOpens = o.opens;
     tone();
-    $("ov-hangup").focus();
+    primary.focus();
   } else if (!wasOpen) {
-    $("ov-hangup").focus();
+    primary.focus();
   }
 }
 
@@ -553,4 +589,114 @@ function privIcon(ok) {
   use.setAttribute("href", ok ? "#i-low" : "#i-up");
   svg.append(use);
   return svg;
+}
+
+// ---------------------------------------------------------------- exits (T7 / UI-5)
+
+const HOLD_MS = 3000;
+let hold = null; // {t0, raf}
+let toastTimer = 0;
+
+function isSafe() {
+  return $("safe-input").value.trim().toLowerCase() === "safe";
+}
+
+function toast(text) {
+  $("ov-toast").textContent = text;
+  $("ov-toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    $("ov-toast").hidden = true;
+    $("ov-toast").textContent = "";
+  }, 6000);
+}
+
+function setHold(p) {
+  $("safe-hold").style.setProperty("--p", String(p));
+  $("safe-hold-text").textContent = p > 0 ? "Keep holding…" : "Hold 3 s";
+}
+
+function startHold(state) {
+  if (hold || !isSafe()) return;
+  const t0 = performance.now();
+  hold = { t0, raf: 0 };
+  const frame = (now) => {
+    if (!hold) return;
+    const p = Math.min(1, (now - t0) / HOLD_MS);
+    setHold(p);
+    if (now - t0 >= HOLD_MS) return finishHold(state);
+    hold.raf = requestAnimationFrame(frame);
+  };
+  hold.raf = requestAnimationFrame(frame);
+}
+
+function stopHold() {
+  if (!hold) return;
+  cancelAnimationFrame(hold.raf);
+  hold = null;
+  setHold(0);
+}
+
+function finishHold(state) {
+  hold = null;
+  setHold(0);
+  $("safe-input").value = "";
+  send("mark_safe");
+  send("gate_release", { how: "mark_safe" });
+  state.gate = null;
+  state.markedSafe = true;
+  state.overlay.open = false;
+  rerender();
+}
+
+function bindExits(state) {
+  $("ov-hangup").addEventListener("click", () => {
+    send("gate_release", { how: "hang_up" });
+    state.gate = null;
+    state.overlay.mode = "callback";
+    rerender();
+    ($("cb-copy").hidden ? $("overlay") : $("cb-copy")).focus();
+  });
+  $("ov-colleague").addEventListener("click", () => {
+    send("colleague");
+    send("gate_release", { how: "colleague" });
+    state.gate = null;
+    rerender();
+    toast("Heads-up sent. Stay on the line or hang up, your choice.");
+  });
+  $("cb-copy").addEventListener("click", async () => {
+    const phone = state.verify && state.verify.phone;
+    if (!phone) return;
+    try {
+      await navigator.clipboard.writeText(phone);
+      $("cb-copy").textContent = "Copied";
+    } catch {
+      $("cb-copy").textContent = "Copy failed";
+    }
+    setTimeout(() => ($("cb-copy").textContent = "Copy number"), 1500);
+  });
+
+  // "I've verified, it's safe": type SAFE, then hold 3 s. No single click or key does it.
+  $("safe-input").addEventListener("input", () => {
+    stopHold();
+    $("safe-hold").disabled = !isSafe();
+  });
+  const btn = $("safe-hold");
+  btn.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    btn.setPointerCapture?.(e.pointerId);
+    startHold(state);
+  });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture", "blur"]) btn.addEventListener(ev, stopHold);
+  btn.addEventListener("keydown", (e) => {
+    if (e.key !== " ") return;
+    e.preventDefault();
+    if (!e.repeat) startHold(state);
+  });
+  btn.addEventListener("keyup", (e) => {
+    if (e.key === " ") {
+      e.preventDefault();
+      stopHold();
+    }
+  });
 }
