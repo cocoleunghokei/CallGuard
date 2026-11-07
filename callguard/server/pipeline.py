@@ -71,6 +71,10 @@ class Pipeline:
         self.call_risk = CallRisk()
         # Called with (raw window check, smoothed call check): gate, verify.
         self.on_check: list[Callable[[ScamCheck, ScamCheck], Any]] = []
+        self.on_call_end: list[Callable[[], Any]] = []  # verify cache, gate, ...
+        self.call_id = 0
+        self.active = False
+        self._stop = False
 
     # ------------------------------------------------------------ window
     def _prune(self) -> None:
@@ -88,8 +92,32 @@ class Pipeline:
         self._pending = False
         self.call_risk.reset()
 
+    # ------------------------------------------------------------ call lifecycle (SRV-5)
+    async def start_call(self) -> None:
+        self.clear()
+        self.call_id += 1
+        self.active = True
+        await self.broadcast("call", {"state": "started"})
+
+    async def end_call(self) -> None:
+        """Call over (stream ended, or `end_call` from the UI): forget everything."""
+        if not self.active:
+            return
+        self.active = False
+        self._stop = True  # a replay stops; live audio starts a new call on its next chunk
+        self.call_id += 1  # any check still running belongs to the old call: dropped
+        self.clear()
+        for fn in self.on_call_end:
+            r = fn()
+            if asyncio.iscoroutine(r):
+                await r
+        await self.broadcast("call", {"state": "ended"})
+        log.info("call ended, window cleared")
+
     # ------------------------------------------------------------ chunks
     async def feed(self, chunk: TranscriptChunk) -> None:
+        if not self.active:
+            await self.start_call()
         self.window.append(chunk)
         self._prune()
         await self.broadcast("transcript", chunk)
@@ -104,6 +132,7 @@ class Pipeline:
 
     async def _run_checks(self) -> None:
         loop = asyncio.get_running_loop()
+        call_id = self.call_id
         while True:
             self._pending = False
             text = window_text(self.window)
@@ -117,6 +146,8 @@ class Pipeline:
                 result = None
             log.info("check %.2fs, window %d chunks, risk %s",
                      time.monotonic() - t0, len(self.window), result and result.get("risk"))
+            if call_id != self.call_id:
+                return  # the call ended while we were checking
             if result is not None:
                 shown = self.call_risk.update(result)
                 await self.broadcast("check", shown)
@@ -137,12 +168,16 @@ class Pipeline:
         """Consume a blocking chunk generator (audio or fake) without blocking the loop."""
         end = object()
         it = iter(stream)
-        while True:
-            chunk = await asyncio.to_thread(next, it, end)
-            if chunk is end:
-                break
-            await self.feed(chunk)  # type: ignore[arg-type]
-        await self.drain()
+        self._stop = False
+        try:
+            while not self._stop:
+                chunk = await asyncio.to_thread(next, it, end)
+                if chunk is end or self._stop:
+                    break
+                await self.feed(chunk)  # type: ignore[arg-type]
+            await self.drain()
+        finally:
+            await self.end_call()
 
     async def run_fake(self, path: str | Path, speed: float = 1.0) -> None:
         await self.run(load_fake_stream()(path, speed=speed))

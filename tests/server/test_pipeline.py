@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from callguard.server import fakes
-from callguard.server.__main__ import fake_call_task, parse_args
+from callguard.server.__main__ import build_app, parse_args
 from callguard.server.app import Hub, create_app
 from callguard.server.pipeline import Pipeline, window_text
 
@@ -61,7 +61,7 @@ def test_only_caller_chunks_trigger_checks():
         return sink
     sink = run(go())
     assert calls == ["you: hello\ncaller: hi there"]
-    assert sink.types() == ["transcript", "transcript", "check"]
+    assert sink.types() == ["call", "transcript", "transcript", "check"]
 
 
 def test_skip_if_busy_then_one_rerun_on_newest_window():
@@ -101,7 +101,7 @@ def test_check_exception_is_swallowed_and_logged_without_text(caplog):
         return sink
     with caplog.at_level(logging.DEBUG):
         sink = run(go())
-    assert sink.types() == ["transcript"]
+    assert sink.types() == ["call", "transcript"]
     assert "1234" not in caplog.text and "secret" not in caplog.text
 
 
@@ -132,10 +132,75 @@ def test_cli_fake_flags(tmp_path):
 
 
 def test_fake_call_over_websocket(tmp_path):
-    hub = Hub()
-    client = TestClient(create_app(hub, ui_dir=tmp_path, tasks=[fake_call_task(str(S1), 0)]))
+    app, runtime = build_app(parse_args(["--fake", str(S1), "--fake-speed", "0"]))
+    client = TestClient(app)
     with client, client.websocket_connect("/ws") as ws:
-        got = [ws.receive_json() for _ in range(5)]
+        assert ws.receive_json()["type"] == "rules"
+        got = [ws.receive_json() for _ in range(6)]
+    assert got.pop(0) == {"type": "call", "data": {"state": "started"}}
     assert got[0] == {"type": "transcript", "data": {"speaker": "caller", "start": 0.0, "end": 3.0,
                       "language": "en", "text": "Hi, this is Officer Chen from the Department of Justice."}}
-    assert {m["type"] for m in got} <= {"transcript", "check"}
+    assert {m["type"] for m in got} <= {"transcript", "check", "call"}
+
+
+# ---------------------------------------------------------------- SRV-5 lifecycle
+def test_fake_call_starts_and_ends_and_forgets():
+    async def go():
+        sink = Sink()
+        p = Pipeline(sink, check_fn=fakes.fake_check, rules=[])
+        ended = []
+        p.on_call_end.append(lambda: ended.append(True))
+        await p.run_fake(S1, speed=0)
+        return sink, p, ended
+    sink, p, ended = run(go())
+    assert sink.msgs[0] == ("call", {"state": "started"})
+    assert sink.msgs[-1] == ("call", {"state": "ended"})
+    assert ended == [True]
+    assert len(p.window) == 0 and p.call_risk.shown is None and not p.active
+    p.close()
+
+
+def test_end_call_from_ui_stops_replay_and_drops_inflight_check():
+    started, release = threading.Event(), threading.Event()
+
+    def slow(w, r):
+        started.set()
+        release.wait(5)
+        return {**LOW, "risk": "danger"}
+
+    def stream():
+        yield chunk("caller", "one", 0)
+        yield chunk("caller", "two", 3)
+        yield chunk("caller", "three", 6)
+
+    async def go():
+        sink = Sink()
+        p = Pipeline(sink, check_fn=slow, rules=[])
+        task = asyncio.create_task(p.run(stream()))
+        await asyncio.to_thread(started.wait, 5)
+        await p.end_call()  # UI pressed "end call" mid-check
+        release.set()
+        await task
+        await p.drain()
+        return sink, p
+    sink, p = run(go())
+    assert "check" not in sink.types()  # stale result for the ended call dropped
+    assert sink.types().count("call") == 2 and sink.msgs[-1] == ("call", {"state": "ended"})
+    assert len(p.window) == 0
+    p.close()
+
+
+def test_live_stream_starts_a_new_call_after_end():
+    async def go():
+        sink = Sink()
+        p = Pipeline(sink, check_fn=lambda w, r: LOW, rules=[])
+        await p.feed(chunk("caller", "a", 0))
+        await p.drain()
+        await p.end_call()
+        await p.feed(chunk("caller", "b", 0))
+        await p.drain()
+        return sink, p
+    sink, p = run(go())
+    assert [d["state"] for t, d in sink.msgs if t == "call"] == ["started", "ended", "started"]
+    assert [c["text"] for c in p.window] == ["b"]
+    p.close()

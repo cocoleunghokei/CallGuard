@@ -13,7 +13,7 @@ from pathlib import Path
 import uvicorn
 
 from callguard.server.app import Hub, create_app
-from callguard.server.pipeline import Pipeline
+from callguard.server.runtime import Runtime
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -44,27 +44,29 @@ def load_env() -> None:
     load_dotenv(REPO_ROOT / ".env")
 
 
-def fake_call_task(script: str, speed: float):
-    async def run(hub: Hub) -> None:
-        await hub.wait_for_client()  # don't play the call to an empty room
-        pipeline = Pipeline(hub.broadcast)
-        try:
-            await pipeline.run_fake(script, speed=speed)
-        finally:
-            pipeline.close()
-    return run
+def build_app(args: argparse.Namespace):
+    hub = Hub()
+    runtime = Runtime(hub)
+    tasks = []
+    if args.fake:
+        async def fake_call(_hub: Hub) -> None:
+            await runtime.run_fake(args.fake, speed=args.fake_speed)
+        tasks.append(fake_call)
+    return create_app(hub, tasks=tasks), runtime
 
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     load_env()
-    tasks = [fake_call_task(args.fake, args.fake_speed)] if args.fake else []
-    app = create_app(tasks=tasks)
+    app, runtime = build_app(args)
     if not args.browser:
         logging.getLogger("callguard.server").info(
             "native window not built yet (SRV-11); serving for the browser")
-    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+    try:
+        uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+    finally:
+        runtime.close()  # app stops: transcript cleared
 
 
 if __name__ == "__main__":
