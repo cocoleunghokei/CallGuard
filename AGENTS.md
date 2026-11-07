@@ -2,7 +2,7 @@
 
 Every coding agent reads this file first, then the `AGENTS.md` of its lane.
 **Team:** Coco is the only human and acts as Lead. Every other lane is run by a coding agent in its own git worktree. Agents never merge into `main`; Coco reviews and merges.
-Why we're building this: [hack1984/background.md](hack1984/background.md). What and when: [hack1984/project-plan.md](hack1984/project-plan.md).
+Why we're building this: [hack1984/background.md](hack1984/background.md). What and when: [hack1984/project-plan.md](hack1984/project-plan.md). Detailed requirements by lane (IDs like `DET-6`): [hack1984/prd.md](hack1984/prd.md).
 
 **Callguard** is a Mac desktop app. It listens to work calls, transcribes them on the laptop, detects scam scripts, checks them against the firm's own rules, and warns the user. **Everything runs locally.**
 
