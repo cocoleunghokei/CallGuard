@@ -6,6 +6,8 @@ Read the root [AGENTS.md](../AGENTS.md) first. You own `ui/` and `tests/ui/` onl
 A local web page (`ui/index.html` plus plain JS and CSS, no build step) served by the Server. It sits in a narrow window next to Zoom and reacts to the WebSocket messages in root AGENTS.md section 3.
 
 ## Tasks
+Full flows and copy-paste task prompts (T1–T11, design brief): [hack1984/ui-flows.md](../hack1984/ui-flows.md), [hack1984/ui-tasks.md](../hack1984/ui-tasks.md). Work them in order.
+
 **P0**
 - [ ] "Listening locally" badge, and an online/offline indicator from `status`
 - [ ] Risk meter: low / watch / danger
