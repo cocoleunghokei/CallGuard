@@ -16,7 +16,7 @@ def test_overlay_markup():
     html = (UI / "index.html").read_text(encoding="utf-8")
     tag = re.search(r'<div id="overlay"[^>]*>', html).group(0)
     assert 'role="alertdialog"' in tag and 'aria-labelledby="ov-h"' in tag and 'aria-modal="true"' in tag
-    assert re.search(r'<h1 id="ov-h">Stop and verify this call</h1>', html)
+    assert re.search(r'<h1 id="ov-h">Scam detected</h1>', html)
     assert 'data-exit="hang_up"' in html
 
 

@@ -63,7 +63,7 @@ Open `http://localhost:8080/dev/replay.html?f=s1_government&autoplay=1&speed=1`.
 | 8 | Hang up in Zoom, click **End call** (or wait 45 s of silence) | Panel wipes: no lines, no quotes left on screen or in memory |
 | 9 | **Wi-Fi off**, run the call again | Header "Offline". Everything works the same, the lookup says "Offline, search skipped. Use the number on file." and the egress entry reads "Offline, not sent" |
 
-The other two exits, if asked: **Check with a colleague** (toast + a local Mac notification), and **Type SAFE + hold 3 s** (meter back to green, "Marked safe").
+The other two exits, if asked: **Ask a colleague for help** (toast + a local Mac notification), and **Type SAFE + hold 3 s** (meter back to green, "Marked safe").
 
 ## 4. Backup video (due Sun 09:00, file stays off-repo)
 

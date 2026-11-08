@@ -91,10 +91,6 @@ svg { display: block; flex: none; }
 .hero .ic { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto var(--s3); display: grid; place-items: center; background: var(--bg); color: var(--idle); }
 .hero h1 { margin: 0; font-size: var(--t-hero); line-height: 1.1; font-weight: 700; }
 .hero .sub { margin: var(--s2) 0 0; font-size: var(--t-meta); color: var(--muted); display: flex; justify-content: center; align-items: center; gap: var(--s2); }
-.bar { display: inline-flex; gap: 3px; }
-.bar:empty { display: none; }
-.bar i { width: 12px; height: 4px; border-radius: 2px; background: currentColor; opacity: .2; }
-.bar i.on { opacity: 1; }
 .lv-low .sub { color: var(--low); }
 .lv-low .sub #hero-words { color: var(--muted); }
 .lv-watch .sub { color: var(--watch); }
@@ -309,7 +305,7 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .ov-report b { color: var(--danger); }
 
 /* Header: one word, "Offline" only when it matters */
-#hero-sub:has(#hero-words:empty):has(.bar:empty) { display: none; }
+#hero-sub:has(#hero-words:empty) { display: none; }
 
 /* ================= sidebar (Call / Firm rules / Emergency contacts) ================= */
 .shell { min-height: 100%; display: flex; }

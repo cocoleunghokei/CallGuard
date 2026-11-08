@@ -68,7 +68,7 @@
       <section id="hero" class="hero lv-idle" aria-live="polite">
         <div class="ic"><svg width="26" height="26"><use id="hero-icon" href="#i-idle"/></svg></div>
         <h1 id="hero-word">Not on a call</h1>
-        <p id="hero-sub" class="sub"><span id="hero-words"></span><span id="hero-bar" class="bar" aria-hidden="true"></span></p>
+        <p id="hero-sub" class="sub"><span id="hero-words"></span></p>
         <button id="show-warning" class="hero-btn" type="button" hidden>Show the warning</button>
       </section>
 
@@ -112,7 +112,7 @@
       <!-- G: actions at Watch (T10 / UI-9). Outside danger, one click is enough. -->
       <div id="actions" class="actions" hidden>
         <div class="side-btns">
-          <button id="side-colleague" class="btn quiet" type="button">Check with a colleague</button>
+          <button id="side-colleague" class="btn quiet" type="button">Ask a colleague for help</button>
           <button id="side-safe" class="btn quiet" type="button">Mark as safe</button>
         </div>
         <p id="panel-toast" class="toast" role="status" hidden></p>
@@ -176,8 +176,8 @@
     <div class="ov-card">
       <section class="hero lv-danger ov-hero">
         <div class="ic"><svg width="28" height="28"><use href="#i-danger"/></svg></div>
-        <h1 id="ov-h">Stop and verify this call</h1>
-        <p id="ov-sub" class="sub"><span id="ov-words">Strong signs</span><span id="ov-bar" class="bar" aria-hidden="true"></span></p>
+        <h1 id="ov-h">Scam detected</h1>
+        <p id="ov-sub" class="sub"><span id="ov-words">Strong signs</span></p>
         <!-- T7: the safe-path pause. It never blocks typing. -->
         <div id="ov-lock" class="ov-lock" hidden>
           <p id="ov-ask" class="ov-ask"></p>
@@ -209,7 +209,7 @@
         <!-- T7: three exits, the safe one easiest. Enter and Esc never take one. -->
         <div id="ov-exits" class="ov-exits">
           <button id="ov-hangup" class="btn primary" type="button" data-exit="hang_up">Hang up and call back</button>
-          <button id="ov-colleague" class="btn" type="button" data-exit="colleague">Check with a colleague</button>
+          <button id="ov-colleague" class="btn" type="button" data-exit="colleague">Ask a colleague for help</button>
           <div class="safe">
             <label for="safe-input">Verified it's safe? Type SAFE</label>
             <input id="safe-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="8" aria-describedby="safe-hint">

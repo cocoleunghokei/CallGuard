@@ -153,23 +153,12 @@ function renderHero(state, lv) {
   $("hero-icon").setAttribute("href", L.icon);
   $("hero-word").textContent = L.word;
 
-  const bar = $("hero-bar");
+  // Words only, no signs bar (Coco, Sat).
   const c = state.check && typeof state.check.confidence === "number" ? state.check.confidence : null;
-  if (lv === "idle") {
-    $("hero-words").textContent = "";
-    bar.replaceChildren();
-  } else if (state.markedSafe) {
-    $("hero-words").textContent = "Marked safe";
-    bar.replaceChildren();
-  } else if (c == null) {
-    // No confidence: no bar. The default words still name the level.
-    $("hero-words").textContent = DEFAULT_SIGNS[lv];
-    bar.replaceChildren();
-  } else {
-    const segs = Math.max(0, Math.min(10, Math.round(c * 10)));
-    $("hero-words").textContent = signsWords(segs);
-    bar.replaceChildren(...Array.from({ length: 10 }, (_, i) => h("i", { class: i < segs ? "on" : null })));
-  }
+  if (lv === "idle") $("hero-words").textContent = "";
+  else if (state.markedSafe) $("hero-words").textContent = "Marked safe";
+  else if (c == null) $("hero-words").textContent = DEFAULT_SIGNS[lv];
+  else $("hero-words").textContent = signsWords(Math.max(0, Math.min(10, Math.round(c * 10))));
 }
 
 // ---------------------------------------------------------------- D why
@@ -536,7 +525,7 @@ function renderOverlay(state, lv) {
 
   const c = state.check;
   const callback = o.mode === "callback";
-  $("ov-h").textContent = callback ? "Hang up now" : "Stop and verify this call";
+  $("ov-h").textContent = callback ? "Hang up now" : "Scam detected";
   $("ov-sub").hidden = callback;
   $("ov-body").hidden = callback;
   $("ov-exits").hidden = callback;
@@ -562,7 +551,6 @@ function renderOverlay(state, lv) {
   const conf = typeof c.confidence === "number" ? c.confidence : null;
   const segs = conf == null ? null : Math.max(0, Math.min(10, Math.round(conf * 10)));
   $("ov-words").textContent = segs == null ? "Strong signs" : signsWords(segs);
-  $("ov-bar").replaceChildren(...(segs == null ? [] : Array.from({ length: 10 }, (_, i) => h("i", { class: i < segs ? "on" : null }))));
 
   $("ov-claim").hidden = !c.claimed_identity;
   $("ov-claim").replaceChildren(...(c.claimed_identity ? ["The caller claims to be: ", h("b", { text: c.claimed_identity })] : []));
@@ -814,7 +802,7 @@ function renderTabs(state, lv) {
   const alert = state.tab !== "call" && (lv === "watch" || lv === "danger");
   dot.hidden = !alert;
   dot.className = `tab-dot lv-dot-${lv}`;
-  $("tab-call").setAttribute("aria-label", alert ? `Call, ${lv === "danger" ? "stop and verify" : "worth a second look"}` : "Call");
+  $("tab-call").setAttribute("aria-label", alert ? `Call, ${lv === "danger" ? "Scam detected" : "worth a second look"}` : "Call");
   const hits = Object.values(state.ruleHits).filter(Boolean).length;
   $("tab-rules-dot").hidden = !(hits && state.tab !== "rules");
 }

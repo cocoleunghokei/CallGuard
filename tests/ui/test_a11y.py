@@ -88,7 +88,7 @@ def test_overlay_is_an_alert_with_a_name(ui_server, browser):
     snap = page.accessibility.snapshot(root=r.frame.query_selector("#overlay")) if hasattr(page, "accessibility") else None
     role = r.frame.get_attribute("#overlay", "role")
     name = r.frame.inner_text("#ov-h")
-    assert role == "alertdialog" and name == "Stop and verify this call"
+    assert role == "alertdialog" and name == "Scam detected"
     if snap:
         assert snap.get("role") == "alertdialog"
     page.close()
