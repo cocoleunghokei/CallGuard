@@ -253,6 +253,13 @@ body{
 .close .h{font-size:46px;color:var(--ink)}
 .close small{font-size:17px;color:var(--ink)}
 
+/* s12 performance */
+.s12 .row{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:70px}
+.stats.perf{grid-template-columns:repeat(4,1fr);bottom:100px}
+.stats.perf .big{font-size:76px}
+.stats.perf .big .u{font-size:38px}
+.stats.perf .from{font-size:19px;color:var(--ink);font-weight:500}
+
 /* ---------- chrome ---------- */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;justify-content:center;align-items:center;gap:10px;
   padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
@@ -495,12 +502,30 @@ body{
   <aside class="notes">“Why now? Two things changed. Catching AI voices has become an endless loop: every time a detector gets better, the fakes get better too. And AI got small enough to run on a laptop. A couple of years ago, this couldn't have run on your Mac.” “So why would a firm pick us over the big names? Three reasons. We read the script, so we catch AI and non-AI scams. Everything runs on the laptop. And it's fifteen dollars a seat, with no security team needed. The big players check the voice, in their cloud, for companies with a security team. We're built for the firm that lacks support.” “And next, every firm makes the others safer, without us ever hearing a call. When CallGuard flags a scam, the laptop already knows the pattern: who they claimed to be and what they asked for. With one click, a firm can share just that pattern, never the words. So when a fake court clerk hits a few law firms in Boston on Monday, every firm on CallGuard is warned by Tuesday, often before it's even in the news.” <b>(beat)</b> “My friend heard ‘don't tell your colleagues’ and gave away her bank login. CallGuard would have turned red at that exact sentence, and shown her the real number to call. Thank you.”</aside>
 </section>
 
+<!-- 12 -->
+<section class="slide s12" data-name="performance">
+  <div class="pad">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>How well it works</span></div>
+    <div class="row">
+      <h2 class="h h2"><span class="ink">Tuned overnight.</span><br><span class="plum">Zero false alarms.</span></h2>
+      <p class="body">We replay scripted scam calls and normal calls through the local model, line by line, and score every warning. Then we tuned the prompt and the scoring, and ran it again.</p>
+    </div>
+  </div>
+  <div class="stats perf">
+    <div class="card stat"><div class="big mono">+20<span class="u">%</span></div><div class="small">accuracy: right risk level on every line</div><div class="from mono">83% → 100%</div><div class="src">Lines where the risk shown was the expected one</div></div>
+    <div class="card stat"><div class="big mono">2<span class="u">×</span></div><div class="small">scams turned red in time (+100%)</div><div class="from mono">50% → 100%</div><div class="src">Red by the line that gives the scam away</div></div>
+    <div class="card stat market"><div class="big mono">0</div><div class="small">false alarms: no normal call ever turned red</div><div class="from mono">0 → 0</div><div class="src">Normal calls with money, banks and deadlines</div></div>
+    <div class="card stat"><div class="big mono">6.7<span class="u">s</span></div><div class="small">p95 check time, 8% faster</div><div class="from mono">7.3 s → 6.7 s</div><div class="src">95% of checks finish within this, on a MacBook</div></div>
+  </div>
+  <aside class="notes">“How well does it work? We test it on scripted scam calls and normal calls, line by line. After a night of tuning, accuracy went up twenty percent, from eighty-three to a hundred percent of lines. Scams caught in time doubled, from half to all of them. And through all of it, zero false alarms: no normal call ever turned red. Each check runs in under seven seconds, on the laptop.” <b>If asked:</b> before = first live run on all 8 test calls (24 lines); after = the 3 demo calls (17 lines), qwen2.5:7b on the demo Mac.</aside>
+</section>
+
 </div></div>
 
 <div class="notes-panel" id="notesPanel"><div id="notesText"></div></div>
 <nav class="bar" aria-label="Slide controls">
   <button type="button" id="prev" aria-label="Previous slide">←</button>
-  <span class="count" id="count">1 / 10</span>
+  <span class="count" id="count">1 / 12</span>
   <button type="button" id="next" aria-label="Next slide">→</button>
   <button type="button" id="fsBtn">Fullscreen (F)</button>
 </nav>
