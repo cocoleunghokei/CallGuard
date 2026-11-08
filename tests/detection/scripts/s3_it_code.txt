@@ -9,7 +9,7 @@
 # rules: it_never_asks_for_codes
 caller: Hi, this is Jake from the IT help desk. Do you have a minute?
 you: Sure, what's up?
-caller: We're doing some routine checks on staff laptops, and yours needs fixing today.
+caller: We're doing some security checks on staff laptops, and yours has to be fixed in the next five minutes.
 you: Okay, no problem.
 caller: Your account has been flagged and will be shut down. You'll lose access to all your client files.
 you: Oh no, what do I need to do?
