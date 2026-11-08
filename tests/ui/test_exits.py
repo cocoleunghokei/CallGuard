@@ -80,7 +80,7 @@ def test_check_with_a_colleague(ui_server, browser):
     page.keyboard.press(" ")
     assert r.sent() == [{"type": "colleague"}, {"type": "gate_release", "how": "colleague"}]
     toast = f.inner_text("#ov-toast")
-    assert "Heads-up for IT and your manager" in toast and "Demo: not sent" in toast
+    assert "Heads-up for IT and your manager" in toast and "IT team and your manager" in toast and "Demo" not in toast
     assert "Department of Justice" not in toast, "fixed wording only, nothing from the call"
     assert f.inner_text("#priv-text").startswith("1 search sent"), "the heads-up adds nothing to the egress log"
     assert f.is_visible("#overlay")

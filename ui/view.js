@@ -667,8 +667,37 @@ function showToast(id, lines) {
   }, 12000);
 }
 
-function headsUpLines() {
-  return [h("b", { text: HEADS_UP.title }), h("q", { text: HEADS_UP.message }), h("small", { text: HEADS_UP.note })];
+function headsUpLines(copied) {
+  return [
+    h("b", { text: HEADS_UP.title }),
+    h("q", { text: HEADS_UP.message }),
+    h("small", { text: copied ? HEADS_UP.copied : HEADS_UP.notCopied }),
+  ];
+}
+
+/** Copy fixed text to the clipboard; true when it worked. Falls back to
+ *  execCommand for webviews without navigator.clipboard. Local only. */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const had = document.activeElement;
+    const ta = h("textarea", { text });
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+    document.body.append(ta);
+    ta.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    ta.remove();
+    had?.focus?.();
+    return ok;
+  }
 }
 
 function setHold(p) {
@@ -710,12 +739,13 @@ function finishHold(state) {
 }
 
 function bindExits(state) {
-  $("ov-colleague").addEventListener("click", () => {
+  $("ov-colleague").addEventListener("click", async () => {
+    const copying = copyText(HEADS_UP.message); // start inside the click, before any await
     send("colleague");
     send("gate_release", { how: "colleague" });
     state.callLog.outcome = "colleague";
-      rerender();
-    toast(...headsUpLines());
+    rerender();
+    toast(...headsUpLines(await copying));
   });
 
   // "I've verified, it's safe": type SAFE, then hold 3 s. No single click or key does it.
@@ -746,10 +776,11 @@ function bindExits(state) {
 // ---------------------------------------------------------------- side buttons at Watch (T10 / UI-9)
 
 function bindSideButtons(state) {
-  $("side-colleague").addEventListener("click", () => {
+  $("side-colleague").addEventListener("click", async () => {
+    const copying = copyText(HEADS_UP.message);
     send("colleague"); // no pause outside danger, so no gate_release
     state.callLog.outcome = "colleague";
-    showToast("panel-toast", headsUpLines());
+    showToast("panel-toast", headsUpLines(await copying));
   });
   $("side-safe").addEventListener("click", () => {
     // One click is enough here: there is no pause to get past (F10).
