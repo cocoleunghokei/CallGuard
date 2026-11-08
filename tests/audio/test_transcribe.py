@@ -48,3 +48,27 @@ def test_missing_local_model_fails_without_importing_whisper(monkeypatch):
     transcribe.get_model.cache_clear()
     with pytest.raises(RuntimeError, match="CALLGUARD_WHISPER_DIR"):
         transcribe.get_model()
+
+
+def test_mic_floor_skips_quiet_you_chunks_only(monkeypatch):
+    transcribe.get_model.cache_clear()
+    monkeypatch.delenv("CALLGUARD_WHISPER_DIR", raising=False)
+    monkeypatch.setattr(transcribe, "get_model", lambda: SimpleNamespace(
+        transcribe=lambda samples, **kw: (iter([SimpleNamespace(text="words")]), None)))
+    echo = np.full(48_000, 0.01, dtype=np.float32)
+    loud = np.full(48_000, 0.05, dtype=np.float32)
+
+    monkeypatch.delenv("CALLGUARD_MIC_MIN_RMS", raising=False)
+    assert transcribe.transcribe_chunk(echo, "you") == "words"  # default: only silence skipped
+
+    monkeypatch.setenv("CALLGUARD_MIC_MIN_RMS", "0.02")
+    assert transcribe.transcribe_chunk(echo, "you") == ""        # echo dropped
+    assert transcribe.transcribe_chunk(loud, "you") == "words"   # your own voice kept
+    assert transcribe.transcribe_chunk(echo, "caller") == "words"  # caller never affected
+
+
+def test_mic_floor_ignores_bad_or_tiny_values(monkeypatch):
+    monkeypatch.setenv("CALLGUARD_MIC_MIN_RMS", "loud")
+    assert transcribe.mic_min_rms() == transcribe.SILENCE_RMS
+    monkeypatch.setenv("CALLGUARD_MIC_MIN_RMS", "0")
+    assert transcribe.mic_min_rms() == transcribe.SILENCE_RMS

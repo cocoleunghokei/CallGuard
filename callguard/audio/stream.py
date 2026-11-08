@@ -20,7 +20,7 @@ def stream_chunks() -> Iterator[TranscriptChunk]:
     get_model()
     with closing(capture_chunks()) as audio_chunks:
         for audio in audio_chunks:
-            text = transcribe_chunk(audio.samples)
+            text = transcribe_chunk(audio.samples, audio.speaker)
             if text:
                 yield TranscriptChunk(
                     speaker=audio.speaker,

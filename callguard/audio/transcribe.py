@@ -18,6 +18,19 @@ if TYPE_CHECKING:
 SILENCE_RMS = 0.003
 
 
+def mic_min_rms() -> float:
+    """Loudness floor for the "you" mic, from CALLGUARD_MIC_MIN_RMS (default: SILENCE_RMS).
+
+    Raise it when the caller's voice leaks from the speakers into the mic: quieter
+    mic chunks (the echo) are skipped, your own closer, louder voice still counts.
+    """
+    try:
+        value = float(os.environ.get("CALLGUARD_MIC_MIN_RMS", ""))
+    except ValueError:
+        return SILENCE_RMS
+    return max(value, SILENCE_RMS)
+
+
 @lru_cache(maxsize=1)
 def get_model():
     """Load the pre-downloaded small model once, with Hub access disabled."""
@@ -31,9 +44,10 @@ def get_model():
     return WhisperModel(model_dir, device="cpu", compute_type="int8", local_files_only=True)
 
 
-def transcribe_chunk(samples: ndarray) -> str:
-    """Return recognized English words, or an empty string for silence."""
-    if rms(samples) < SILENCE_RMS:
+def transcribe_chunk(samples: ndarray, speaker: str = "caller") -> str:
+    """Return recognized English words, or an empty string for silence (or mic echo)."""
+    floor = mic_min_rms() if speaker == "you" else SILENCE_RMS
+    if rms(samples) < floor:
         return ""
 
     segments, _ = get_model().transcribe(
@@ -58,10 +72,16 @@ def main() -> int:
         return 0
 
     try:
+        from dotenv import load_dotenv
+        load_dotenv()  # pick up CALLGUARD_WHISPER_DIR / CALLGUARD_MIC_MIN_RMS from .env
+    except ImportError:
+        pass
+    print(f"mic floor (CALLGUARD_MIC_MIN_RMS): {mic_min_rms():.4f}", flush=True)
+    try:
         get_model()  # warm the model before the timed audio check
         for chunk in capture_chunks(duration=args.seconds):
             started = monotonic()
-            text = transcribe_chunk(chunk.samples)
+            text = transcribe_chunk(chunk.samples, chunk.speaker)
             elapsed_ms = (monotonic() - started) * 1_000
             tail = text.replace("\n", " ")[-80:]
             print(f"{chunk.speaker}: rms={rms(chunk.samples):.4f} transcribe_ms={elapsed_ms:.0f} tail={tail}", flush=True)

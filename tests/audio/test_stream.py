@@ -21,7 +21,7 @@ def test_stream_chunks_combines_both_speakers_and_skips_empty_text(monkeypatch):
     monkeypatch.setattr("callguard.audio.stream.capture_chunks", fake_capture)
     monkeypatch.setattr(
         "callguard.audio.stream.transcribe_chunk",
-        lambda samples: {caller: "Hello", silence: "", you: "I hear you"}[samples],
+        lambda samples, speaker: {caller: "Hello", silence: "", you: "I hear you"}[samples],
     )
 
     assert list(stream_chunks()) == [
@@ -44,7 +44,7 @@ def test_closing_stream_stops_capture(monkeypatch):
 
     monkeypatch.setattr("callguard.audio.stream.get_model", lambda: None)
     monkeypatch.setattr("callguard.audio.stream.capture_chunks", fake_capture)
-    monkeypatch.setattr("callguard.audio.stream.transcribe_chunk", lambda samples: "words")
+    monkeypatch.setattr("callguard.audio.stream.transcribe_chunk", lambda samples, speaker: "words")
 
     stream = stream_chunks()
     assert next(stream)["speaker"] == "caller"
