@@ -1,0 +1,608 @@
+<title>CallGuard Pitch Deck</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: 16:9 white slides (1600x900 canvas, scaled to fit) on a soft grey stage; pink-to-blue glass imagery used sparingly */
+:root{
+  --stage:#f3f3f5;
+  --paper:#ffffff;
+  --ink:#17151c;
+  --plum:#5b1d4f;
+  --grey:#17151c;
+  --grey-2:#2e2b35;
+  --line:#e8e7ec;
+  --card:#fafafb;
+  --chip:#efeef2;
+  --pink:#e95bb8;
+  --magenta:#b8237f;
+  --violet:#b9a3f3;
+  --sky:#7fb4f6;
+  --ok:#1f7a55;
+  --soon:#8a5a10;
+  --font: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+html,body{height:100%}
+body{
+  background:var(--stage);color:var(--ink);font-family:var(--font);
+  overflow:hidden;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing:antialiased;
+}
+.viewport{position:absolute;left:50%;top:0;transform:translateX(-50%)}
+.stage{position:absolute;left:0;top:0;width:1600px;height:900px;transform-origin:0 0}
+
+/* ---------- slides ---------- */
+.slide{position:absolute;inset:0;background:var(--paper);overflow:hidden;display:none;
+  box-shadow:0 1px 2px rgba(23,21,28,.04),0 18px 50px rgba(23,21,28,.06)}
+.slide.active{display:block}
+.pad{position:absolute;inset:0;padding:84px 110px}
+.labels{display:flex;font-size:17px;color:var(--ink);letter-spacing:.01em}
+.labels > span:first-child{width:400px}
+.brand{display:inline-flex;align-items:center;gap:9px;color:var(--ink);font-weight:500}
+.brand .mark{width:17px;height:22px;color:var(--ink)}
+.labels .brand{width:400px;flex:none}
+.applogo{width:84px;height:86px;filter:drop-shadow(0 8px 14px rgba(23,21,28,.18))}
+.h{font-weight:300;letter-spacing:-.025em;line-height:1.06;margin:0;text-wrap:balance}
+.h1{font-size:96px}
+.h2{font-size:72px}
+.h3{font-size:58px}
+.plum{color:var(--plum)}
+.ink{color:var(--ink)}
+.body{font-size:27px;line-height:1.5;color:var(--grey);font-weight:400;margin:0}
+.small{font-size:19px;color:var(--grey);font-weight:400;line-height:1.45}
+.mono{font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.notes{display:none}
+
+/* iridescent imagery */
+.iris{position:relative;overflow:hidden;
+  background:
+    radial-gradient(55% 70% at 88% 95%, rgba(184,35,127,.95) 0%, transparent 60%),
+    radial-gradient(45% 55% at 68% 72%, rgba(233,91,184,.9) 0%, transparent 62%),
+    radial-gradient(50% 60% at 18% 22%, rgba(90,160,245,.95) 0%, transparent 65%),
+    radial-gradient(45% 50% at 52% 38%, rgba(201,181,247,.95) 0%, transparent 62%),
+    radial-gradient(40% 50% at 10% 85%, rgba(160,205,255,.9) 0%, transparent 60%),
+    linear-gradient(135deg,#8ec2ff 0%,#b9a6f5 48%,#f29ad4 100%);}
+.iris::before,.iris::after{content:"";position:absolute;border-radius:50%;filter:blur(40px);opacity:.75;pointer-events:none}
+.iris::before{width:70%;height:38%;left:-10%;top:52%;transform:rotate(-14deg);
+  background:linear-gradient(90deg,rgba(255,255,255,.0),rgba(255,255,255,.55),rgba(255,255,255,0))}
+.iris::after{width:55%;height:60%;right:-12%;top:-20%;
+  background:radial-gradient(circle,rgba(120,175,255,.8),transparent 70%)}
+.glass{background:rgba(255,255,255,.34);border:1px solid rgba(255,255,255,.65);
+  backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 30px rgba(80,40,120,.12)}
+
+/* photo slots */
+.photo{position:absolute;overflow:hidden;cursor:pointer}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo .hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  padding:22px 34px;border-radius:999px;font-size:24px;color:var(--ink);white-space:nowrap;text-align:center}
+.photo .hint small{display:block;font-size:16px;color:var(--grey);margin-top:4px}
+.photo.filled .hint{display:none}
+.photo .remove{position:absolute;top:18px;right:18px;width:44px;height:44px;border-radius:50%;border:0;
+  font:400 26px/1 var(--font);color:var(--ink);cursor:pointer;display:none}
+.photo .remove{z-index:3}
+.photo.filled:hover .remove,.photo.filled:focus-within .remove{display:block}
+.sticker{position:absolute;z-index:2;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:170px;line-height:1;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;display:none;transform:translate(-50%,-50%)}
+.photo.filled .sticker{display:block}
+.sticker:active{cursor:grabbing}
+.sticker .grip{position:absolute;right:-6px;bottom:-6px;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid var(--plum);cursor:nwse-resize;opacity:0;transition:opacity .15s}
+.sticker:hover .grip{opacity:1}
+.photo.drag{outline:4px solid var(--pink);outline-offset:-4px}
+.photo:focus-visible{outline:4px solid var(--sky);outline-offset:-4px}
+
+/* ---------- per-slide ---------- */
+/* s1 split */
+.split-left{position:absolute;left:0;top:0;bottom:0;width:880px;padding:84px 70px 84px 110px;display:flex;flex-direction:column}
+.split-left .stack{margin-top:auto;margin-bottom:auto;display:flex;flex-direction:column;gap:34px}
+.s1 .photo{left:0;right:0;top:0;height:640px}
+.s1 .photo img{object-position:50% 30%}
+.face-emoji{position:absolute;z-index:2;transform:translate(-50%,-50%);line-height:1;pointer-events:none;display:none;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.photo.is-default .face-emoji{display:block}
+.s1 .caption{position:absolute;left:110px;right:110px;bottom:70px;display:flex;flex-direction:column;gap:12px}
+
+/* s2 full photo top */
+.s2 .photo{left:0;right:0;top:0;height:540px}
+.s2 .caption{position:absolute;left:110px;right:110px;bottom:70px;display:flex;flex-direction:column;gap:14px}
+
+/* s3 reveal */
+.s3 .photo{inset:0}
+.s3 .left{position:absolute;left:110px;top:0;bottom:0;width:640px;display:flex;flex-direction:column;justify-content:center;gap:26px}
+
+/* s4 stats */
+.s4 .row{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:70px}
+.stats{position:absolute;left:110px;right:110px;bottom:90px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.stat{padding:30px 34px 34px;display:flex;flex-direction:column;gap:12px;min-height:200px}
+.big{font-size:84px;font-weight:300;letter-spacing:-.035em;color:var(--plum);line-height:1}
+.big .u{font-size:48px;letter-spacing:-.02em}
+.src{font-size:15px;color:var(--grey-2);margin-top:auto}
+
+/* s5 who */
+.s5 .grid{position:absolute;left:110px;right:110px;top:290px;bottom:90px;display:grid;grid-template-columns:380px 1fr;gap:40px}
+.hero-num{display:flex;flex-direction:column;justify-content:center;gap:10px}
+.hero-num .big{font-size:104px}
+.sector{display:flex;flex-direction:column;margin:14px 0 6px;border-top:1px solid var(--line)}
+.sector div{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);font-size:19px;color:var(--ink)}
+.sector b{font-weight:400;color:var(--plum);font-size:22px}
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.feat .card{padding:28px 30px;display:flex;flex-direction:column;gap:10px}
+.ico{width:52px;height:52px;border-radius:50%;background:var(--ink);display:grid;place-items:center;margin-bottom:10px}
+.ico svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.feat h4{margin:0;font-size:27px;font-weight:400;letter-spacing:-.01em;color:var(--ink)}
+
+/* s6 map */
+.s6 .left{position:absolute;left:110px;top:84px;width:500px;bottom:84px}
+.s6 .left .stack{position:absolute;left:0;right:0;top:366px;transform:translateY(-50%);display:flex;flex-direction:column;gap:30px}
+.map{position:absolute;right:90px;top:95px;width:880px;height:760px}
+.quad{position:absolute;inset:0 0 50px 50px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.q{padding:24px 26px;border:0 solid var(--line);display:flex;flex-direction:column;gap:14px}
+.q:nth-child(1){border-right-width:1px;border-bottom-width:1px}
+.q:nth-child(2){border-bottom-width:1px}
+.q:nth-child(3){border-right-width:1px}
+.q h5{margin:0 0 6px;font-size:18px;font-weight:500;color:var(--grey);letter-spacing:.02em;text-transform:uppercase}
+.q.hot{background:linear-gradient(140deg,rgba(201,181,247,.28),rgba(242,154,212,.25) 55%,rgba(142,194,255,.28))}
+.dot{display:flex;gap:12px;align-items:flex-start;font-size:24px;color:var(--ink);font-weight:400}
+.dot i{flex:none;width:14px;height:14px;border-radius:50%;background:#cfcdd6;margin-top:6px}
+.dot small{display:block;font-size:18px;color:var(--grey);font-weight:400;margin-top:2px}
+.dot.me{font-size:32px;font-weight:500}
+.dot.me i{width:20px;height:20px;margin-top:5px;background:linear-gradient(135deg,var(--pink),var(--sky));box-shadow:0 0 0 6px rgba(233,91,184,.15)}
+.empty{margin:auto;font-size:24px;color:var(--grey-2)}
+.cloudlist{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.ax-y{position:absolute;left:0;top:0;bottom:50px;width:40px;display:flex;flex-direction:column;justify-content:space-around;align-items:center}
+.ax-y span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:18px;color:var(--grey)}
+.ax-x{position:absolute;left:50px;right:0;bottom:0;height:40px;display:grid;grid-template-columns:1fr 1fr;text-align:center;font-size:18px;color:var(--grey);align-items:end}
+
+/* s7 demo hero */
+.s7{background:#000}
+.s7 .iris{position:absolute;inset:0}
+.s7 .inner{position:absolute;inset:0;padding:84px 110px;display:flex;flex-direction:column;z-index:1}
+.s7 .labels{color:var(--ink)}
+.callpill{margin-top:auto;align-self:center;display:flex;align-items:center;gap:22px;padding:24px 40px 24px 26px;border-radius:999px;font-size:30px;color:var(--ink)}
+.pulse{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.55);display:grid;place-items:center;position:relative}
+.pulse::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid rgba(255,255,255,.7);animation:ring 2.2s ease-out infinite}
+.pulse svg{width:28px;height:28px;stroke:var(--plum);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@keyframes ring{from{transform:scale(.85);opacity:1}to{transform:scale(1.35);opacity:0}}
+.s7 .title{margin-top:auto;margin-bottom:10px}
+
+/* s8 how it works */
+.s8 .flow{position:absolute;left:110px;right:110px;top:84px;bottom:84px;display:flex;flex-direction:column;justify-content:space-between}
+.track{position:relative;flex:none;height:170px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
+.track .line{position:absolute;left:24px;right:24px;top:34px;height:1px;background:var(--ink)}
+.track .nodes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr)}
+.node{position:relative;display:flex;flex-direction:column;align-items:center;padding-top:28px}
+.node::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--ink)}
+.node::after{content:"";width:1px;height:26px;background:var(--ink)}
+.node b{font-weight:300;font-size:34px;letter-spacing:-.02em;margin-top:8px}
+.node em{font-style:normal;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);margin-top:6px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.steps .card{padding:22px 24px;font-size:19px;line-height:1.45;color:var(--grey);text-align:center;font-weight:400}
+.leaves{display:flex;align-items:center;justify-content:center;gap:18px}
+.leaves .pill{border-radius:999px;padding:18px 28px;font-size:22px;color:var(--ink);display:flex;align-items:center;gap:12px}
+.leaves .pill.iris{color:var(--ink)}
+.leaves .pill.iris span{position:relative;z-index:1}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.fact{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:6px}
+.fact b{font-size:15px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--grey-2)}
+.fact span{font-size:21px;color:var(--ink);font-weight:400;line-height:1.35}
+
+/* s9 the ask */
+.s9 .cols{position:absolute;left:110px;right:110px;top:290px;bottom:84px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.s9 .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.s9 .colhead{font-size:15px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);padding-bottom:10px;border-bottom:1px solid var(--line)}
+.s9 .rows{display:flex;flex-direction:column;gap:14px;flex:1;justify-content:space-between}
+.s9 .rows .card{background:var(--chip);border-color:#e3e2e8;padding:14px 26px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex:1}
+.s9 .rows .card div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.s9 .rows .card.market{background:linear-gradient(120deg,rgba(201,181,247,.35),rgba(242,154,212,.3) 55%,rgba(142,194,255,.35));border-color:rgba(185,163,243,.6)}
+.s9 .rows h4{margin:0;font-size:24px;font-weight:400;color:var(--ink)}
+.s9 .rows p{margin:0;font-size:17px;color:var(--grey);font-weight:400}
+.s9 .rows .v{font-size:40px;font-weight:300;letter-spacing:-.03em;color:var(--plum);white-space:nowrap}
+.donut{flex:1;display:flex;align-items:center;justify-content:center;gap:34px}
+.donut .ring{position:relative;width:300px;height:300px;flex:none}
+.donut svg{position:absolute;inset:0;width:100%;height:100%}
+.donut .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut .center b{font-size:60px;font-weight:300;letter-spacing:-.03em;color:var(--plum)}
+.donut .center span{font-size:16px;color:var(--grey)}
+.legend{display:flex;flex-direction:column;gap:10px;min-width:0}
+.legend div{display:flex;align-items:center;gap:10px;font-size:17px;color:var(--ink);padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;white-space:nowrap}
+.legend i{width:12px;height:12px;border-radius:50%;flex:none}
+.legend .tot{border:0;background:none;padding:2px 4px 0;color:var(--grey);font-size:14px;white-space:normal;line-height:1.4;max-width:280px}
+.banner{font-size:22px;font-weight:400;color:var(--ink);text-align:center}
+.banner b{font-weight:500;color:var(--plum)}
+
+.stats.four{grid-template-columns:repeat(3,1fr);bottom:100px}
+.stats.four .big{font-size:68px}
+.stats.four .big .u{font-size:34px}
+.stat.market{background:linear-gradient(120deg,rgba(201,181,247,.35),rgba(242,154,212,.3) 55%,rgba(142,194,255,.35));border-color:rgba(185,163,243,.6)}
+.donut.big2{position:absolute;left:110px;right:110px;top:330px;bottom:90px;gap:80px}
+.donut.big2 .ring{width:400px;height:400px}
+.donut.big2 .center b{font-size:80px}
+.donut.big2 .center span{font-size:18px}
+.donut.big2 .legend div{font-size:20px;padding:10px 18px}
+.donut.big2 .legend .tot{font-size:17px;max-width:460px;padding-top:6px}
+/* s10 moat */
+.s10 .iris{position:absolute;inset:0}
+.s10 .inner{position:absolute;inset:0;padding:84px 110px;z-index:1}
+.s10 .labels{color:var(--ink)}
+.rm{position:absolute;left:110px;right:110px;top:300px}
+.rm .line{position:absolute;left:0;right:0;top:0;height:1px;background:rgba(255,255,255,.85)}
+.rm .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.rm .col{display:flex;flex-direction:column;align-items:center}
+.rm .col::before{content:"";width:12px;height:12px;border-radius:50%;background:#fff;margin-top:-6px;box-shadow:0 0 0 4px rgba(255,255,255,.35)}
+.rm .col::after{content:"";order:1;width:1px;height:30px;background:rgba(255,255,255,.85)}
+.tag{order:2;background:#fff;border-radius:10px;padding:8px 16px;font-size:16px;font-weight:500;letter-spacing:.02em}
+.tag.ok{color:var(--ok)}
+.tag.next{color:var(--soon)}
+.rm .glass{order:3;margin-top:24px;border-radius:22px;padding:28px 30px;align-self:stretch;min-height:190px;display:flex;flex-direction:column;gap:10px}
+.rm h4{margin:0;font-size:28px;font-weight:400;letter-spacing:-.01em;color:var(--ink)}
+.rm p{margin:0;font-size:20px;line-height:1.45;color:var(--ink);font-weight:400}
+.close{position:absolute;left:110px;right:110px;bottom:72px;display:flex;justify-content:space-between;align-items:flex-end;gap:40px}
+.close .h{font-size:46px;color:var(--ink)}
+.close small{font-size:17px;color:var(--ink)}
+
+/* ---------- chrome ---------- */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;justify-content:center;align-items:center;gap:10px;
+  padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  opacity:.35;transition:opacity .2s}
+.bar:hover,.bar:focus-within{opacity:1}
+.bar button{font:500 14px/1 var(--font);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 14px;cursor:pointer}
+.bar button:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.bar .count{font:500 14px var(--font);color:var(--grey);min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+.notes-panel{position:fixed;left:0;right:0;bottom:56px;z-index:4;display:none;justify-content:center;
+  padding:0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px))}
+.notes-panel.open{display:flex}
+.notes-panel div{max-width:980px;width:100%;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 22px;
+  font-size:15px;line-height:1.55;color:var(--ink);max-height:30vh;overflow:auto;box-shadow:0 10px 30px rgba(23,21,28,.08)}
+.notes-panel b{font-weight:600;color:var(--plum)}
+@media (prefers-reduced-motion: reduce){.pulse::after{animation:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="cg-mark" viewBox="256 192 512 648"><path d="M512 214 C592 258 664 278 746 286 V500 C746 652 644 764 512 818 C380 764 278 652 278 500 V286 C360 278 432 258 512 214 Z" fill="none" stroke="currentColor" stroke-width="44" stroke-linejoin="round"/><g fill="currentColor"><rect x="340" y="480" width="32" height="70" rx="16"/><rect x="392" y="440" width="32" height="150" rx="16"/><rect x="444" y="390" width="32" height="250" rx="16"/><rect x="496" y="350" width="32" height="330" rx="16"/><rect x="548" y="390" width="32" height="250" rx="16"/><rect x="600" y="440" width="32" height="150" rx="16"/><rect x="652" y="480" width="32" height="70" rx="16"/></g></symbol>
+<linearGradient id="cg-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e4e4e7"/></linearGradient>
+<symbol id="cg-app" viewBox="80 80 864 880"><rect x="100" y="100" width="824" height="824" rx="186" fill="url(#cg-bg)" stroke="#d4d4d8" stroke-width="3"/><use href="#cg-mark" x="256" y="192" width="512" height="648" style="color:#111113"/></symbol>
+</defs></svg>
+<div class="viewport" id="viewport"><div class="stage" id="stage">
+
+<!-- 1 -->
+<section class="slide s1" data-name="story-1">
+  <div class="photo iris" data-slot="p1b" data-default="deck-assets/slide1-blur.jpg" tabindex="0" role="button" aria-label="Add photo for slide 1">
+    <span class="face-emoji" style="left:12px;top:192px;font-size:147px">😄</span><span class="face-emoji" style="left:214px;top:212px;font-size:185px">😄</span><span class="face-emoji" style="left:524px;top:196px;font-size:193px">😄</span><span class="face-emoji" style="left:800px;top:208px;font-size:204px">🥲</span><span class="face-emoji" style="left:1132px;top:176px;font-size:208px">😄</span><span class="face-emoji" style="left:1436px;top:168px;font-size:193px">😄</span>
+    <div class="hint glass">Add a photo<small>Click, drop, or paste</small></div>
+    <button class="remove glass" type="button" aria-label="Remove photo">×</button>
+  </div>
+  <div class="caption">
+    <h1 class="h h2"><span class="ink">Meet my friend.</span> <span class="plum">Lawyer. Very smart.</span></h1>
+    <p class="body">Works on money-laundering cases.</p>
+  </div>
+  <aside class="notes">“I wanna start with a story of my friend. She's a lawyer, works on money-laundering cases. Very smart.”</aside>
+</section>
+
+<!-- 2 -->
+<section class="slide s2" data-name="story-2">
+  <div class="photo iris" data-slot="p2" data-default="deck-assets/slide2-cat.webp" tabindex="0" role="button" aria-label="Add photo for slide 2">
+    <div class="hint glass">Add a photo<small>Click, drop, or paste</small></div>
+    <button class="remove glass" type="button" aria-label="Remove photo">×</button>
+  </div>
+  <div class="caption">
+    <h2 class="h h2"><span class="ink">Officer Wang 👮</span> <span class="plum">Ministry of Public Security.</span></h2>
+    <p class="body">“You are a suspect. Do not tell your colleagues.”</p>
+  </div>
+  <aside class="notes">“One day she gets a call from Officer Wang. He says she's a suspect in a money-laundering case, <i>her own</i> case. And: don't tell your colleagues.”</aside>
+</section>
+
+<!-- 3 -->
+<section class="slide s3" data-name="story-3">
+  <div class="photo iris" data-slot="p3" data-default="deck-assets/slide3-hotel.webp" tabindex="0" role="button" aria-label="Add photo for slide 3">
+    <div class="sticker" data-sticker="p3" data-fx="0.506" data-fy="0.29" data-size="180" title="Drag to move. Drag the corner dot to resize." aria-label="Smiling face with tear sticker">🥲<span class="grip"></span></div>
+    <div class="hint glass">Add a photo<small>Click, drop, or paste</small></div>
+    <button class="remove glass" type="button" aria-label="Remove photo">×</button>
+  </div>
+  <aside class="notes">“So she goes to a hotel room, alone, and gives him her banking login.” <b>(pause)</b> “Funny now. It wasn't funny then. I've spent five years building voice AI, and I kept thinking: every warning sign was in what he <i>said</i>. A computer could have caught that.”</aside>
+</section>
+
+<!-- 4 -->
+<section class="slide s4" data-name="numbers">
+  <div class="pad">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>The cost of one phone call</span></div>
+    <div class="row">
+      <h2 class="h h2"><span class="ink">She's</span><br><span class="plum">not alone.</span></h2>
+      <p class="body">Scammers pretend to be a vendor, a boss or an official, and voice is the fastest-growing way they do it. A phone call skips every email filter a firm has.</p>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="card stat"><div class="big mono">$20.9<span class="u">B</span></div><div class="small">lost to cybercrime in the US in 2025, up 26%</div><div class="src">FBI IC3 2025</div></div>
+    <div class="card stat"><div class="big mono">$3.05<span class="u">B</span></div><div class="small">lost to fake vendors, fake bosses and wire fraud</div><div class="src">FBI IC3 2025</div></div>
+    <div class="card stat"><div class="big mono">+442<span class="u">%</span></div><div class="small">rise in voice phishing from the first to the second half of 2024</div><div class="src">CrowdStrike 2025 Global Threat Report</div></div>
+  </div>
+  <aside class="notes">“And she's not alone. Americans lost almost twenty-one billion dollars to cybercrime last year. Three billion came from people pretending to be a vendor, a boss or an official. And scam calls are growing fastest, up more than four hundred percent in the second half of 2024 alone.”</aside>
+</section>
+
+<!-- 5 -->
+<section class="slide s5" data-name="who">
+  <div class="pad">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Who it's for</span></div>
+    <h2 class="h h3 plum" style="margin-top:44px">Small firms that hold other people's money.</h2>
+  </div>
+  <div class="grid">
+    <div class="hero-num">
+      <div class="big mono">~240K</div>
+      <div class="body" style="font-size:22px;color:var(--ink)">US firms that hold client money and bank details</div>
+      <div class="sector">
+        <div><span>Law firms</span><b class="mono">~157K</b></div>
+        <div><span>Accounting (CPA) firms</span><b class="mono">~51K</b></div>
+        <div><span>Wealth advisers (RIA)</span><b class="mono">~33K</b></div>
+      </div>
+      <div class="src" style="color:var(--ink);margin-top:8px">Firms with employees. US Census; SEC Form ADV via IAA 2026; NASAA 2026. Rounded</div>
+      <div class="small" style="margin-top:14px">First market: Boston law firms</div>
+    </div>
+    <div class="feat">
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><h4>The user</h4><div class="small">Paralegals, bookkeepers and office managers on Zoom, Teams or Meet</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/></svg></div><h4>The firm</h4><div class="small">Law, accounting and wealth management, under 200 people</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div><h4>Why scammers pick them</h4><div class="small">Client funds, bank details and Social Security numbers</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/><path d="M5 5l14 14"/></svg></div><h4>What they have today</h4><div class="small">No security team. Big companies have one. These firms have nobody</div></div>
+    </div>
+  </div>
+  <aside class="notes">“Who's this for? Small professional firms: law, accounting, wealth management. Under two hundred people. They hold client money and client data, and scammers know it. Big companies have a security team. These firms have nobody. There are about two hundred forty thousand of these firms in the US. We start with law firms here in Boston.”</aside>
+</section>
+
+<!-- 6 -->
+<section class="slide s6" data-name="different">
+  <div class="left">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span></div>
+    <div class="stack">
+      <div class="small" style="font-size:17px">What's different</div>
+      <h2 class="h h2" style="font-size:52px"><span class="ink">You can't tell the voice.</span><br><span class="plum">You can tell the script.</span></h2>
+      <p class="body" style="font-size:24px">Numbers get faked. AI voices are getting perfect. The script never changes: authority, secrecy, a threat, then a request for money.</p>
+    </div>
+  </div>
+  <div class="map">
+    <div class="ax-y"><span>Runs on the device</span><span>Runs in the cloud</span></div>
+    <div class="quad">
+      <div class="q"><h5>On device · checks phone number or AI voice</h5>
+        <div class="dot"><i></i><div>Polygraf Meeting Guard<small>local deployment option</small></div></div></div>
+      <div class="q hot"><h5>On device · reads the script</h5>
+        <div class="dot me"><i></i><div>CallGuard<small>laptop work calls, any app, firm rules</small></div></div>
+        <div class="dot"><i></i><div>Google Scam Detection<small>Pixel 9+ and Galaxy S26 phones only</small></div></div></div>
+      <div class="q"><h5>Cloud · checks phone number or AI voice</h5>
+        <div class="cloudlist">
+          <div class="dot"><i></i>Microsoft Teams</div><div class="dot"><i></i>Pindrop</div>
+          <div class="dot"><i></i>Reality Defender</div><div class="dot"><i></i>Hiya</div>
+          <div class="dot"><i></i>Truecaller</div></div></div>
+      <div class="q"><h5>Cloud · reads the script</h5><div class="empty">No one shipping</div></div>
+    </div>
+    <div class="ax-x"><span>Checks phone number or AI voice</span><span>Reads what is said</span></div>
+  </div>
+  <aside class="notes">“Today's tools check <i>who</i> is calling, the number or the voice. But numbers get faked, and AI voices are getting perfect. The script never changes: authority, secrecy, a threat, then a request for money. Only Google reads the script on the device, and only on Pixel phones. Work calls happen on laptops. Let me show you.”</aside>
+</section>
+
+<!-- 7 -->
+<section class="slide s7" data-name="demo">
+  <div class="iris"></div>
+  <div class="inner">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Live demo</span></div>
+    <div class="callpill glass">
+      <div class="pulse"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/></svg></div>
+      <span>Officer Wang is calling…</span>
+    </div>
+    <h1 class="h h1 ink title">Let's take a call.</h1>
+  </div>
+  <aside class="notes"><b>Switch to Meet + CallGuard.</b> Click footer “Sent online (0)” → green → amber at “warrant” → click the search flash (“only the agency name left this laptop”) → red at “don't tell your colleagues”: “one warning with the tactic, his exact words, your firm's rule, and the real number to call back. That's this firm's own rule, which they wrote.” → Report scam → hang up, panel wipes. <b>Backup:</b> <code>python -m callguard.server --fake tests/detection/scripts/s1_jess.txt</code></aside>
+</section>
+
+<!-- 8 -->
+<section class="slide s8" data-name="privacy">
+  <div class="flow">
+  <div class="head">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>What left this device</span></div>
+    <h2 class="h h3" style="margin-top:36px;text-align:center"><span class="ink">Everything runs on the laptop.</span> <span class="plum">Nothing is stored.</span></h2>
+  </div>
+  <div class="track"><div class="line"></div><div class="nodes">
+    <div class="node"><b>Listen</b><em>Step 01</em></div>
+    <div class="node"><b>Transcribe</b><em>Step 02</em></div>
+    <div class="node"><b>Check</b><em>Step 03</em></div>
+    <div class="node"><b>Warn</b><em>Step 04</em></div>
+  </div></div>
+  <div class="steps">
+    <div class="card">Call audio from Zoom, Teams or Meet, kept in memory only</div>
+    <div class="card">Whisper on the laptop. No audio sent anywhere</div>
+    <div class="card">Local model reads the tactics and checks the firm's own rules</div>
+    <div class="card">The tactic, his words, the rule broken, the real number</div>
+  </div>
+  <div class="leaves">
+    <div class="small" style="color:var(--ink);font-size:20px">The only thing sent online:</div>
+    <div class="pill iris"><span>“Ministry of Public Security” → Tavily → the real public number</span></div>
+  </div>
+  <div class="facts">
+    <div class="fact"><b>Leaves the device</b><span>One organization name, checked first so it can't carry your words</span></div>
+    <div class="fact"><b>Who can read the call</b><span>Only you. Not your boss, not us</span></div>
+    <div class="fact"><b>What the employer sees</b><span>Alert counts only. It protects staff without monitoring them</span></div>
+  </div>
+  </div>
+  <aside class="notes">“So what left the device? One agency name. Listening and the scam check run on this Mac, with nothing in the cloud. Your boss doesn't get your calls, only a count of alerts. It protects staff without spying on them. And it runs offline. Pull the Wi-Fi after this and I'll show you.”</aside>
+</section>
+
+<!-- 9 -->
+<section class="slide s9" data-name="pay">
+  <div class="pad">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Why firms will pay</span></div>
+    <h2 class="h h2" style="margin-top:56px"><span class="ink">One stopped scam</span><br><span class="plum">pays for 34 years of CallGuard.</span></h2>
+  </div>
+  <div class="stats four">
+    <div class="card stat"><div class="big mono">$123<span class="u">K</span></div><div class="small">average loss per fake-vendor / fake-boss scam</div><div class="src">FBI IC3 2025</div></div>
+    <div class="card stat"><div class="big mono">$3.6<span class="u">K/yr</span></div><div class="small">CallGuard for a 20-person firm, at $15 per seat per month</div><div class="src">Target price, $10–15</div></div>
+    <div class="card stat market"><div class="big mono">$100<span class="u">M+/yr</span></div><div class="small">what we can earn: ~30K US firms with 10+ staff × ~20 seats</div><div class="src">Rounded estimate</div></div>
+  </div>
+  <aside class="notes">“Would a firm pay? The average business scam reported to the FBI last year cost a hundred and twenty-three thousand dollars. CallGuard for 20 people is thirty-six hundred dollars a year. One stopped scam pays for thirty-four years. And across the thirty thousand bigger firms alone, that's over a hundred million dollars a year we can earn.”</aside>
+</section>
+
+<!-- 9b -->
+<section class="slide s9b" data-name="margin">
+  <div class="pad">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Cost to run and margin</span></div>
+    <h2 class="h h2" style="margin-top:56px"><span class="ink">Almost free to run.</span><br><span class="plum">~95% margin, even at $10 a seat.</span></h2>
+  </div>
+  <div class="donut big2">
+    <div class="ring">
+      <svg viewBox="0 0 400 400" aria-label="Cost breakdown of a $10 seat">
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#efeef2" stroke-width="64"/>
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2730" stroke-width="64" stroke-dasharray="899.4 942.5" transform="rotate(-90 200 200)"/>
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#e95bb8" stroke-width="64" stroke-dasharray="28.3 942.5" stroke-dashoffset="-899.4" transform="rotate(-90 200 200)"/>
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#7fb4f6" stroke-width="64" stroke-dasharray="15.1 942.5" stroke-dashoffset="-927.7" transform="rotate(-90 200 200)"/>
+      </svg>
+      <div class="center"><b class="mono">95%</b><span>margin per seat</span></div>
+    </div>
+    <div class="legend">
+      <div><i style="background:#2a2730"></i>Margin · $9.54</div>
+      <div><i style="background:#e95bb8"></i>Payment fees · ~$0.30</div>
+      <div><i style="background:#7fb4f6"></i>Search · $0.16</div>
+      <div><i style="background:#efeef2;border:1px solid #d8d6de"></i>AI model + transcription · $0, runs on the laptop</div>
+      <div class="tot">Per seat, per month, at $10. Search = 20 suspicious calls × $0.008. A cloud AI tool pays for every minute of every call.</div>
+    </div>
+  </div>
+  <aside class="notes">“And it's cheap to run. The AI and the transcription run on the laptop, so we pay nothing per call, just one search when a call looks suspicious, less than a cent. A cloud tool pays for every minute of every call. Even at ten dollars a seat, we keep about ninety-five percent.”</aside>
+</section>
+
+<!-- 10 -->
+<section class="slide s10" data-name="moat">
+  <div class="iris"></div>
+  <div class="inner">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Why it's hard to copy</span></div>
+    <h2 class="h h3 ink" style="margin-top:40px">Firms hand us their real rules because we never hear their calls.</h2>
+    <div class="rm"><div class="line"></div><div class="cols">
+      <div class="col"><span class="tag ok">Built</span><div class="glass"><h4>The firm's own rules</h4><p>“We never change bank details by phone.” Every call is checked against them. The AI model is the replaceable part.</p></div></div>
+      <div class="col"><span class="tag ok">Built</span><div class="glass"><h4>Harder to replace every week</h4><p>Each firm adds its payment policies, vendor callback numbers and emergency contacts. Switching means rebuilding all of it.</p></div></div>
+      <div class="col"><span class="tag next">Next</span><div class="glass"><h4>A scam-script library</h4><p>Opt-in, anonymous tactic signals, never words. Every firm that joins protects every other firm.</p></div></div>
+    </div></div>
+    <div class="close">
+      <div class="h">My friend heard “don't tell your colleagues.”<br>CallGuard would have turned red right there.</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:14px"><svg class="applogo" aria-label="CallGuard logo"><use href="#cg-app"/></svg><small>Off by default · every byte shown in the log</small></div>
+    </div>
+  </div>
+  <aside class="notes">“Why can't someone copy this? Firms write their own rules, and we check every call against them. The AI model is the replaceable part. Firms trust us with those rules <i>because</i> they never leave the laptop. Next, an opt-in scam-script library: anonymous tactics, never words, so every firm protects every other firm.” <b>(beat)</b> “My friend heard ‘don't tell your colleagues’ and gave away her bank login. CallGuard would have turned red at that exact sentence, and shown her the real number to call. Thank you.”</aside>
+</section>
+
+</div></div>
+
+<div class="notes-panel" id="notesPanel"><div id="notesText"></div></div>
+<nav class="bar" aria-label="Slide controls">
+  <button type="button" id="prev" aria-label="Previous slide">←</button>
+  <span class="count" id="count">1 / 10</span>
+  <button type="button" id="next" aria-label="Next slide">→</button>
+  <button type="button" id="fsBtn">Fullscreen (F)</button>
+</nav>
+<input type="file" id="filePick" accept="image/*" hidden>
+
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('.slide')];
+  const stage=document.getElementById('stage'), vp=document.getElementById('viewport');
+  const panel=document.getElementById('notesPanel'), notesText=document.getElementById('notesText');
+  const count=document.getElementById('count');
+  let i=0, curScale=1;
+
+  function fromHash(){const m=/^#s(\d+)$/.exec(location.hash);return m?Math.min(Math.max(+m[1]-1,0),slides.length-1):0}
+  function show(n){
+    i=Math.min(Math.max(n,0),slides.length-1);
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    count.textContent=(i+1)+' / '+slides.length;
+    const note=slides[i].querySelector('.notes');
+    notesText.innerHTML=note?note.innerHTML:'';
+    if(location.hash!=='#s'+(i+1)){try{history.replaceState(null,'','#s'+(i+1))}catch(e){}}
+    fit();
+  }
+  function fit(){
+    const barH=56, notesH=panel.classList.contains('open')?panel.offsetHeight+8:0;
+    const w=window.innerWidth-32, h=window.innerHeight-barH-notesH-24;
+    const s=Math.max(Math.min(w/1600,h/900),0.1);curScale=s;
+    stage.style.transform='scale('+s+')';
+    vp.style.width=(1600*s)+'px';vp.style.height=(900*s)+'px';
+    vp.style.top=Math.max(12,(window.innerHeight-barH-notesH-900*s)/2)+'px';
+  }
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.getElementById('next').onclick=()=>show(i+1);
+  function toggleNotes(){panel.classList.toggle('open');fit()}
+  function toggleFs(){
+    if(document.fullscreenElement){document.exitFullscreen?.().catch(()=>{})}
+    else{const p=document.documentElement.requestFullscreen?.();p&&p.catch(()=>{})}
+  }
+  document.getElementById('fsBtn').onclick=toggleFs;
+  window.addEventListener('resize',fit);
+  document.addEventListener('fullscreenchange',()=>setTimeout(fit,50));
+  window.addEventListener('hashchange',()=>{const n=fromHash();if(n!==i)show(n)});
+  document.addEventListener('keydown',e=>{
+    if(e.target.matches('input,textarea'))return;
+    if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1)}
+    else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(i-1)}
+    else if(e.key==='Home')show(0);
+    else if(e.key==='End')show(slides.length-1);
+    else if(e.key==='n'||e.key==='N')toggleNotes();
+    else if(e.key==='f'||e.key==='F')toggleFs();
+  });
+  let tx=null;
+  document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)show(i+(dx<0?1:-1));tx=null});
+
+  /* ---- photos: stored only in this browser (IndexedDB) ---- */
+  function db(){return new Promise((res,rej)=>{try{const r=indexedDB.open('callguard-deck',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('photos');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})}
+  async function put(k,v){try{const d=await db();const t=d.transaction('photos','readwrite');v?t.objectStore('photos').put(v,k):t.objectStore('photos').delete(k)}catch(e){}}
+  async function get(k){try{const d=await db();return await new Promise(r=>{const q=d.transaction('photos').objectStore('photos').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch(e){return null}}
+  function setPhoto(el,blob,save){
+    let img=el.querySelector('img');
+    if(!blob){if(img)img.remove();el.classList.remove('filled','is-default');if(save)put(el.dataset.slot,null);return}
+    if(!img){img=document.createElement('img');img.alt='';el.prepend(img)}
+    if(img.dataset.url)URL.revokeObjectURL(img.dataset.url);
+    const url=URL.createObjectURL(blob);img.src=url;img.dataset.url=url;
+    el.classList.add('filled');el.classList.remove('is-default');if(save)put(el.dataset.slot,blob);
+  }
+  const pick=document.getElementById('filePick');let target=null;
+  pick.addEventListener('change',()=>{const f=pick.files&&pick.files[0];if(f&&target)setPhoto(target,f,true);pick.value=''});
+  document.querySelectorAll('.photo').forEach(el=>{
+    get(el.dataset.slot).then(b=>{if(b)setPhoto(el,b,false);else if(el.dataset.default&&!el.querySelector('img')){const img=document.createElement('img');img.alt='';img.src=el.dataset.default;el.prepend(img);el.classList.add('filled','is-default')}});
+    el.addEventListener('click',e=>{if(e.target.closest('.remove'))return;target=el;pick.click()});
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'){target=el;pick.click()}});
+    el.querySelector('.remove').addEventListener('click',e=>{e.stopPropagation();setPhoto(el,null,true)});
+    el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag')});
+    el.addEventListener('dragleave',()=>el.classList.remove('drag'));
+    el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('drag');const f=[...e.dataTransfer.files].find(f=>f.type.startsWith('image/'));if(f)setPhoto(el,f,true)});
+  });
+  document.addEventListener('paste',e=>{
+    const el=slides[i].querySelector('.photo');if(!el)return;
+    const item=[...(e.clipboardData?.items||[])].find(it=>it.type.startsWith('image/'));
+    if(item){e.preventDefault();setPhoto(el,item.getAsFile(),true)}
+  });
+
+  /* ---- emoji sticker: drag to move, corner dot to resize; position kept in this browser ---- */
+  document.querySelectorAll('.sticker').forEach(st=>{
+    const key='cg-sticker2-'+st.dataset.sticker, box=st.parentElement;
+    let pos={fx:+(st.dataset.fx||0.5),fy:+(st.dataset.fy||0.32),size:+(st.dataset.size||170)};
+    try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v&&typeof v.fx==='number')pos=v}catch(e){}
+    function apply(){st.style.left=(pos.fx*100)+'%';st.style.top=(pos.fy*100)+'%';st.style.fontSize=pos.size+'px'}
+    function save(){try{localStorage.setItem(key,JSON.stringify(pos))}catch(e){}}
+    apply();
+    ['click','keydown'].forEach(t=>st.addEventListener(t,e=>e.stopPropagation()));
+    st.addEventListener('pointerdown',e=>{
+      e.preventDefault();e.stopPropagation();st.setPointerCapture(e.pointerId);
+      const resize=e.target.classList.contains('grip');
+      const w=box.offsetWidth||1,h=box.offsetHeight||1;
+      const start={cx:e.clientX,cy:e.clientY,fx:pos.fx,fy:pos.fy,size:pos.size};
+      function move(ev){
+        const dx=(ev.clientX-start.cx)/curScale,dy=(ev.clientY-start.cy)/curScale;
+        if(resize){pos.size=Math.min(600,Math.max(40,start.size+(dx+dy)/1.4))}
+        else{pos.fx=Math.min(1,Math.max(0,start.fx+dx/w));pos.fy=Math.min(1,Math.max(0,start.fy+dy/h))}
+        apply();
+      }
+      function up(){st.removeEventListener('pointermove',move);st.removeEventListener('pointerup',up);st.removeEventListener('pointercancel',up);save()}
+      st.addEventListener('pointermove',move);st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
+    });
+  });
+
+  show(fromHash());
+})();
+</script>
