@@ -59,15 +59,15 @@ Open `http://localhost:8080/dev/replay.html?f=s1_government&autoplay=1&speed=1`.
 | 4 | Point at the footer | It flashes once: `1 search sent: "Department of Justice"`. Click it: that name is the **only** thing sent, to api.tavily.com |
 | 5 | Caller: "…don't tell your colleagues…" | Red warning fills the window, one short tone, the Mac notification (fixed text, no caller words). Tactics with their quotes, the firm rule, the real public number |
 | 6 | Caller asks for bank details; presenter tries to type (it still works: nothing is blocked) | "This call is asking for bank details. Verify before you send anything…", "🔒 Pause ends in 2:00" counting down. Callguard keeps focus |
-| 7 | Click **Hang up and call back** | "Hang up now": the verified number, big, with Copy number |
+| 7 | Click **Report scam** | Toast "Heads-up for IT and your manager" with the fixed message and "Demo: not sent…"; the real public number stays on the warning |
 | 8 | Hang up in Zoom, click **End call** (or wait 45 s of silence) | Panel wipes: no lines, no quotes left on screen or in memory |
 | 9 | **Wi-Fi off**, run the call again | Header "Offline". Everything works the same, the lookup says "Offline, search skipped. Use the number on file." and the egress entry reads "Offline, not sent" |
 
-The other two exits, if asked: **Ask a colleague for help** (toast + a local Mac notification), and **Type SAFE + hold 3 s** (meter back to green, "Marked safe").
+The other exit, if asked: **Type SAFE + hold 3 s** (meter back to green, "Marked safe").
 
 ## 4. Backup video (due Sun 09:00, file stays off-repo)
 
 1. Wi-Fi on. `python -m callguard.server --fake tests/detection/scripts/s1_government.txt`
-2. QuickTime → New Screen Recording, select the Callguard window plus a little of the desktop. Start, then let the replay play steps 1–8 above (click the egress footer at step 4, Hang up and call back at step 7).
+2. QuickTime → New Screen Recording, select the Callguard window plus a little of the desktop. Start, then let the replay play steps 1–8 above (click the egress footer at step 4, Report scam at step 7).
 3. Wi-Fi off, restart the same command, record step 9.
 4. Save outside the repo.

@@ -17,7 +17,7 @@ def test_overlay_markup():
     tag = re.search(r'<div id="overlay"[^>]*>', html).group(0)
     assert 'role="alertdialog"' in tag and 'aria-labelledby="ov-h"' in tag and 'aria-modal="true"' in tag
     assert re.search(r'<h1 id="ov-h">Scam detected</h1>', html)
-    assert 'data-exit="hang_up"' in html
+    assert 'data-exit="hang_up"' not in html and 'data-exit="colleague"' in html
 
 
 def test_tone_is_generated_not_loaded():
@@ -54,12 +54,12 @@ def test_danger_opens_overlay_that_explains_itself(name, ui_server, browser):
     r.one()
     f = r.frame
     assert f.is_visible("#overlay")
-    assert f.evaluate("document.activeElement.id") == "ov-hangup"
+    assert f.evaluate("document.activeElement.id") == "ov-colleague"
     assert f.evaluate("document.getElementById('panel').inert")
 
     # Esc and Enter never close it.
-    f.press("#ov-hangup", "Escape")
-    f.press("#ov-hangup", "Enter")
+    f.press("#ov-colleague", "Escape")
+    f.press("#ov-colleague", "Enter")
     assert f.is_visible("#overlay")
 
     assert r.until(is_end)

@@ -42,19 +42,19 @@ def test_card_copy_has_no_banned_words():
 @pytest.mark.parametrize(
     "name,kind,outcome",
     [
-        ("s1_government", "Someone posing as an official", "you hung up to call back"),
-        ("s2_vendor_bank", "Someone asking to change bank details", "you hung up to call back"),
-        ("s3_it_code", "Someone asking for a login code", "you hung up to call back"),
-        ("s4_partner_wire", "Someone pushing for a payment", "you hung up to call back"),
+        ("s1_government", "Someone posing as an official", "you reported it"),
+        ("s2_vendor_bank", "Someone asking to change bank details", "you reported it"),
+        ("s3_it_code", "Someone asking for a login code", "you reported it"),
+        ("s4_partner_wire", "Someone pushing for a payment", "you reported it"),
     ],
 )
-def test_card_after_hang_up(name, kind, outcome, ui_server, browser):
+def test_card_after_report(name, kind, outcome, ui_server, browser):
     page = browser.new_page()
     r = Replay(page, ui_server, name)
     f = r.frame
     r.until(is_gate_locked)
     r.one()
-    f.click("#ov-hangup")
+    f.click("#ov-colleague")
     play_to_end(r)
     assert not f.is_visible("#history"), "the card waits in its own tab"
     assert f.is_visible("#tab-history-dot")

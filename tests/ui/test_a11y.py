@@ -68,7 +68,7 @@ def test_demo_path_contrast_and_focus(beat, scheme, ui_server, browser):
     else:
         r.until(is_gate_locked)
         r.one()
-        start = "#ov-hangup"
+        start = "#ov-colleague"
         if beat == "panel_danger":
             r.one()  # auto-release: back to the red panel
             start = "#show-warning"

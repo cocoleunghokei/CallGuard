@@ -248,11 +248,6 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
   touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .hold:disabled { cursor: not-allowed; color: var(--muted); }
-.ov-callback { display: flex; flex-direction: column; gap: var(--s2); }
-.cb-card { background: var(--sunken); border-radius: var(--r-card); padding: var(--s4); display: flex; flex-direction: column; gap: 2px; }
-.cb-card small { font-size: var(--t-meta); color: var(--muted); }
-.cb-card b { font-size: 26px; font-variant-numeric: tabular-nums; }
-.cb-card b.none { font-size: var(--t-key); }
 @media (min-width: 701px) {
   .safe { grid-template-columns: auto 140px auto; justify-content: center; }
 }

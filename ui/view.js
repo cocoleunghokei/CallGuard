@@ -68,7 +68,7 @@ export function bindView(state, redraw) {
   $("show-warning").addEventListener("click", () => {
     state.overlay.open = true; // not a new open: no tone
     rerender();
-    $("ov-hangup").focus();
+    $("ov-colleague").focus();
   });
   $("overlay").addEventListener("keydown", (e) => overlayKeys(e));
   $("priv-btn").addEventListener("click", () => {
@@ -284,7 +284,7 @@ function renderTodo(state, lv) {
   if (!show) {
     $("num").hidden = true;
     $("verify-note").hidden = true;
-    $("next-step").textContent = lv === "low" && state.markedSafe ? "Marked safe. Callguard keeps listening." : "No action needed. Callguard keeps listening.";
+    $("next-step").textContent = ""; // nothing to do yet: empty, its space stays reserved
     return;
   }
 
@@ -368,7 +368,7 @@ function renderTail(state) {
 
 /** Call content leaves the DOM, not just the screen (UI-7, F9). */
 function clearCallDom() {
-  for (const id of ["ov-ask", "cb-number", "cb-src", "ov-toast", "ov-report"]) $(id).textContent = "";
+  for (const id of ["ov-ask", "ov-toast", "ov-report"]) $(id).textContent = "";
   $("safe-input").value = "";
   for (const id of ["pills", "quote", "rules-broken", "flagged", "said-latest", "tail", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
   for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step", "ov-claim", "ov-verify", "ov-say-text", "ov-next"]) $(id).textContent = "";
@@ -550,17 +550,11 @@ function renderOverlay(state, lv) {
   if (!open) return;
 
   const c = state.check;
-  const callback = o.mode === "callback";
-  $("ov-h").textContent = callback ? "Hang up now" : "Scam detected";
-  $("ov-sub").hidden = callback;
-  $("ov-body").hidden = callback;
-  $("ov-exits").hidden = callback;
-  $("ov-callback").hidden = !callback;
-  $("ov-cb-actions").hidden = !callback;
+  $("ov-h").textContent = "Scam detected";
 
   // The pause (gate): its reason, a local countdown, and the soft-focus line.
   const g = state.gate;
-  const locked = !callback && !!(g && g.state === "locked");
+  const locked = !!(g && g.state === "locked");
   $("ov-lock").hidden = !locked;
   $("ov-ask").textContent = locked ? askLine(g, c.tactics) : "";
   $("ov-count").textContent = locked && g.until ? mmss((g.until - Date.now()) / 1000) : "";
@@ -568,12 +562,6 @@ function renderOverlay(state, lv) {
   $("safe-hold").disabled = !isSafe();
 
   const vi = verifyInfo(state);
-  if (callback) {
-    $("cb-number").textContent = vi.phone || "Use the number on file";
-    $("cb-number").classList.toggle("none", !vi.phone);
-    $("cb-src").textContent = vi.phone ? [c.claimed_identity, vi.host].filter(Boolean).join(" · ") : "";
-    $("cb-copy").hidden = !vi.phone;
-  }
   const conf = typeof c.confidence === "number" ? c.confidence : null;
   const segs = conf == null ? null : Math.max(0, Math.min(10, Math.round(conf * 10)));
   $("ov-words").textContent = segs == null ? "Strong signs" : signsWords(segs);
@@ -610,7 +598,7 @@ function renderOverlay(state, lv) {
   // One-line egress summary at the foot (T5 item 5): the privacy proof stays visible.
   $("ov-egress").replaceChildren(privIcon(sentCount(state) === 0), egressSummary(state));
 
-  const primary = callback ? (vi.phone ? $("cb-copy") : $("overlay")) : $("ov-hangup");
+  const primary = $("ov-colleague");
   if (o.opens > lastOpens) {
     lastOpens = o.opens;
     tone();
@@ -701,14 +689,6 @@ function finishHold(state) {
 }
 
 function bindExits(state) {
-  $("ov-hangup").addEventListener("click", () => {
-    send("gate_release", { how: "hang_up" });
-    state.callLog.outcome = "hang_up";
-    state.gate = null;
-    state.overlay.mode = "callback";
-    rerender();
-    ($("cb-copy").hidden ? $("overlay") : $("cb-copy")).focus();
-  });
   $("ov-colleague").addEventListener("click", () => {
     send("colleague");
     send("gate_release", { how: "colleague" });
@@ -716,17 +696,6 @@ function bindExits(state) {
     state.gate = null;
     rerender();
     toast(...headsUpLines());
-  });
-  $("cb-copy").addEventListener("click", async () => {
-    const phone = state.verify && state.verify.phone;
-    if (!phone) return;
-    try {
-      await navigator.clipboard.writeText(phone);
-      $("cb-copy").textContent = "Copied";
-    } catch {
-      $("cb-copy").textContent = "Copy failed";
-    }
-    setTimeout(() => ($("cb-copy").textContent = "Copy number"), 1500);
   });
 
   // "I've verified, it's safe": type SAFE, then hold 3 s. No single click or key does it.

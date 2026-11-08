@@ -46,10 +46,10 @@ export const state = {
   verifyWait: null, // {org, since}
   egress: [], // EgressEntry[] + {seq, call}, newest first, kept for the session (org names only)
   // Danger overlay (T6). Sticky: opens on danger, closes only on call end, mark
-  // safe, a release (T7), or the local "Hang up and call back" button.
+  // safe, or a release (T7).
   // `seen` = tactics already warned about this call; a closed overlay reopens
   // only for a new one (same no re-nagging rule as the gate, prd 7.5).
-  // mode: "warning" | "callback" (after "Hang up and call back").
+  // mode: always "warning" (the "Hang up and call back" exit was removed, Coco Sat).
   overlay: { open: false, opens: 0, seen: [], mode: "warning" },
   calls: 0, // calls started this session; tags egress entries "This call" vs "Earlier today"
   ui: { expanded: null, view: "panel", egressOpen: false, egressEntry: null }, // open pill, view, egress panel, open entry seq
