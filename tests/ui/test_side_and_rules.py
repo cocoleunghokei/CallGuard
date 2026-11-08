@@ -24,7 +24,7 @@ def test_s1_buttons_at_watch_only(ui_server, browser):
     f.click("#side-colleague")
     assert r.sent() == [{"type": "colleague"}], "no gate_release outside danger"
     toast = f.inner_text("#panel-toast")
-    assert "Heads-up for IT and your manager" in toast and "Demo: not sent" in toast
+    assert "Heads-up for IT and your manager" in toast and "IT team and your manager" in toast and "Demo" not in toast
     f.click("#side-safe")  # one click is enough outside danger
     assert r.sent()[-1] == {"type": "mark_safe"}
     assert f.inner_text("#hero-word") == "Low" and f.inner_text("#hero-words") == "Marked safe"

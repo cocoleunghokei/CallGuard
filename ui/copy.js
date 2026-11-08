@@ -112,14 +112,15 @@ export function mmss(sec) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** "Report scam" heads-up (Coco, Sat): goes to the firm's IT team and
- *  the user's line manager, fixed wording only, never anything from the call.
- *  The hackathon build shows it here and sends nothing, so it says so: the
- *  "What left this device" log must stay true. */
+/** "Report scam" heads-up (Coco, Sun): fixed wording only, never anything
+ *  from the call. Report scam copies the message to the clipboard for the user
+ *  to paste to IT and their manager; Callguard itself sends nothing, so the
+ *  "What left this device" log stays true. */
 export const HEADS_UP = {
   title: "Heads-up for IT and your manager",
   message: "Callguard heads-up: a call on this laptop looks suspicious. Please check in.",
-  note: "Demo: not sent. In the full version this goes to your IT team and your manager. Stay on the line or hang up, your choice.",
+  copied: "Message copied. Paste it to your IT team and your manager.",
+  notCopied: "Send this message to your IT team and your manager.",
 };
 
 /** After-call summary (T11 / UI-10). What the call looked like, from tactics
