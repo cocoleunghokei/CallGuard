@@ -7,7 +7,7 @@
 <meta name="description" content="Try Callguard: recorded scam calls played through the real app screen, in your browser.">
 <!--
   Judge landing page, published to GitHub Pages by .github/workflows/pages.yml.
-  The workflow copies ui/ to app/ next to this file, so the frame below plays
+  The workflow publishes ui/ next to this file, so the frame below plays
   ui/dev/fixtures through the CURRENT ui/index.html on main (no Server, no
   Ollama, no network). Scenario ids must exist in ui/dev/replay.js FIXTURES.
 -->
@@ -116,7 +116,7 @@
   function play(s) {
     for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.id === s.id));
     look.textContent = "What to look for: " + s.look;
-    frame.src = "app/dev/replay.html?f=" + encodeURIComponent(s.id) + "&speed=1";
+    frame.src = "ui/dev/replay.html?f=" + encodeURIComponent(s.id) + "&speed=1";
     try { history.replaceState(null, "", "#" + s.id); } catch (e) { /* ignore */ }
   }
 
