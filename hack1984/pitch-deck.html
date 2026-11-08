@@ -186,24 +186,27 @@ body{
 .fact span{font-size:21px;color:var(--ink);font-weight:400;line-height:1.35}
 
 /* s9 the ask */
-.s9 .top{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:40px}
-.s9 .rows{position:absolute;left:110px;top:330px;width:620px;display:flex;flex-direction:column;gap:16px}
-.s9 .rows .card{background:var(--chip);border-color:#e3e2e8;padding:20px 26px;display:flex;justify-content:space-between;align-items:baseline;gap:20px}
-.s9 .rows .card div{display:flex;flex-direction:column;gap:4px}
+.s9 .cols{position:absolute;left:110px;right:110px;top:290px;bottom:84px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.s9 .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.s9 .colhead{font-size:15px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);padding-bottom:10px;border-bottom:1px solid var(--line)}
+.s9 .rows{display:flex;flex-direction:column;gap:14px;flex:1;justify-content:space-between}
+.s9 .rows .card{background:var(--chip);border-color:#e3e2e8;padding:20px 26px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex:1}
+.s9 .rows .card div{display:flex;flex-direction:column;gap:4px;min-width:0}
 .s9 .rows h4{margin:0;font-size:24px;font-weight:400;color:var(--ink)}
 .s9 .rows p{margin:0;font-size:17px;color:var(--grey);font-weight:400}
 .s9 .rows .v{font-size:40px;font-weight:300;letter-spacing:-.03em;color:var(--plum);white-space:nowrap}
-.banner{position:absolute;left:110px;width:620px;bottom:80px;font-size:26px;font-weight:300;color:var(--ink)}
-.banner b{font-weight:500;color:var(--plum)}
-.donut{position:absolute;left:790px;right:110px;top:320px;height:470px}
-.donut svg{position:absolute;left:0;top:20px;width:380px;height:380px}
-.donut .center{position:absolute;left:0;top:20px;width:380px;height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.donut .center b{font-size:68px;font-weight:300;letter-spacing:-.03em;color:var(--plum)}
-.donut .center span{font-size:17px;color:var(--grey)}
-.legend{position:absolute;left:410px;right:0;top:80px;display:flex;flex-direction:column;gap:12px}
+.donut{flex:1;display:flex;align-items:center;justify-content:center;gap:34px}
+.donut .ring{position:relative;width:300px;height:300px;flex:none}
+.donut svg{position:absolute;inset:0;width:100%;height:100%}
+.donut .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut .center b{font-size:60px;font-weight:300;letter-spacing:-.03em;color:var(--plum)}
+.donut .center span{font-size:16px;color:var(--grey)}
+.legend{display:flex;flex-direction:column;gap:10px;min-width:0}
 .legend div{display:flex;align-items:center;gap:10px;font-size:17px;color:var(--ink);padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;white-space:nowrap}
-.legend i{width:12px;height:12px;border-radius:50%}
-.legend .tot{border:0;background:none;padding-left:4px;color:var(--grey);font-size:15px;white-space:normal!important;line-height:1.4}
+.legend i{width:12px;height:12px;border-radius:50%;flex:none}
+.legend .tot{border:0;background:none;padding:2px 4px 0;color:var(--grey);font-size:14px;white-space:normal;line-height:1.4;max-width:280px}
+.banner{font-size:22px;font-weight:400;color:var(--ink);text-align:center}
+.banner b{font-weight:500;color:var(--plum)}
 
 /* s10 moat */
 .s10 .iris{position:absolute;inset:0}
@@ -412,33 +415,41 @@ body{
 <section class="slide s9" data-name="business">
   <div class="pad">
     <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Would they pay · What it costs</span></div>
-    <div class="top">
-      <h2 class="h h3 plum" style="font-size:52px">One stopped scam pays for 34 years of CallGuard.</h2>
+    <h2 class="h h3 plum" style="font-size:52px;margin-top:40px">One stopped scam pays for 34 years of CallGuard.</h2>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <div class="colhead">Would they pay?</div>
+      <div class="rows">
+        <div class="card"><div><h4>Average scam loss</h4><p>per fake-vendor / fake-boss complaint · FBI IC3 2025</p></div><span class="v mono">$123,000</span></div>
+        <div class="card"><div><h4>What insurance pays back</h4><p>policies often exclude or cap scams where an employee sent the money</p></div><span class="v" style="font-size:30px">Often $0</span></div>
+        <div class="card"><div><h4>CallGuard, 20 people</h4><p>$10–15 per seat per month</p></div><span class="v mono">$2.4–3.6K<span style="font-size:22px">/yr</span></span></div>
+      </div>
     </div>
-  </div>
-  <div class="rows">
-    <div class="card"><div><h4>Average scam loss</h4><p>per fake-vendor / fake-boss complaint · FBI IC3 2025</p></div><span class="v mono">$123,000</span></div>
-    <div class="card"><div><h4>What insurance pays back</h4><p>policies often exclude or cap scams where an employee sent the money</p></div><span class="v" style="font-size:28px">Often $0</span></div>
-    <div class="card"><div><h4>CallGuard, 20 people</h4><p>$10–15 per seat per month</p></div><span class="v mono">$2.4–3.6K<span style="font-size:22px">/yr</span></span></div>
-  </div>
-  <div class="banner">And it's almost free to run: <b>~95% margin even at $10 per seat per month</b></div>
-  <div class="donut">
-    <svg viewBox="0 0 400 400" aria-label="Cost breakdown of a $10 seat">
-      <circle cx="200" cy="200" r="150" fill="none" stroke="#efeef2" stroke-width="64"/>
-      <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2730" stroke-width="64"
-        stroke-dasharray="899.4 942.5" transform="rotate(-90 200 200)"/>
-      <circle cx="200" cy="200" r="150" fill="none" stroke="#e95bb8" stroke-width="64"
-        stroke-dasharray="28.3 942.5" stroke-dashoffset="-899.4" transform="rotate(-90 200 200)"/>
-      <circle cx="200" cy="200" r="150" fill="none" stroke="#7fb4f6" stroke-width="64"
-        stroke-dasharray="15.1 942.5" stroke-dashoffset="-927.7" transform="rotate(-90 200 200)"/>
-    </svg>
-    <div class="center"><b class="mono">95%</b><span>kept from a $10 seat</span></div>
-    <div class="legend">
-      <div><i style="background:#2a2730"></i>Margin · $9.54</div>
-      <div><i style="background:#e95bb8"></i>Payment fees · ~$0.30</div>
-      <div><i style="background:#7fb4f6"></i>Search · $0.16</div>
-      <div><i style="background:#efeef2;border:1px solid #d8d6de"></i>AI model + transcription · $0</div>
-      <div class="tot">Per seat, per month. Search = 20 suspicious calls × $0.008</div>
+    <div class="col">
+      <div class="colhead">What it costs to run</div>
+      <div class="donut">
+        <div class="ring">
+          <svg viewBox="0 0 400 400" aria-label="Cost breakdown of a $10 seat">
+            <circle cx="200" cy="200" r="150" fill="none" stroke="#efeef2" stroke-width="64"/>
+            <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2730" stroke-width="64"
+              stroke-dasharray="899.4 942.5" transform="rotate(-90 200 200)"/>
+            <circle cx="200" cy="200" r="150" fill="none" stroke="#e95bb8" stroke-width="64"
+              stroke-dasharray="28.3 942.5" stroke-dashoffset="-899.4" transform="rotate(-90 200 200)"/>
+            <circle cx="200" cy="200" r="150" fill="none" stroke="#7fb4f6" stroke-width="64"
+              stroke-dasharray="15.1 942.5" stroke-dashoffset="-927.7" transform="rotate(-90 200 200)"/>
+          </svg>
+          <div class="center"><b class="mono">95%</b><span>margin per seat</span></div>
+        </div>
+        <div class="legend">
+          <div><i style="background:#2a2730"></i>Margin · $9.54</div>
+          <div><i style="background:#e95bb8"></i>Payment fees · ~$0.30</div>
+          <div><i style="background:#7fb4f6"></i>Search · $0.16</div>
+          <div><i style="background:#efeef2;border:1px solid #d8d6de"></i>AI model + transcription · $0</div>
+          <div class="tot">Per seat, per month. Search = 20 suspicious calls × $0.008</div>
+        </div>
+      </div>
+      <div class="banner">Almost free to run: <b>~95% margin even at $10 a seat</b></div>
     </div>
   </div>
   <aside class="notes">“Would a firm pay? The average business scam reported to the FBI last year cost a hundred and twenty-three thousand dollars. Insurance often won't cover it, and client money is the firm's to pay back. CallGuard for 20 people is under four thousand dollars a year. One stopped scam pays for over thirty years. And because the AI runs on the laptop, we pay almost nothing per call. Even at ten dollars a seat, we keep about ninety-five percent.”</aside>
