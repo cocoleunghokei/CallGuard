@@ -128,3 +128,24 @@ def test_verify_line_hides_when_no_lookup_arrives(ui_server, browser):
     page.wait_for_timeout(5300)
     assert not f.is_visible("#ov-verify")
     page.close()
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("s1_report", "Reported: Callers posing as DOJ staff asking for bank details · consumer.ftc.gov, Oct 2026"),
+        ("s1_government", None),  # no report on verify: no line
+        ("offline", None),  # offline: no line
+    ],
+)
+def test_report_line(name, expected, ui_server, browser):
+    page = browser.new_page()
+    r = Replay(page, ui_server, name)
+    r.until(is_danger)
+    r.one()
+    f = r.frame
+    if expected:
+        assert f.inner_text("#ov-report") == expected
+    else:
+        assert not f.is_visible("#ov-report")
+    page.close()

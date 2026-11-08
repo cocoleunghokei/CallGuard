@@ -294,3 +294,16 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .firm-list li.off { color: var(--muted); }
 .rule-badge { flex: none; padding: 1px 8px; border-radius: var(--r-pill); font-weight: 600; background: var(--danger-tint); color: var(--danger); white-space: nowrap; }
 .rule-badge.muted { background: var(--idle-tint); color: var(--text); }
+
+/* T11: after-call summary card */
+.sum-card { border: 1px solid var(--line); border-left: 4px solid var(--watch); border-radius: var(--r-card); padding: var(--s3) var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
+.lv-sum-danger .sum-card { border-left-color: var(--danger); }
+.sum-card p { margin: 0; }
+.sum-kind { font-size: var(--t-key); font-weight: 600; }
+.sum-line { font-size: var(--t-meta); color: var(--muted); }
+.sum-btns { display: flex; gap: var(--s2); }
+.sum-card .note { padding: 0; }
+
+/* UI-16: recent public report line on the warning */
+.ov-report { margin: 0; font-size: var(--t-meta); color: var(--text); }
+.ov-report b { color: var(--danger); }

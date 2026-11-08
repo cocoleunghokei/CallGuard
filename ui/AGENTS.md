@@ -10,27 +10,27 @@ Full list with IDs and "done when": [prd.md §13.5](../hack1984/prd.md#135-ui--u
 Full flows and copy-paste task prompts (T1–T11, design brief): [hack1984/ui-flows.md](../hack1984/ui-flows.md), [hack1984/ui-tasks.md](../hack1984/ui-tasks.md). Work them in order.
 
 **P0**
-- [ ] "Listening locally" badge, and an online/offline indicator from `status`
-- [ ] Risk meter: low / watch / danger
-- [ ] "Watch" note: one line with `reason`
-- [ ] Danger notification (UI-4, [prd.md §9.5](../hack1984/prd.md#95-the-danger-notification)): browser Notification API with a sound; fixed text only, never the caller's words, a name or a number; clicking it focuses the page and shows the danger warning
-- [ ] Danger warning in the Callguard window, not full-screen (UI-4): tactic, the caller's words, rule broken, real number (from `verify`), `next_step`
-- [ ] Safe-path pause exits (UI-5): "Hang up and call back", "Check with a colleague", type `SAFE` + hold 3 s. Never blocks typing in other apps
-- [ ] "What left this device" panel listing every `egress` message (empty is the point); `refused` entries show "Blocked: lookup skipped to protect your privacy"
-- [ ] Until the Server is ready, test with a fake WebSocket or a local JSON replay
+- [x] "Listening locally" badge, and an online/offline indicator from `status`
+- [x] Risk meter: low / watch / danger
+- [x] "Watch" note: one line with `reason`
+- [x] Danger notification (posted natively by the Server, SRV-11; the page adds the in-window warning + tone) (UI-4, [prd.md §9.5](../hack1984/prd.md#95-the-danger-notification)): browser Notification API with a sound; fixed text only, never the caller's words, a name or a number; clicking it focuses the page and shows the danger warning
+- [x] Danger warning in the Callguard window, not full-screen (UI-4): tactic, the caller's words, rule broken, real number (from `verify`), `next_step`
+- [x] Safe-path pause exits (UI-5): "Hang up and call back", "Check with a colleague", type `SAFE` + hold 3 s. Never blocks typing in other apps
+- [x] "What left this device" panel listing every `egress` message (empty is the point); `refused` entries show "Blocked: lookup skipped to protect your privacy"
+- [x] Until the Server is ready, test with a fake WebSocket or a local JSON replay
 
 **P1**
-- [ ] "Check with a colleague" and "Mark as safe" buttons
-- [ ] Firm rules panel (UI-13), then the rules editor with a "Never search for" list (UI-14, [prd.md §8.1](../hack1984/prd.md#81-customizing-the-rules-p1)); editing is locked during a call
-- [ ] "Say this" line on the watch note and danger warning (UI-15, wording in [prd.md §18.3](../hack1984/prd.md#183-say-this-lines))
-- [ ] Scam report line on the danger warning from `verify.report` (UI-16)
+- [x] "Check with a colleague" and "Mark as safe" buttons
+- [x] Firm rules panel (UI-13) · [ ] then the rules editor with a "Never search for" list (UI-14, [prd.md §8.1](../hack1984/prd.md#81-customizing-the-rules-p1)); editing is locked during a call
+- [x] "Say this" line on the watch note and danger warning (UI-15, wording in [prd.md §18.3](../hack1984/prd.md#183-say-this-lines))
+- [x] Report line on the danger warning from `verify.report` (UI-16; shows once the Server sends it, SRV-15)
 
 **P2**
-- [ ] Post-call summary card (UI-10): evidence quotes with time and tactic, "Copy for a report"; memory only, never the full transcript, gone when dismissed
+- [x] Post-call summary card (UI-10), built to the T11 brief: no quotes (they are deleted at call end), "Copy summary"; memory only, gone when dismissed
 
 **Demo (owner of the backup)**
 - [ ] Record the backup video of the full demo by **Sun 09:00**
-- [ ] Keep the demo machine's setup steps in `ui/DEMO.md`
+- [x] Keep the demo machine's setup steps in `ui/DEMO.md`
 
 ## Rules for this lane
 - Plain words that a paralegal understands. Say "verify first," not "fraud"
@@ -54,3 +54,4 @@ Full flows and copy-paste task prompts (T1–T11, design brief): [hack1984/ui-fl
 =======
 - [Sun 05:30] Done: integration (Coco's ask: tie all lanes together). Merged `lane/server` (SRV-8/9/13), `lane/audio` (AUD-2..9), `lane/detection` (DET-3/6/7/9) and the T7/T8 UI branch. T9 `ui/DEMO.md` (setup, stage checklist, fallbacks, click-by-click path, backup-video script). New `b-audio` banner shows `status.audio_message` when `status.audio_ok` is false (live mode). Root `pytest.ini` + `requirements.txt` added. End-to-end in Chromium against the real Server: S1 goes Low → Watch → Danger, warning, colleague toast, hang-up card, wipe on call end; without Ollama the "Basic checks only" banner shows. `pytest`: 603 pass, 1 skip (with Playwright) | Next: Coco tests on the Mac (live audio + Ollama + Tavily), records the backup video | Needs: —
 >>>>>>> origin/main
+- [Sun 00:00 UTC] Done: merged main (kept main's `ui/DEMO.md`; recording-mode test now reads `dev/replay.html`). T11 / UI-10 after-call card, built to the T11 brief: on `call ended`, if the call reached Watch or Danger, a "Last call" card under the idle hero: what it looked like from the tactics only ("Someone posing as an official", "…asking to change bank details", "…asking for a login code", "…pushing for a payment", …), "Reached Danger · N warning signs · you hung up to call back | checked with a colleague | marked it safe | the pause ran out", sign pills, firm rules that came up, "Copy summary" (same text, user's own action) and "Dismiss" (clears it from memory and the DOM). Holds tactic ids, counts, outcome and rule text only: no transcript, quotes, claimed name or number (test checks every fixture's lines, quotes, claimed identity and phone are absent). Calm calls leave no card; the next call clears it. UI-16: "Reported: {summary} · {domain}, {Mon YYYY}" on the warning from `verify.report`, hidden when absent, offline or for another org; new fixture `s1_report`. Task list above ticked. Whole repo `pytest` (with Playwright): 629 pass | Next: nothing in the UI lane; demo/video later with Coco | Needs: (Server) SRV-15 to send `verify.report`; SRV-14 before the UI-14 rules editor can be built. (Coco) PRD §9.1 asks for evidence quotes + "Copy for a report" in the card, T11 says no quotes; I followed T11 because quotes are promised deleted at call end. Open decisions [a] "Pause ends in…" copy, [b] auto-release closes the warning. Note: main's DEMO.md step 6 still says "Typing is paused…", which the UI no longer shows.

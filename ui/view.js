@@ -1,7 +1,7 @@
 // Draws `state` (see app.js) into ui/index.html. Never logs, never stores.
 // The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
 
-import { plainWords, shortWords, sayThis, signsWords, askLine, mmss, HEADS_UP } from "./copy.js";
+import { plainWords, shortWords, sayThis, signsWords, askLine, mmss, HEADS_UP, callKind, OUTCOME } from "./copy.js";
 import { send } from "./ws.js";
 
 /** How long the verify line says "Checking…" before it gives up and hides. */
@@ -63,6 +63,7 @@ export function bindView(state, redraw) {
   $("end-call").addEventListener("click", () => send("end_call"));
   bindExits(state);
   bindSideButtons(state);
+  bindSummary(state);
   $("show-warning").addEventListener("click", () => {
     state.overlay.open = true; // not a new open: no tone
     rerender();
@@ -105,6 +106,7 @@ export function render(state) {
   renderOverlay(state, lv);
   renderActions(state, lv);
   renderFirmRules(state);
+  renderSummary(state);
 
   if (focusKey) {
     const el = document.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
@@ -241,6 +243,21 @@ function hostOf(url) {
   }
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "Callers posing as … · ftc.gov, Oct 2026" from verify.report, or "". */
+function reportLine(state) {
+  const c = state.check;
+  const v = state.verify;
+  const r = v && v.report;
+  if (!r || !r.summary || !c || v.org !== c.claimed_identity || v.status === "offline") return "";
+  const host = hostOf(r.source_url || v.source_url);
+  const m = /^(\d{4})-(\d{2})/.exec(String(r.date || ""));
+  const when = m && MONTHS[Number(m[2]) - 1] ? `${MONTHS[Number(m[2]) - 1]} ${m[1]}` : "";
+  const tail = [host, when].filter(Boolean).join(", ");
+  return String(r.summary).slice(0, 140) + (tail ? ` · ${tail}` : "");
+}
+
 /** Verify line (C12): only when the caller claims an organization. */
 function verifyInfo(state) {
   const c = state.check;
@@ -334,7 +351,7 @@ function renderTail(state, lv) {
 
 /** Call content leaves the DOM, not just the screen (UI-7, F9). */
 function clearCallDom() {
-  for (const id of ["ov-ask", "cb-number", "cb-src", "ov-toast"]) $(id).textContent = "";
+  for (const id of ["ov-ask", "cb-number", "cb-src", "ov-toast", "ov-report"]) $(id).textContent = "";
   $("safe-input").value = "";
   for (const id of ["pills", "quote", "rules-broken", "flagged", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
   for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step", "ov-claim", "ov-verify", "ov-say-text", "ov-next"]) $(id).textContent = "";
@@ -563,6 +580,12 @@ function renderOverlay(state, lv) {
   $("ov-verify").textContent = verify;
   $("ov-verify").classList.toggle("has-num", !!vi.phone);
 
+  // UI-16: a recent public report about people posing as this organization (verify.report, C17).
+  // Hidden when absent, offline, or not about the org the caller claims now.
+  const rep = reportLine(state);
+  $("ov-report").hidden = !rep;
+  $("ov-report").replaceChildren(...(rep ? [h("b", { text: "Reported: " }), rep] : []));
+
   const say = sayThis(c.tactics);
   $("ov-say").hidden = !say;
   $("ov-say-text").textContent = say || "";
@@ -654,6 +677,7 @@ function finishHold(state) {
   $("safe-input").value = "";
   send("mark_safe");
   send("gate_release", { how: "mark_safe" });
+  state.callLog.outcome = "mark_safe";
   state.gate = null;
   state.markedSafe = true;
   state.overlay.open = false;
@@ -663,6 +687,7 @@ function finishHold(state) {
 function bindExits(state) {
   $("ov-hangup").addEventListener("click", () => {
     send("gate_release", { how: "hang_up" });
+    state.callLog.outcome = "hang_up";
     state.gate = null;
     state.overlay.mode = "callback";
     rerender();
@@ -671,6 +696,7 @@ function bindExits(state) {
   $("ov-colleague").addEventListener("click", () => {
     send("colleague");
     send("gate_release", { how: "colleague" });
+    state.callLog.outcome = "colleague";
     state.gate = null;
     rerender();
     toast(...headsUpLines());
@@ -717,11 +743,13 @@ function bindExits(state) {
 function bindSideButtons(state) {
   $("side-colleague").addEventListener("click", () => {
     send("colleague"); // no pause outside danger, so no gate_release
+    state.callLog.outcome = "colleague";
     showToast("panel-toast", headsUpLines());
   });
   $("side-safe").addEventListener("click", () => {
     // One click is enough here: there is no pause to get past (F10).
     send("mark_safe");
+    state.callLog.outcome = "mark_safe";
     state.markedSafe = true;
     $("panel-toast").hidden = true;
     rerender();
@@ -761,4 +789,53 @@ function renderFirmRules(state) {
   );
   const src = state.rulesSource === "custom" ? "Set by your firm." : state.rulesSource === "default" ? "Callguard's default rules." : "";
   $("firm-rules-src").textContent = src ? `${src} Kept on this laptop, never sent.` : "Kept on this laptop, never sent.";
+}
+
+// ---------------------------------------------------------------- after-call summary (T11 / UI-10)
+
+function signsCount(n) {
+  return `${n} warning sign${n === 1 ? "" : "s"}`;
+}
+
+/** Plain text for "Copy summary". Same content as the card: no names, numbers or quotes. */
+export function summaryText(sum) {
+  const parts = [`Callguard call summary: ${callKind(sum.tactics)}.`, `Reached ${sum.peak === "danger" ? "Danger" : "Watch"}, ${signsCount(sum.tactics.length)}: ${sum.tactics.map(plainWords).join("; ")}.`];
+  if (sum.outcome) parts.push(`Then ${OUTCOME[sum.outcome]}.`);
+  if (sum.rules.length) parts.push(`Firm rules that came up: ${sum.rules.join(" ")}`);
+  parts.push("Nothing the caller said was kept.");
+  return parts.join(" ");
+}
+
+function bindSummary(state) {
+  $("sum-dismiss").addEventListener("click", () => {
+    state.summary = null; // gone from memory, not just hidden
+    rerender();
+  });
+  $("sum-copy").addEventListener("click", async () => {
+    if (!state.summary) return;
+    try {
+      await navigator.clipboard.writeText(summaryText(state.summary));
+      $("sum-copy").textContent = "Copied";
+    } catch {
+      $("sum-copy").textContent = "Copy failed";
+    }
+    setTimeout(() => ($("sum-copy").textContent = "Copy summary"), 1500);
+  });
+}
+
+function renderSummary(state) {
+  const sum = state.summary;
+  const show = !!sum && !state.inCall;
+  $("summary").hidden = !show;
+  if (!show) {
+    for (const id of ["sum-pills", "sum-rules"]) $(id).replaceChildren();
+    for (const id of ["sum-kind", "sum-line"]) $(id).textContent = "";
+    return;
+  }
+  $("summary").className = `sec summary lv-sum-${sum.peak}`;
+  $("sum-kind").textContent = callKind(sum.tactics);
+  const level = sum.peak === "danger" ? "Reached Danger" : "Reached Watch";
+  $("sum-line").textContent = [level, signsCount(sum.tactics.length), sum.outcome ? OUTCOME[sum.outcome] : null].filter(Boolean).join(" · ");
+  $("sum-pills").replaceChildren(...sum.tactics.map((t) => h("span", { class: "pill", title: plainWords(t), text: shortWords(t) })));
+  $("sum-rules").replaceChildren(...sum.rules.map((text) => h("li", {}, h("b", { text: "Firm rule: " }), text)));
 }

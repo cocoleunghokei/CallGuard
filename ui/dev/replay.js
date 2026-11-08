@@ -6,6 +6,7 @@
 export const FIXTURES = [
   "idle",
   "s1_government",
+  "s1_report",
   "s2_vendor_bank",
   "s3_it_code",
   "s4_partner_wire",
