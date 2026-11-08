@@ -61,3 +61,39 @@ def test_phrase_and_model_agreement_adds_five_points():
 def test_two_safe_signals_are_capped_at_thirty_points():
     assert score([ev("authority")], safe_signals=["callback_known_number",
                                                  "asks_in_writing"])[0] < 0.02
+
+
+# --- G6: a clear ask that breaks a firm rule is danger on its own (Coco, Sun) ---
+
+def _e(tactic, strength):
+    return {"tactic": tactic, "quote": "q", "strength": strength, "speaker": "caller"}
+
+
+def test_g6_clear_ask_breaking_a_rule_is_danger():
+    # Live eval S2 beat 2: bank_change clear + no_bank_changes_by_phone was 0.65 watch.
+    conf, risk = score([_e("bank_change", "clear")], ["no_bank_changes_by_phone"])
+    assert risk == "danger" and conf == 0.75
+
+
+def test_g6_hinted_ask_with_rule_stays_below_danger():
+    # Live eval B3 beat 2: a misread `payment_request` hint broke the government rule.
+    conf, risk = score([_e("authority", "clear"), _e("payment_request", "hint")],
+                       ["government_never_calls_for_payment_or_bank_details"])
+    assert risk != "danger"
+
+
+def test_g6_safe_signal_blocks_the_floor():
+    _, risk = score([_e("bank_change", "clear")], ["no_bank_changes_by_phone"],
+                    ["callback_known_number"])
+    assert risk != "danger"
+
+
+def test_g6_needs_a_broken_rule():
+    _, risk = score([_e("bank_change", "clear")], [])
+    assert risk != "danger"
+
+
+def test_g6_ignores_employee_speech():
+    item = dict(_e("bank_change", "clear"), speaker="you")
+    _, risk = score([item], ["no_bank_changes_by_phone"])
+    assert risk == "low"

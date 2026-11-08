@@ -46,7 +46,7 @@ def best_strength_per_tactic(evidence: Iterable[Evidence]) -> dict[str, float]:
 
 def score(evidence: Iterable[Evidence], rules_broken: Iterable[str] = (),
           safe_signals: Iterable[str] = (), *, model_failed: bool = False) -> tuple[float, Risk]:
-    """Return (confidence, risk), applying G1-G5 after the score formula."""
+    """Return (confidence, risk), applying G1-G6 after the score formula."""
     items = list(evidence)
     strengths = best_strength_per_tactic(items)
     if model_failed and not strengths:  # G5
@@ -70,5 +70,12 @@ def score(evidence: Iterable[Evidence], rules_broken: Iterable[str] = (),
                                               for item in caller_items)  # G3
     if confidence >= 0.75 and (only_soft or not has_teeth or phrase_only):
         confidence = 0.74
+    # G6 (Coco, Sun): a CLEAR ask that breaks an enabled firm rule is danger on its
+    # own ("we never change bank details by phone"). Hints and safe signals don't
+    # count, so a misread on a real bank call (B3) stays below danger.
+    clear_ask = any(item.get("tactic") in ASK_TACTICS and item.get("strength") == "clear"
+                    for item in caller_items)
+    if clear_ask and rules and not safe:
+        confidence = max(confidence, 0.75)
     risk: Risk = "danger" if confidence >= 0.75 else "watch" if confidence >= 0.40 else "low"
     return confidence, risk

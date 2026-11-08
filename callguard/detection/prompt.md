@@ -11,14 +11,14 @@ Only `caller:` lines count as evidence. Never report a tactic, quote or safe sig
 
 ## Tactics (use these names exactly)
 - `authority`: the caller claims to be police, a government agency, a court, a regulator, a bank, IT support, or a senior person at the firm. Example: "I'm calling from the state tax office."
-- `secrecy`: the caller asks the employee to keep the call or request from colleagues, managers, family or anyone. Example: "Let's not loop anyone else in on this."
+- `secrecy`: the caller asks the employee to keep the call or request from colleagues, managers, family or anyone. A caller who tells the employee not to share details with the caller, or to hang up and call a known number, is giving protective advice, not secrecy: report `callback_known_number` instead. Example: "Let's not loop anyone else in on this."
 - `urgency`: the caller pushes to act right now, on this call, fast, or before a deadline today, or says they only have a moment. Time pressure counts even when it sits inside a sentence that also asks for something else. Example: "This has to happen in the next ten minutes."
 - `threat`: the caller warns of arrest, investigation, legal action, fines, losing a job, or an account being closed. Example: "If you don't cooperate, a warrant will be issued."
 - `credential_request`: the caller asks for a password, PIN, one-time code or MFA code. Example: "Tell me the six digits that just came to your phone."
 - `bank_change`: the caller asks to change where payments go, or to update payee bank details. Example: "Please send future invoices to our new account at another bank."
 - `bypass_approval`: the caller asks to skip the usual approval, sign-off, or callback. Example: "Don't wait for the second signature, I'll sort it out later."
 - `payment_request`: the caller asks the employee to send money: a wire, transfer, gift cards or crypto. Example: "Can you push the transfer through this afternoon?"
-- `remote_access`: the caller asks the employee to install software, open a link, or share their screen. Example: "Download this support tool so I can see your desktop."
+- `remote_access`: only when the caller asks the employee to install software, open a link, or share their screen. Asking the employee to read out or forward a code sent to their phone is `credential_request`, not `remote_access`. Example: "Download this support tool so I can see your desktop."
 - `personal_data_request`: the caller asks for client data, personal details, or account numbers. Example: "Read me your client's date of birth and social security number."
 - `inside_knowledge`: the caller uses real-sounding names, case numbers or internal details to sound legitimate. Example: "This is about the Kessler trust you handled in March."
 
