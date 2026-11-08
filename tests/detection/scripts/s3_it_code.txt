@@ -9,9 +9,9 @@
 # rules: it_never_asks_for_codes
 caller: Hi, this is Jake from the IT help desk. Do you have a minute?
 you: Sure, what's up?
-caller: We're doing some routine checks on staff laptops this week.
+caller: We're doing some routine checks on staff laptops, and yours needs fixing today.
 you: Okay, no problem.
-caller: Your account will be shut down today and you'll lose access to your client files. We have to fix this in the next five minutes.
+caller: Your account has been flagged and will be shut down. You'll lose access to all your client files.
 you: Oh no, what do I need to do?
 caller: I've just sent a code to your phone. Read it to me so I can lock the attacker out.
 you: Um, it says it's from our login system.
