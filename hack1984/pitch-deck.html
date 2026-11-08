@@ -454,7 +454,6 @@ body{
   <button type="button" id="prev" aria-label="Previous slide">←</button>
   <span class="count" id="count">1 / 10</span>
   <button type="button" id="next" aria-label="Next slide">→</button>
-  <button type="button" id="notesBtn">Notes (N)</button>
   <button type="button" id="fsBtn">Fullscreen (F)</button>
 </nav>
 <input type="file" id="filePick" accept="image/*" hidden>
@@ -492,7 +491,6 @@ body{
     if(document.fullscreenElement){document.exitFullscreen?.().catch(()=>{})}
     else{const p=document.documentElement.requestFullscreen?.();p&&p.catch(()=>{})}
   }
-  document.getElementById('notesBtn').onclick=toggleNotes;
   document.getElementById('fsBtn').onclick=toggleFs;
   window.addEventListener('resize',fit);
   document.addEventListener('fullscreenchange',()=>setTimeout(fit,50));
