@@ -166,7 +166,8 @@ body{
 .s7 .title{margin-top:auto;margin-bottom:10px}
 
 /* s8 how it works */
-.track{position:absolute;left:110px;right:110px;top:250px;height:170px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
+.s8 .flow{position:absolute;left:110px;right:110px;top:84px;bottom:84px;display:flex;flex-direction:column;justify-content:space-between}
+.track{position:relative;flex:none;height:170px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
 .track .line{position:absolute;left:24px;right:24px;top:34px;height:1px;background:var(--ink)}
 .track .nodes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr)}
 .node{position:relative;display:flex;flex-direction:column;align-items:center;padding-top:28px}
@@ -174,13 +175,13 @@ body{
 .node::after{content:"";width:1px;height:26px;background:var(--ink)}
 .node b{font-weight:300;font-size:34px;letter-spacing:-.02em;margin-top:8px}
 .node em{font-style:normal;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);margin-top:6px}
-.steps{position:absolute;left:110px;right:110px;top:445px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
 .steps .card{padding:22px 24px;font-size:19px;line-height:1.45;color:var(--grey);text-align:center;font-weight:400}
-.leaves{position:absolute;left:110px;right:110px;top:600px;display:flex;align-items:center;justify-content:center;gap:18px}
+.leaves{display:flex;align-items:center;justify-content:center;gap:18px}
 .leaves .pill{border-radius:999px;padding:18px 28px;font-size:22px;color:var(--ink);display:flex;align-items:center;gap:12px}
 .leaves .pill.iris{color:var(--ink)}
 .leaves .pill.iris span{position:relative;z-index:1}
-.facts{position:absolute;left:110px;right:110px;bottom:80px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
 .fact{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:6px}
 .fact b{font-size:15px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--grey-2)}
 .fact span{font-size:21px;color:var(--ink);font-weight:400;line-height:1.35}
@@ -394,9 +395,10 @@ body{
 
 <!-- 8 -->
 <section class="slide s8" data-name="privacy">
-  <div class="pad">
+  <div class="flow">
+  <div class="head">
     <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>What left this device</span></div>
-    <h2 class="h h3" style="margin-top:40px;text-align:center"><span class="ink">Everything runs on the laptop.</span> <span class="plum">Nothing is stored.</span></h2>
+    <h2 class="h h3" style="margin-top:36px;text-align:center"><span class="ink">Everything runs on the laptop.</span> <span class="plum">Nothing is stored.</span></h2>
   </div>
   <div class="track"><div class="line"></div><div class="nodes">
     <div class="node"><b>Listen</b><em>Step 01</em></div>
@@ -418,6 +420,7 @@ body{
     <div class="fact"><b>Leaves the device</b><span>One organization name, checked first so it can't carry your words</span></div>
     <div class="fact"><b>Who can read the call</b><span>Only you. Not your boss, not us</span></div>
     <div class="fact"><b>What the employer sees</b><span>Alert counts only. It protects staff without monitoring them</span></div>
+  </div>
   </div>
   <aside class="notes">“So what left the device? One agency name. Listening and the scam check run on this Mac, with nothing in the cloud. Your boss doesn't get your calls, only a count of alerts. It protects staff without spying on them. And it runs offline. Pull the Wi-Fi after this and I'll show you.”</aside>
 </section>
