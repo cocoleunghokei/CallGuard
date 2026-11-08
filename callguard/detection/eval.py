@@ -143,7 +143,9 @@ def evaluate(paths: Iterable[Path], *, post: Post | None = None,
                       and result.get("source") != "fallback",
             }
             if verbose:
-                row["notes"] = diagnose(seen, text, elapsed_ms)
+                row["notes"] = diagnose(seen, text, elapsed_ms) + [
+                    f"{e['tactic']:<21} phrase added by the urgency spotter{' ' * 18}{_short(e['quote'])}"
+                    for e in result.get("evidence", []) if e.get("strength") == "phrase"]
             rows.append(row)
         if beat != len(expected):
             raise ValueError(f"expect count too long: {path.name}")

@@ -74,9 +74,37 @@ def test_bad_json_returns_failure_not_exception():
     assert "failed" in result["reason"]
 
 
-def test_empty_model_object_returns_failure():
+def test_empty_model_object_is_a_quiet_low_result():
+    # Live eval B7 beat 1: an empty JSON object means "nothing seen", not a failure.
     result = check("caller: Hello.", load_rules(), post=post_for("{}"))
-    assert result["source"] == "fallback"
+    assert result["source"] == "model"
+    assert result["risk"] == "low" and result["tactics"] == []
+    assert "failed" not in result["reason"]
+
+
+def test_urgency_phrase_lifts_a_real_ask_to_danger():
+    # Live eval S2: the model saw bank_change but skipped the urgency in the same sentence.
+    window = ("caller: We've moved banks, the payment goes to our new account.\n"
+              "caller: Can you change it right now while I'm on the line?")
+    model_only = reply([ev("bank_change", "the payment goes to our new account")])
+    result = check(window, load_rules(), post=post_for(model_only))
+    assert result["tactics"] == ["bank_change", "urgency"]
+    phrase = [e for e in result["evidence"] if e["tactic"] == "urgency"][0]
+    assert phrase["strength"] == "phrase" and phrase["quote"] in window
+    assert result["risk"] == "danger"
+
+
+def test_urgency_phrase_alone_never_reaches_danger():
+    window = "caller: I need the draft by five, the filing is due Monday."
+    result = check(window, load_rules(), post=post_for(reply([])))
+    assert result["tactics"] == ["urgency"]
+    assert result["risk"] == "low"
+
+
+def test_urgency_said_by_you_is_ignored():
+    window = "caller: Can you book the room?\nyou: Sure, I'll do it right now."
+    result = check(window, load_rules(), post=post_for(reply([])))
+    assert result["tactics"] == []
 
 
 def test_empty_window_does_not_call_model():
