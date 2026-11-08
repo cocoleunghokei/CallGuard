@@ -508,16 +508,16 @@ body{
     <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>How well it works</span></div>
     <div class="row">
       <h2 class="h h2"><span class="ink">Tuned overnight.</span><br><span class="plum">Zero false alarms.</span></h2>
-      <p class="body">We replay scripted scam calls and normal calls through the local model, line by line, and score every warning. Then we tuned the prompt and the scoring, and ran it again.</p>
+      <p class="body">I replay scripted scam calls and normal calls through the local model, line by line, and score every warning. Then I tuned the prompt and the scoring, and ran it again.</p>
     </div>
   </div>
   <div class="stats perf">
-    <div class="card stat"><div class="big mono">+20<span class="u">%</span></div><div class="small">accuracy: right risk level on every line</div><div class="from mono">83% → 100%</div><div class="src">Lines where the risk shown was the expected one</div></div>
-    <div class="card stat"><div class="big mono">2<span class="u">×</span></div><div class="small">scams turned red in time (+100%)</div><div class="from mono">50% → 100%</div><div class="src">Red by the line that gives the scam away</div></div>
-    <div class="card stat market"><div class="big mono">0</div><div class="small">false alarms: no normal call ever turned red</div><div class="from mono">0 → 0</div><div class="src">Normal calls with money, banks and deadlines</div></div>
-    <div class="card stat"><div class="big mono">6.7<span class="u">s</span></div><div class="small">p95 check time, 8% faster</div><div class="from mono">7.3 s → 6.7 s</div><div class="src">95% of checks finish within this, on a MacBook</div></div>
+    <div class="card stat"><div class="big mono">+20<span class="u">%</span></div><div class="small">Accuracy: the risk shown matched the expected level on every line</div><div class="from mono">83% → 100%</div></div>
+    <div class="card stat"><div class="big mono">2<span class="u">×</span></div><div class="small">Scams caught in time: red by the line that gives the scam away (+100%)</div><div class="from mono">50% → 100%</div></div>
+    <div class="card stat market"><div class="big mono">0</div><div class="small">False alarms: no normal call with money, banks or deadlines ever turned red</div></div>
+    <div class="card stat"><div class="big mono">6.7<span class="u">s</span></div><div class="small">Check time, 8% faster: 95% of checks finish within this on a MacBook</div><div class="from mono">7.3 s → 6.7 s</div></div>
   </div>
-  <aside class="notes">“How well does it work? We test it on scripted scam calls and normal calls, line by line. After a night of tuning, accuracy went up twenty percent, from eighty-three to a hundred percent of lines. Scams caught in time doubled, from half to all of them. And through all of it, zero false alarms: no normal call ever turned red. Each check runs in under seven seconds, on the laptop.” <b>If asked:</b> before = first live run on all 8 test calls (24 lines); after = the 3 demo calls (17 lines), qwen2.5:7b on the demo Mac.</aside>
+  <aside class="notes">“How well does it work? I test it on scripted scam calls and normal calls, line by line. After a night of tuning, accuracy went up twenty percent, from eighty-three to a hundred percent of lines. Scams caught in time doubled, from half to all of them. And through all of it, zero false alarms: no normal call ever turned red. Each check runs in under seven seconds, on the laptop.” <b>If asked:</b> before = first live run on all 8 test calls (24 lines); after = the 3 demo calls (17 lines), qwen2.5:7b on the demo Mac.</aside>
 </section>
 
 </div></div>
