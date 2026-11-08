@@ -50,7 +50,7 @@ export const SAY = {
   remote_access: "I can't install anything a caller asks for. I'll check with IT.",
   personal_data_request: "Please send that request in writing through the usual channel.",
   secrecy: "I need to check this with a colleague before I do anything.",
-  threat: "I'll call your office back on its public number.",
+  threat: "I won't discuss this without my lawyer. Send it to me in writing.",
   urgency: "I can't do this right now. What's your callback number?",
   authority: "Thanks. I'll call back on your organization's public number to confirm.",
 };

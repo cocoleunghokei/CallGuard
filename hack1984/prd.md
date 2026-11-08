@@ -567,7 +567,8 @@ Names the firm never wants sent to a search provider, even if a caller says them
 │  Reported: DOJ impersonators asking for bank details           │
 │            · ftc.gov, Oct 2026                                 │
 │                                                                │
-│  Say this: "I'll call your office back on its public number."  │
+│  Say this: "I won't discuss this without my lawyer.            │
+│             Send it to me in writing."                         │
 │                                                                │
 │  This call asks for bank details. Verify before you send them. │
 │                                                                │
@@ -1188,7 +1189,7 @@ Fixed copy (UI-15), Coco signs off the wording. Each line moves the conversation
 | remote_access | "I can't install anything a caller asks for. I'll check with IT." |
 | personal_data_request | "Please send that request in writing through the usual channel." |
 | secrecy | "I need to check this with a colleague before I do anything." |
-| threat (with authority) | "I'll call your office back on its public number." |
+| threat (with authority) | "I won't discuss this without my lawyer. Send it to me in writing." |
 | urgency | "I can't do this right now. What's your callback number?" |
 | authority (alone) | "Thanks. I'll call back on your organization's public number to confirm." |
 
