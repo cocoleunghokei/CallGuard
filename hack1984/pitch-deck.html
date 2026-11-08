@@ -85,7 +85,13 @@ body{
 .photo.filled .hint{display:none}
 .photo .remove{position:absolute;top:18px;right:18px;width:44px;height:44px;border-radius:50%;border:0;
   font:400 26px/1 var(--font);color:var(--ink);cursor:pointer;display:none}
+.photo .remove{z-index:3}
 .photo.filled:hover .remove,.photo.filled:focus-within .remove{display:block}
+.sticker{position:absolute;z-index:2;font-size:170px;line-height:1;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;display:none;transform:translate(-50%,-50%)}
+.photo.filled .sticker{display:block}
+.sticker:active{cursor:grabbing}
+.sticker .grip{position:absolute;right:-6px;bottom:-6px;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid var(--plum);cursor:nwse-resize;opacity:0;transition:opacity .15s}
+.sticker:hover .grip{opacity:1}
 .photo.drag{outline:4px solid var(--pink);outline-offset:-4px}
 .photo:focus-visible{outline:4px solid var(--sky);outline-offset:-4px}
 
@@ -250,6 +256,7 @@ body{
     </div>
   </div>
   <div class="photo iris" data-slot="p1" tabindex="0" role="button" aria-label="Add photo for slide 1">
+    <div class="sticker" data-sticker="p1" title="Drag onto her face. Drag the corner dot to resize." aria-label="Smiling face with tear sticker">🥲<span class="grip"></span></div>
     <div class="hint glass">Add a photo<small>Click, drop, or paste</small></div>
     <button class="remove glass" type="button" aria-label="Remove photo">×</button>
   </div>
@@ -464,7 +471,7 @@ body{
   const stage=document.getElementById('stage'), vp=document.getElementById('viewport');
   const panel=document.getElementById('notesPanel'), notesText=document.getElementById('notesText');
   const count=document.getElementById('count');
-  let i=0;
+  let i=0, curScale=1;
 
   function fromHash(){const m=/^#s(\d+)$/.exec(location.hash);return m?Math.min(Math.max(+m[1]-1,0),slides.length-1):0}
   function show(n){
@@ -479,7 +486,7 @@ body{
   function fit(){
     const barH=56, notesH=panel.classList.contains('open')?panel.offsetHeight+8:0;
     const w=window.innerWidth-32, h=window.innerHeight-barH-notesH-24;
-    const s=Math.max(Math.min(w/1600,h/900),0.1);
+    const s=Math.max(Math.min(w/1600,h/900),0.1);curScale=s;
     stage.style.transform='scale('+s+')';
     vp.style.width=(1600*s)+'px';vp.style.height=(900*s)+'px';
     vp.style.top=Math.max(12,(window.innerHeight-barH-notesH-900*s)/2)+'px';
@@ -536,6 +543,34 @@ body{
     const el=slides[i].querySelector('.photo');if(!el)return;
     const item=[...(e.clipboardData?.items||[])].find(it=>it.type.startsWith('image/'));
     if(item){e.preventDefault();setPhoto(el,item.getAsFile(),true)}
+  });
+
+  /* ---- emoji sticker: drag to move, corner dot to resize; position kept in this browser ---- */
+  document.querySelectorAll('.sticker').forEach(st=>{
+    const key='cg-sticker-'+st.dataset.sticker, box=st.parentElement;
+    let pos={x:null,y:null,size:170};
+    try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v)pos=v}catch(e){}
+    function apply(){
+      const w=box.offsetWidth||720,h=box.offsetHeight||900;
+      st.style.left=(pos.x??w*0.5)+'px';st.style.top=(pos.y??h*0.32)+'px';st.style.fontSize=pos.size+'px';
+    }
+    function save(){try{localStorage.setItem(key,JSON.stringify(pos))}catch(e){}}
+    apply();
+    ['click','keydown'].forEach(t=>st.addEventListener(t,e=>e.stopPropagation()));
+    st.addEventListener('pointerdown',e=>{
+      e.preventDefault();e.stopPropagation();st.setPointerCapture(e.pointerId);
+      const resize=e.target.classList.contains('grip');
+      const w=box.offsetWidth,h=box.offsetHeight;
+      const start={cx:e.clientX,cy:e.clientY,x:pos.x??w*0.5,y:pos.y??h*0.32,size:pos.size};
+      function move(ev){
+        const dx=(ev.clientX-start.cx)/curScale,dy=(ev.clientY-start.cy)/curScale;
+        if(resize){pos.size=Math.min(600,Math.max(40,start.size+(dx+dy)/1.4))}
+        else{pos.x=Math.min(w,Math.max(0,start.x+dx));pos.y=Math.min(h,Math.max(0,start.y+dy))}
+        apply();
+      }
+      function up(){st.removeEventListener('pointermove',move);st.removeEventListener('pointerup',up);st.removeEventListener('pointercancel',up);save()}
+      st.addEventListener('pointermove',move);st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
+    });
   });
 
   show(fromHash());
