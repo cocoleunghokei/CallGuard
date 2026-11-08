@@ -35,7 +35,7 @@ Screens and the fixture step that shows each one: [SCREENS.md](SCREENS.md). Flow
   python -m callguard.server                 # live: listens to the Zoom call
   ```
   The Callguard window opens on top (400 × 760). Put it at the right edge of the screen, Zoom on the left.
-- Check the header: just "Listening" ("Offline" appears next to it only with the Wi-Fi off). No yellow banner. A banner "Basic checks only, local model unavailable" means Ollama isn't answering; an audio banner means the mic or BlackHole isn't heard.
+- Check the header: just "Listening" ("Offline" appears next to it only with the Wi-Fi off). No yellow banner. If Ollama isn't answering there is no banner, so check it first (`ollama list`); watch reasons will say "Basic checks only". An audio banner means the mic or BlackHole isn't heard.
 
 **No caller available / audio trouble?** Play a scripted call through the real pipeline instead (same window, same model, no mic):
 ```bash

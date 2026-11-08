@@ -61,7 +61,6 @@
 
     <!-- B: banners -->
     <p id="b-conn" class="banner" role="status" hidden>Connecting to Callguard…</p>
-    <p id="b-model" class="banner" role="status" hidden>Basic checks only, local model unavailable</p>
     <p id="b-audio" class="banner" role="status" hidden></p>
 
     <main id="main" class="body" role="tabpanel" aria-labelledby="tab-call">
@@ -148,7 +147,8 @@
       <h2 id="contacts-h" class="view-h">Emergency contacts</h2>
       <p class="note">Unsure about a call? Hang up and call one of these. Never use a number the caller gave you.</p>
       <ul id="contacts-list" class="contacts"></ul>
-      <p class="note">Never sent. Changes here last until you close Callguard.</p>
+      <p id="contacts-msg" class="toast" role="status" hidden></p>
+      <p class="note">Saved on this laptop only. Never sent.</p>
     </section>
 
     <!-- F: what left this device (T5). The empty state is the feature. -->

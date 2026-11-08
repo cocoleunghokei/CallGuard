@@ -39,7 +39,7 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 
 | State | Fixture | Step | What to look for |
 |---|---|---|---|
-| Local model down, F8 | `model_down` | 1 → end | Banner "Basic checks only, local model unavailable"; tops out at Watch, never opens the warning |
+| Local model down, F8 | `model_down` | 1 → end | No banner (the reason line says "Basic checks only"); tops out at Watch, never opens the warning |
 | Normal call stays calm | `b1_vendor_invoice` | 1 → end | Low the whole call, "Nothing sent online" |
 | Bank change, no public number | `s2_vendor_bank` | 8, 10 | Warning with "Firm rule: We never change vendor or client bank details…", "Couldn't find a public number, use the one on file." |
 | Code request | `s3_it_code` | 8, then wait 5 s | "Checking…" line, hidden after 5 s with no lookup answer |

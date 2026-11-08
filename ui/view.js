@@ -137,8 +137,7 @@ function renderHeader(state) {
 
 function renderBanners(state) {
   $("b-conn").hidden = state.connected;
-  const model = state.status && state.status.model;
-  $("b-model").hidden = !(state.connected && (model === "degraded" || model === "offline"));
+  // No banner for a degraded model (Coco, Sat): the check's own reason says "Basic checks only".
   // Live mode: the Server says when the mic or BlackHole input isn't working (AUD-9).
   const audioBad = !!(state.connected && state.status && state.status.audio_ok === false);
   $("b-audio").hidden = !audioBad;
@@ -855,6 +854,10 @@ function bindTabs(state) {
 let contactsDrawn = null; // redraw only on change, so typing in the edit form survives other messages
 
 function renderContacts(state) {
+  const note = state.contactsNote;
+  $("contacts-msg").hidden = !note;
+  $("contacts-msg").textContent = note ? note.text : "";
+  $("contacts-msg").classList.toggle("err", !!(note && !note.ok));
   const sig = JSON.stringify([state.contacts, state.editContact]);
   if (sig === contactsDrawn) return;
   contactsDrawn = sig;
@@ -932,6 +935,10 @@ function saveContactForm(state, form) {
   const phone = form.elements.phone.value.trim();
   state.contacts = state.contacts.map((c) => (c.id === id ? { ...c, name, phone } : c));
   state.editContact = null;
+  // The Server checks and saves them to one local file, then answers `contacts_saved`.
+  state.contactsNote = send("save_contacts", { data: state.contacts })
+    ? null
+    : { ok: false, text: "Not connected, so not saved. Your change lasts until you close Callguard." };
   rerender();
   const edit = $("contacts-list").querySelector(`button[data-act="edit"][data-id="${CSS.escape(id)}"]`);
   if (edit) edit.focus();

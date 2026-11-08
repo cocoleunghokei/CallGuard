@@ -51,11 +51,27 @@ export const state = {
   railOpen: false,
   contacts: loadContacts(), // [{id, role, name, phone}], set on this laptop, never sent
   editContact: null, // id of the contact being edited
+  contactsNote: null, // {ok, text} after a save, from `contacts_saved`
 };
 
 const handlers = {
   status(data) {
     state.status = data || null;
+  },
+  contacts(data) {
+    if (Array.isArray(data)) state.contacts = data;
+  },
+  contacts_saved(data) {
+    const ok = !!(data && data.ok);
+    const errors = (data && Array.isArray(data.errors) && data.errors) || [];
+    state.contactsNote = { ok, text: ok ? "Saved on this laptop." : errors.join(" ") || "Couldn't save." };
+    if (ok) {
+      const shown = state.contactsNote;
+      setTimeout(() => {
+        if (state.contactsNote === shown) state.contactsNote = null;
+        render(state);
+      }, 2500);
+    }
   },
   rules(data, msg) {
     state.rules = Array.isArray(data) ? data : [];

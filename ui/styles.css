@@ -363,3 +363,4 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .contact form { display: flex; flex-direction: column; gap: var(--s2); }
 .contact label { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: var(--s2); font-size: var(--t-meta); color: var(--muted); }
 .contact input { min-width: 0; font-size: var(--t-body); padding: 6px var(--s2); border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+#contacts-msg.err { background: var(--danger-tint); color: var(--danger); }
