@@ -99,7 +99,9 @@ body{
 /* s1 split */
 .split-left{position:absolute;left:0;top:0;bottom:0;width:880px;padding:84px 70px 84px 110px;display:flex;flex-direction:column}
 .split-left .stack{margin-top:auto;margin-bottom:auto;display:flex;flex-direction:column;gap:34px}
-.s1 .photo{left:880px;top:0;right:0;bottom:0}
+.s1 .photo{left:0;right:0;top:0;height:640px}
+.s1 .photo img{object-position:50% 30%}
+.s1 .caption{position:absolute;left:110px;right:110px;bottom:70px;display:flex;flex-direction:column;gap:12px}
 
 /* s2 full photo top */
 .s2 .photo{left:0;right:0;top:0;height:540px}
@@ -266,17 +268,13 @@ body{
 
 <!-- 1 -->
 <section class="slide s1" data-name="story-1">
-  <div class="split-left">
-    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>A story</span></div>
-    <div class="stack">
-      <h1 class="h h1" style="font-size:72px;white-space:nowrap"><span class="ink">Meet my friend.</span><br><span class="plum">Lawyer. Very smart.</span></h1>
-      <p class="body">Works on money-laundering cases.</p>
-    </div>
-  </div>
-  <div class="photo iris" data-slot="p1" tabindex="0" role="button" aria-label="Add photo for slide 1">
-    <div class="sticker" data-sticker="p1" title="Drag onto her face. Drag the corner dot to resize." aria-label="Smiling face with tear sticker">🥲<span class="grip"></span></div>
+  <div class="photo iris" data-slot="p1b" data-default="deck-assets/slide1-friend.jpg" tabindex="0" role="button" aria-label="Add photo for slide 1">
     <div class="hint glass">Add a photo<small>Click, drop, or paste</small></div>
     <button class="remove glass" type="button" aria-label="Remove photo">×</button>
+  </div>
+  <div class="caption">
+    <h1 class="h h2"><span class="ink">Meet my friend.</span> <span class="plum">Lawyer. Very smart.</span></h1>
+    <p class="body">Works on money-laundering cases.</p>
   </div>
   <aside class="notes">“I wanna start with a story of my friend. She's a lawyer, works on money-laundering cases. Very smart.”</aside>
 </section>
