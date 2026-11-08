@@ -6,6 +6,7 @@
 export const FIXTURES = [
   "idle",
   "s1_government",
+  "s1_report",
   "s2_vendor_bank",
   "s3_it_code",
   "s4_partner_wire",
@@ -20,6 +21,19 @@ export const FIXTURES = [
 const TICK_MS = 50;
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
+
+// Recording mode (T9 backup video): ?clean=1 hides the dev controls; f= takes a
+// comma list played back to back with a title card between; exit=hang_up|colleague
+// clicks that exit `exit_after` seconds after the pause locks (hands-free take).
+const CLEAN = params.get("clean") === "1";
+const PLAYLIST = (params.get("f") || "").split(",").filter((n) => FIXTURES.includes(n));
+const GAP_S = Number(params.get("gap")) || 4;
+const AUTO_EXIT = { hang_up: "ov-hangup", colleague: "ov-colleague" }[params.get("exit")] || null;
+const EXIT_AFTER_S = Number(params.get("exit_after")) || 4;
+const CARDS = {
+  s1_government: "A call from “the Department of Justice”",
+  offline: "Wi-Fi off. Same call again.",
+};
 
 const player = {
   fixture: null, // {id, description, steps}
@@ -56,6 +70,13 @@ window.callguardReplay = {
 function deliverNext() {
   const step = player.fixture.steps[player.next++];
   const ok = player.socket ? player.socket.deliver(step.msg) : false;
+  if (AUTO_EXIT && ok && step.msg.type === "gate" && step.msg.data && step.msg.data.state === "locked") {
+    setTimeout(() => {
+      const doc = $("ui").contentDocument;
+      const btn = doc && doc.getElementById(AUTO_EXIT);
+      if (btn && !btn.closest("[hidden]")) btn.click();
+    }, EXIT_AFTER_S * 1000);
+  }
   addLine($("fed"), `${step.at.toFixed(1).padStart(5)}  ${summary(step.msg)}`, ok ? "" : "drop");
   $("fed-n").textContent = `${player.next}/${player.fixture.steps.length}`;
 }
@@ -68,6 +89,7 @@ function tick() {
   if (player.next >= steps.length && player.playing) {
     player.playing = false;
     logSys("end of fixture");
+    playNextInList();
   }
   render();
 }
@@ -90,6 +112,10 @@ async function load(name) {
 }
 
 function restart() {
+  if (CLEAN && player.fixture) {
+    card(CARDS[player.fixture.id]);
+    setTimeout(() => card(""), 3000);
+  }
   player.next = 0;
   player.clock = 0;
   player.socket = null;
@@ -101,6 +127,24 @@ function restart() {
   // A fresh page load, so the UI starts from a clean state.
   $("ui").src = `../index.html?ws=fake&r=${Date.now()}`;
   render();
+}
+
+// ---------------------------------------------------------------- playlist (recording mode)
+
+function card(text) {
+  const el = $("card");
+  el.textContent = text || "";
+  el.hidden = !text;
+}
+
+function playNextInList() {
+  const i = PLAYLIST.indexOf(player.fixture && player.fixture.id);
+  const next = PLAYLIST[i + 1];
+  if (i < 0 || !next) return;
+  setTimeout(() => {
+    $("fixture").value = next;
+    load(next);
+  }, GAP_S * 1000);
 }
 
 // ---------------------------------------------------------------- view
@@ -163,7 +207,8 @@ function stamp() {
 function init() {
   const sel = $("fixture");
   for (const name of FIXTURES) sel.add(new Option(name, name));
-  const start = FIXTURES.includes(params.get("f")) ? params.get("f") : "s1_government";
+  if (CLEAN) document.body.classList.add("clean");
+  const start = PLAYLIST[0] || "s1_government";
   sel.value = start;
   sel.onchange = () => load(sel.value);
   $("play").onclick = () => {

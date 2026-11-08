@@ -49,6 +49,22 @@
         <button id="show-warning" class="hero-btn" type="button" hidden>Show the warning</button>
       </section>
 
+      <!-- After-call summary (T11 / UI-10). No transcript, no quotes. -->
+      <section id="summary" class="sec summary" hidden aria-labelledby="summary-h">
+        <h2 id="summary-h">Last call</h2>
+        <div class="sum-card">
+          <p id="sum-kind" class="sum-kind"></p>
+          <p id="sum-line" class="sum-line"></p>
+          <div id="sum-pills" class="pills"></div>
+          <ul id="sum-rules" class="rules"></ul>
+          <div class="sum-btns">
+            <button id="sum-copy" class="pill-btn" type="button">Copy summary</button>
+            <button id="sum-dismiss" class="pill-btn" type="button">Dismiss</button>
+          </div>
+          <p class="note">Only this summary is kept, in memory, until you dismiss it. Nothing the caller said is kept.</p>
+        </div>
+      </section>
+
       <!-- D: why -->
       <section id="why" class="sec" hidden aria-labelledby="why-h">
         <h2 id="why-h">Why <button id="open-said" class="link" type="button">See what they said ›</button></h2>
@@ -70,6 +86,15 @@
         <p id="next-step" class="next"></p>
       </section>
 
+      <!-- G: actions at Watch (T10 / UI-9). Outside danger, one click is enough. -->
+      <div id="actions" class="actions" hidden>
+        <div class="side-btns">
+          <button id="side-colleague" class="btn quiet" type="button">Check with a colleague</button>
+          <button id="side-safe" class="btn quiet" type="button">Mark as safe</button>
+        </div>
+        <p id="panel-toast" class="toast" role="status" hidden></p>
+      </div>
+
       <!-- "See what they said": flagged lines for this call -->
       <section id="said-view" class="sec" hidden aria-labelledby="said-h">
         <h2 id="said-h"><button id="close-said" class="link back" type="button">‹ Back</button><span>Flagged lines this call</span></h2>
@@ -84,11 +109,13 @@
         <h2>Latest</h2>
         <ol id="tail" class="said"></ol>
       </section>
+      <!-- Firm rules (T10 / UI-13): read only; editing is UI-14 -->
+      <details id="firm-rules" class="sec firm-rules">
+        <summary><span id="firm-rules-h">Your firm's rules</span><span id="firm-rules-hits" class="hits-sum"></span></summary>
+        <ul id="firm-rules-list" class="firm-list"></ul>
+        <p id="firm-rules-src" class="note"></p>
+      </details>
     </main>
-
-    <!-- G: actions (T7/T10) -->
-    <div id="actions" class="actions" hidden>
-    </div>
 
     <!-- F: what left this device (T5). The empty state is the feature. -->
     <footer id="priv" class="priv">
@@ -137,6 +164,7 @@
         <ul id="ov-tactics" class="ov-tactics" aria-label="Signs in this call"></ul>
         <ul id="ov-rules" class="rules"></ul>
         <p id="ov-verify" class="ov-verify" hidden></p>
+        <p id="ov-report" class="ov-report" hidden></p>
         <div id="ov-say" class="say" hidden><small>Say</small><q id="ov-say-text"></q></div>
         <p id="ov-next" class="ov-next"></p>
       </div>

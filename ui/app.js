@@ -17,6 +17,15 @@ export const state = {
   consentDismissed: false, // memory only, for this session
   status: null, // {listening, online, model?, gate?}
   rules: [],
+  rulesSource: null, // "default" | "custom" | null
+  // Firm rules that came up this call: id -> times it newly appeared in check.rules_broken.
+  // Call metadata only (no transcript); reset on call start and end.
+  ruleHits: {},
+  brokenNow: [], // rules_broken of the latest check, to count only new appearances
+  // After-call summary (T11). During a call: peak level, tactics seen, last way out.
+  // Tactic ids and counts only, never transcript or quotes. Becomes `summary` on call end.
+  callLog: { peak: "low", tactics: [], outcome: null },
+  summary: null, // {peak, tactics, outcome, rules: [rule text]} until dismissed or the next call
   inCall: false,
   tail: [], // last TAIL_LINES TranscriptChunks, current call only
   check: null, // latest ScamCheck
@@ -42,12 +51,14 @@ const handlers = {
   status(data) {
     state.status = data || null;
   },
-  rules(data) {
+  rules(data, msg) {
     state.rules = Array.isArray(data) ? data : [];
+    state.rulesSource = (msg && msg.source) || null;
   },
   call(data) {
     const s = data && data.state;
     if (s !== "started" && s !== "ended") return;
+    state.summary = s === "ended" && state.inCall ? summarize() : null;
     wipeCall();
     state.inCall = s === "started";
     if (state.inCall) state.calls += 1;
@@ -60,6 +71,15 @@ const handlers = {
   check(data) {
     state.check = data || null;
     state.markedSafe = false;
+    const broken = (data && data.rules_broken) || [];
+    for (const id of broken) if (!state.brokenNow.includes(id)) state.ruleHits[id] = (state.ruleHits[id] || 0) + 1;
+    state.brokenNow = [...broken];
+    if (state.inCall && data) {
+      const log = state.callLog;
+      if (RANK[data.risk] > RANK[log.peak]) log.peak = data.risk;
+      if (data.risk === "watch" || data.risk === "danger")
+        for (const t of data.tactics || []) if (!log.tactics.includes(t)) log.tactics.push(t);
+    }
     const org = data && data.claimed_identity;
     const shown = data && (data.risk === "watch" || data.risk === "danger"); // the verify line is on screen
     if (org && shown && (!state.verifyWait || state.verifyWait.org !== org)) {
@@ -81,7 +101,10 @@ const handlers = {
     state.gate = null;
     // Auto-release with no exit taken: step back to the red side panel (prd 7.5).
     // "Show the warning" reopens it; danger stays on the panel.
-    if (wasLocked && state.overlay.open && state.overlay.mode === "warning") state.overlay.open = false;
+    if (wasLocked && state.overlay.open && state.overlay.mode === "warning") {
+      state.overlay.open = false;
+      if (!state.callLog.outcome) state.callLog.outcome = "timed_out";
+    }
   },
   egress(data) {
     if (!data) return;
@@ -90,9 +113,9 @@ const handlers = {
 };
 
 /** The single dispatch point for Server -> UI messages. */
-export function onMessage({ type, data }) {
+export function onMessage({ type, data, source }) {
   const handle = handlers[type];
-  if (handle) handle(data);
+  if (handle) handle(data, { source });
   render(state);
 }
 
@@ -108,6 +131,21 @@ function openOverlayFor(tactics) {
   }
 }
 
+const RANK = { low: 0, watch: 1, danger: 2 };
+
+/** The card for the call that just ended, or null for a calm call. */
+function summarize() {
+  const log = state.callLog;
+  if (log.peak !== "watch" && log.peak !== "danger") return null;
+  const hit = new Set(Object.keys(state.ruleHits));
+  return {
+    peak: log.peak,
+    tactics: [...log.tactics],
+    outcome: log.outcome,
+    rules: state.rules.filter((r) => hit.has(r.id)).map((r) => r.text || String(r.id).replace(/_/g, " ")),
+  };
+}
+
 function wipeCall() {
   state.tail.length = 0;
   state.check = null;
@@ -118,6 +156,9 @@ function wipeCall() {
   state.ui.view = "panel";
   state.overlay = { open: false, opens: 0, seen: [], mode: "warning" };
   state.markedSafe = false;
+  state.ruleHits = {};
+  state.brokenNow = [];
+  state.callLog = { peak: "low", tactics: [], outcome: null };
 }
 
 // The pause countdown ticks here, re-synced by every `gate` message. At 0:00

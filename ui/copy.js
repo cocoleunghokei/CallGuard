@@ -111,3 +111,38 @@ export function mmss(sec) {
   const s = Math.max(0, Math.ceil(sec));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
+
+/** "Check with a colleague" heads-up (Coco, Sat): goes to the firm's IT team and
+ *  the user's line manager, fixed wording only, never anything from the call.
+ *  The hackathon build shows it here and sends nothing, so it says so: the
+ *  "What left this device" log must stay true. */
+export const HEADS_UP = {
+  title: "Heads-up for IT and your manager",
+  message: "Callguard heads-up: a call on this laptop looks suspicious. Please check in.",
+  note: "Demo: not sent. In the full version this goes to your IT team and your manager. Stay on the line or hang up, your choice.",
+};
+
+/** After-call summary (T11 / UI-10). What the call looked like, from tactics
+ *  only: no names, no numbers, no caller words. First match wins. */
+const CALL_KINDS = [
+  [["credential_request"], "Someone asking for a login code"],
+  [["bank_change"], "Someone asking to change bank details"],
+  [["payment_request"], "Someone pushing for a payment"],
+  [["remote_access"], "Someone asking for screen access"],
+  [["authority", "threat"], "Someone posing as an official"],
+  [["personal_data_request"], "Someone asking for client or personal data"],
+  [["secrecy"], "Someone asking you to keep a call secret"],
+];
+
+export function callKind(tactics) {
+  const has = new Set(tactics || []);
+  for (const [need, words] of CALL_KINDS) if (need.every((t) => has.has(t))) return words;
+  return "A call with pressure signs";
+}
+
+export const OUTCOME = {
+  hang_up: "you hung up to call back",
+  colleague: "you checked with a colleague",
+  mark_safe: "you marked it safe",
+  timed_out: "the pause ran out",
+};

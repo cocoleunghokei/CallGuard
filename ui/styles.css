@@ -162,7 +162,7 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .said .line { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* G: actions */
-.actions { flex: none; padding: var(--s4) var(--s4) var(--s3); display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
+.actions { display: flex; flex-direction: column; gap: var(--s2); margin-top: calc(-1 * var(--s3)); }
 
 /* F: what left this device (T5) */
 .priv { flex: none; border-top: 1px solid var(--line); font-size: var(--t-meta); color: var(--muted); position: sticky; bottom: 0; background: var(--bg); }
@@ -237,7 +237,10 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 }
 
 /* T7: exits */
-.toast { margin: 0; padding: var(--s2) var(--s3); border-radius: var(--r-card); background: var(--sunken); font-size: var(--t-meta); text-align: center; }
+.toast { margin: 0; padding: var(--s2) var(--s3); border-radius: var(--r-card); background: var(--sunken); font-size: var(--t-meta); display: flex; flex-direction: column; gap: 2px; }
+.toast b { font-size: var(--t-body); }
+.toast q { color: var(--text); }
+.toast small { color: var(--muted); }
 .safe { display: grid; grid-template-columns: auto 1fr auto; gap: var(--s2); align-items: center; margin-top: 2px; font-size: var(--t-meta); color: var(--muted); }
 .safe input { width: 100%; }
 .safe input { min-width: 0; font-size: var(--t-body); padding: 6px var(--s2); border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); text-transform: uppercase; letter-spacing: .08em; }
@@ -275,3 +278,32 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 @media (min-width: 701px) {
   .panel { max-width: 560px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 }
+
+/* T10: side buttons at Watch and the firm rules panel */
+.actions .side-btns { display: flex; gap: var(--s2); width: 100%; }
+.actions .toast { width: 100%; }
+.btn.quiet { min-height: 36px; font-size: var(--t-body); font-weight: 600; }
+.firm-rules summary { cursor: pointer; font-size: var(--t-meta); font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; gap: var(--s2); list-style: none; border-radius: 4px; }
+.firm-rules summary::-webkit-details-marker { display: none; }
+.firm-rules summary::before { content: "›"; display: inline-block; width: 1em; transition: transform var(--dur); }
+.firm-rules[open] summary::before { transform: rotate(90deg); }
+.firm-rules summary #firm-rules-h { flex: 1; }
+.hits-sum { color: var(--danger); }
+.firm-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); font-size: var(--t-meta); }
+.firm-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s2); padding: var(--s2) var(--s3); border-radius: var(--r-card); background: var(--sunken); }
+.firm-list li.off { color: var(--muted); }
+.rule-badge { flex: none; padding: 1px 8px; border-radius: var(--r-pill); font-weight: 600; background: var(--danger-tint); color: var(--danger); white-space: nowrap; }
+.rule-badge.muted { background: var(--idle-tint); color: var(--text); }
+
+/* T11: after-call summary card */
+.sum-card { border: 1px solid var(--line); border-left: 4px solid var(--watch); border-radius: var(--r-card); padding: var(--s3) var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
+.lv-sum-danger .sum-card { border-left-color: var(--danger); }
+.sum-card p { margin: 0; }
+.sum-kind { font-size: var(--t-key); font-weight: 600; }
+.sum-line { font-size: var(--t-meta); color: var(--muted); }
+.sum-btns { display: flex; gap: var(--s2); }
+.sum-card .note { padding: 0; }
+
+/* UI-16: recent public report line on the warning */
+.ov-report { margin: 0; font-size: var(--t-meta); color: var(--text); }
+.ov-report b { color: var(--danger); }
