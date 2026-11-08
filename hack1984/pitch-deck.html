@@ -120,7 +120,10 @@ body{
 /* s5 who */
 .s5 .grid{position:absolute;left:110px;right:110px;top:290px;bottom:90px;display:grid;grid-template-columns:380px 1fr;gap:40px}
 .hero-num{display:flex;flex-direction:column;justify-content:center;gap:10px}
-.hero-num .big{font-size:120px}
+.hero-num .big{font-size:104px}
+.sector{display:flex;flex-direction:column;margin:14px 0 6px;border-top:1px solid var(--line)}
+.sector div{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);font-size:19px;color:var(--ink)}
+.sector b{font-weight:400;color:var(--plum);font-size:22px}
 .feat{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .feat .card{padding:28px 30px;display:flex;flex-direction:column;gap:10px}
 .ico{width:52px;height:52px;border-radius:50%;background:var(--ink);display:grid;place-items:center;margin-bottom:10px}
@@ -311,10 +314,15 @@ body{
   </div>
   <div class="grid">
     <div class="hero-num">
-      <div class="big mono">~15K</div>
-      <div class="body" style="font-size:24px;color:var(--ink)">US law firms with 10+ staff, nationwide</div>
-      <div class="src" style="margin-top:6px;color:var(--ink)">≈10% of 157k employer law firms, US Census</div>
-      <div class="small" style="margin-top:22px">First market: Boston law firms</div>
+      <div class="big mono">~30K</div>
+      <div class="body" style="font-size:24px;color:var(--ink)">US firms with 10+ staff that hold client money</div>
+      <div class="sector">
+        <div><span>Law</span><b class="mono">~15K</b></div>
+        <div><span>Accounting (CPA)</span><b class="mono">~7.6K</b></div>
+        <div><span>Wealth advisers (RIA)</span><b class="mono">~7K</b></div>
+      </div>
+      <div class="src" style="color:var(--ink);margin-top:8px">Census; CPA Trendlines; SEC Form ADV via IAA 2026. Rounded estimates</div>
+      <div class="small" style="margin-top:14px">First market: Boston law firms</div>
     </div>
     <div class="feat">
       <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><h4>The user</h4><div class="small">Paralegals, bookkeepers and office managers on Zoom, Teams or Meet</div></div>
@@ -323,7 +331,7 @@ body{
       <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/><path d="M5 5l14 14"/></svg></div><h4>What they have today</h4><div class="small">No security team. Big companies have one. These firms have nobody</div></div>
     </div>
   </div>
-  <aside class="notes">“Who's this for? Small professional firms: law, accounting, wealth management. Ten to two hundred people. They hold client money and client data, and scammers know it. Big companies have a security team. These firms have nobody. There are about fifteen thousand law firms that size in the US alone, and we start here in Boston.”</aside>
+  <aside class="notes">“Who's this for? Small professional firms: law, accounting, wealth management. Ten to two hundred people. They hold client money and client data, and scammers know it. Big companies have a security team. These firms have nobody. There are about thirty thousand law, accounting and wealth firms that size in the US, and we start with law firms here in Boston.”</aside>
 </section>
 
 <!-- 6 -->
@@ -339,12 +347,12 @@ body{
   <div class="map">
     <div class="ax-y"><span>Runs on the device</span><span>Runs in the cloud</span></div>
     <div class="quad">
-      <div class="q"><h5>On device · judges the caller</h5>
+      <div class="q"><h5>On device · checks the voice</h5>
         <div class="dot"><i></i><div>Polygraf Meeting Guard<small>local deployment option</small></div></div></div>
       <div class="q hot"><h5>On device · reads the script</h5>
         <div class="dot me"><i></i><div>CallGuard<small>laptop work calls, any app, firm rules</small></div></div>
         <div class="dot"><i></i><div>Google Scam Detection<small>Pixel 9+ and Galaxy S26 phones only</small></div></div></div>
-      <div class="q"><h5>Cloud · judges the caller</h5>
+      <div class="q"><h5>Cloud · checks the number or voice</h5>
         <div class="cloudlist">
           <div class="dot"><i></i>Microsoft Teams</div><div class="dot"><i></i>Pindrop</div>
           <div class="dot"><i></i>Reality Defender</div><div class="dot"><i></i>Hiya</div>
