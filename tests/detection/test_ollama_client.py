@@ -29,7 +29,7 @@ def test_request_shape():
     assert oc.chat(WINDOW, post=post) == '{"tactics": []}'
     url, payload, timeout = post.calls[0]
     assert url == "http://localhost:11434/api/chat"
-    assert timeout == 8.0
+    assert timeout == oc.TIMEOUT_S
     assert payload["format"] == "json"
     assert payload["stream"] is False
     assert payload["options"]["temperature"] == 0
@@ -93,3 +93,8 @@ def test_detection_lane_imports_no_network_library():
                 names = [node.module]
             for n in names:
                 assert n.split(".")[0] not in banned, f"{path.name} imports {n}"
+
+
+def test_timeout_leaves_room_for_the_longest_window():
+    # Live eval: S1's last beat took ~8 s on the demo Mac and timed out at 8.0 s.
+    assert oc.TIMEOUT_S >= 12

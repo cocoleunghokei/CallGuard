@@ -14,7 +14,9 @@ from typing import Callable
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 DEFAULT_MODEL = "qwen2.5:7b"
-TIMEOUT_S = 8.0
+# Live eval on the demo Mac: the longest S1 window took ~8 s, and an 8.0 s limit
+# turned the gate beat into a "low" fallback. 15 s keeps a slow-but-valid answer.
+TIMEOUT_S = 15.0
 # prompt.md is ~1.1k tokens; 30 s of speech is ~100 tokens. 4096 leaves room.
 NUM_CTX = 4096
 # Caps generation so a rambling answer can't blow the latency budget. A full

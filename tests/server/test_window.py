@@ -129,3 +129,49 @@ def test_missing_pywebview_says_how_to_fix(monkeypatch):
     monkeypatch.setitem(sys.modules, "webview", None)
     with pytest.raises(SystemExit, match="pywebview"):
         window.import_webview()
+
+
+def test_inside_callguard_app_posts_natively_not_osascript(monkeypatch):
+    posted = []
+    monkeypatch.setattr(window, "_post_native", lambda t, b: posted.append((t, b)) or True)
+    monkeypatch.setattr(window.subprocess, "Popen", lambda *a, **k: pytest.fail("ran osascript"))
+    window.notify_macos(window.NOTIFY_DEFAULT)
+    window.notify_colleague_macos()
+    assert posted == [(window.NOTIFY_TITLE, window.NOTIFY_DEFAULT),
+                      (window.COLLEAGUE_TITLE, window.COLLEAGUE_BODY)]
+
+
+def test_fixed_copy_is_checked_before_any_native_post(monkeypatch):
+    monkeypatch.setattr(window, "_post_native", lambda t, b: pytest.fail("posted"))
+    with pytest.raises(ValueError):
+        window.notify_macos("Officer Chen says hi")
+
+
+def test_outside_the_app_falls_back_to_osascript(monkeypatch):
+    ran = []
+    monkeypatch.setattr(window.sys, "platform", "darwin")
+    monkeypatch.setattr(window, "_post_native", lambda t, b: False)
+    monkeypatch.setattr(window.shutil, "which", lambda n: "/usr/bin/osascript")
+    monkeypatch.setattr(window.subprocess, "Popen", lambda cmd, **k: ran.append(cmd))
+    window.notify_macos(window.NOTIFY_DEFAULT)
+    assert ran and window.NOTIFY_DEFAULT in ran[0][2]
+
+
+def test_native_post_is_off_without_the_app_bundle(monkeypatch):
+    monkeypatch.setattr(window.sys, "platform", "linux")
+    assert window._post_native(window.NOTIFY_TITLE, window.NOTIFY_DEFAULT) is False
+
+
+def test_notification_click_brings_the_window_back(monkeypatch):
+    clicks = []
+    monkeypatch.setattr(window, "_on_click", lambda: clicks.append(1))
+    window._clicked()
+    assert clicks == [1]
+
+
+def test_mac_app_recipe_matches_the_notification_bundle_id():
+    from pathlib import Path
+    macapp = Path(window.__file__).parent / "macapp"
+    assert f'"{window.BUNDLE_ID}"' in (macapp / "setup.py").read_text()
+    assert (macapp / "Callguard.icns").stat().st_size > 0
+    assert "NSMicrophoneUsageDescription" in (macapp / "setup.py").read_text()

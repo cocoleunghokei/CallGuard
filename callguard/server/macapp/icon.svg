@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><defs><filter id="sh" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-opacity=".28"/></filter><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e4e4e7"/></linearGradient>
+</defs>
+<rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)" stroke="#d4d4d8" stroke-width="3" filter="url(#sh)"/>
+<path d="M512 214 C592 258 664 278 746 286 V500 C746 652 644 764 512 818 C380 764 278 652 278 500 V286 C360 278 432 258 512 214 Z" fill="none" stroke="#111113" stroke-width="44" stroke-linejoin="round"/>
+<g fill="#111113"><rect x="340" y="480" width="32" height="70" rx="16"/><rect x="392" y="440" width="32" height="150" rx="16"/><rect x="444" y="390" width="32" height="250" rx="16"/><rect x="496" y="350" width="32" height="330" rx="16"/><rect x="548" y="390" width="32" height="250" rx="16"/><rect x="600" y="440" width="32" height="150" rx="16"/><rect x="652" y="480" width="32" height="70" rx="16"/></g></svg>

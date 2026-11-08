@@ -61,3 +61,19 @@ def test_phrase_and_model_agreement_adds_five_points():
 def test_two_safe_signals_are_capped_at_thirty_points():
     assert score([ev("authority")], safe_signals=["callback_known_number",
                                                  "asks_in_writing"])[0] < 0.02
+
+
+@pytest.mark.parametrize("name,evidence,rules,safe,risk", [
+    # Live Mac misses (Sun): a clear ask plus a broken firm rule, nothing else.
+    ("S3 beat 2 live", [ev("credential_request")], ["it"], [], "danger"),
+    ("S2 beat 2 live", [ev("bank_change")], ["bank"], [], "danger"),
+    ("S4 beat 2 live", [ev("bypass_approval")], ["wire"], [], "danger"),
+    # G6 does not fire without each of its conditions.
+    ("ask is only a hint", [ev("credential_request", "hint")], ["it"], [], "watch"),
+    ("no rule broken", [ev("credential_request")], [], [], "watch"),
+    ("caller gave a safe signal", [ev("bank_change")], ["bank"], ["asks_in_writing"], "watch"),
+    ("keyword phrase only", [ev("bank_change", "phrase")], ["bank"], [], "watch"),
+    ("rule but no ask", [ev("secrecy")], ["secret"], [], "watch"),
+])
+def test_g6_clear_ask_breaking_a_rule(name, evidence, rules, safe, risk):
+    assert score(evidence, rules, safe)[1] == risk, name

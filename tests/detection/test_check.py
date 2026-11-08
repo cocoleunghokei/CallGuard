@@ -2,13 +2,14 @@
 import json
 
 from callguard.detection import check
+from callguard.detection.ollama_client import TIMEOUT_S
 from callguard.detection.rules import load_rules
 
 
 def post_for(content):
     def post(url, payload, timeout=None):
         assert url == "http://localhost:11434/api/chat"
-        assert timeout == 8.0
+        assert timeout == TIMEOUT_S
         return {"message": {"content": content}}
     return post
 
