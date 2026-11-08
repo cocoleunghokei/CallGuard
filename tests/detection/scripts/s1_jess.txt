@@ -2,18 +2,22 @@
 # set: variant
 # kind: scam
 # twin_of: -
-# expect: low|watch, watch, danger, danger, danger
-# giveaway: 3
-# gate: 4
+# expect: low, low, watch, watch, danger, danger, danger
+# giveaway: 5
+# gate: 6
 # tactics: authority, threat, inside_knowledge, secrecy, credential_request
 # rules: never_keep_calls_secret, it_never_asks_for_codes
 # claimed: Ministry of Public Security
-caller: Hello, this is Officer Wang from the Ministry of Public Security in Beijing.
-you: Sorry, who is this? Why are you calling me?
-caller: Your name is linked to a money-laundering case in Shenzhen. You are a suspect and a warrant has been issued.
+caller: Hello, is this Jess? This is Officer Wang from the Ministry of Public Security in Beijing.
+you: Yes, this is Jess. Sorry, what is this about?
+caller: Thank you for taking my call. I will explain everything, it will only take a few minutes.
+you: Okay, go ahead.
+caller: Your name is linked to a money-laundering case in Shenzhen. You are a suspect.
 you: That's impossible. I'm a lawyer, I work on money-laundering cases.
+caller: We know about your cases. A warrant for your arrest has already been issued in Beijing.
+you: What? What am I supposed to do?
 caller: This is a top secret investigation. Go to a quiet room alone. Do not tell your colleagues or your family.
-you: Okay, I'm alone now. What do I need to do?
+you: Okay, I'm alone now, in a hotel room.
 caller: To prove you are innocent, give me your online banking login and password so we can check your accounts.
 you: I don't know, can I talk to someone first?
 caller: If you refuse, you will be taken to China and detained for two years.

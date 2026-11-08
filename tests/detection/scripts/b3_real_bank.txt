@@ -2,12 +2,16 @@
 # set: p0
 # kind: twin
 # twin_of: s5
-# expect: low|watch, low|watch, low|watch
+# expect: low, low, low|watch, low|watch, low|watch
 # tactics: authority
 # rules: -
 # claimed: Chase
 caller: Hello, this is the fraud department at Chase, calling about the firm's card ending 2290.
 you: Okay, what's going on?
+caller: Nothing to worry about, this is a routine check on a recent purchase.
+you: Sure.
 caller: We saw a $2,400 charge at an electronics store yesterday. Do you recognize it?
 you: I'm not sure, I'd have to check.
-caller: No problem. Please don't share any details with me. If you don't recognize it, hang up and call the number on the back of your card.
+caller: For your safety, we will never ask for your PIN or full card number on a call.
+you: Good to know.
+caller: If you don't recognize the charge, hang up and call the number on the back of your card.

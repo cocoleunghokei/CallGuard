@@ -2,11 +2,17 @@
 # set: p0
 # kind: scam
 # twin_of: -
-# expect: low|watch, danger
-# giveaway: 2
-# gate: 2
-# tactics: authority, urgency, credential_request
+# expect: low, low, watch, danger, danger
+# giveaway: 4
+# gate: 4
+# tactics: authority, threat, urgency, credential_request
 # rules: it_never_asks_for_codes
-caller: This is Jake from IT, we've seen suspicious logins on your account.
+caller: Hi, this is Jake from the IT help desk. Do you have a minute?
+you: Sure, what's up?
+caller: We're doing some routine checks on staff laptops this week.
+you: Okay, no problem.
+caller: Someone is trying to break into your account right now. If we don't lock it in the next few minutes, your client files could be wiped.
 you: Oh no, what do I need to do?
-caller: I've just sent a code to your phone. Read it to me so I can lock the attacker out, quickly.
+caller: I've just sent a code to your phone. Read it to me so I can lock the attacker out.
+you: Um, it says it's from our login system.
+caller: Yes, that's the one. Quickly, read me the six digits.
