@@ -259,6 +259,23 @@ body{
 .stats.perf .big{font-size:76px}
 .stats.perf .big .u{font-size:38px}
 .stats.perf .from{font-size:19px;color:var(--ink);font-weight:500}
+/* s13 how it decides */
+.s13 .pipe{position:absolute;left:110px;right:110px;top:300px;display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1.25fr;align-items:stretch}
+.s13 .stepc{padding:24px 24px 26px;display:flex;flex-direction:column;gap:8px}
+.s13 .stepc em{font-style:normal;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-2)}
+.s13 .stepc h4{margin:0;font-size:28px;font-weight:400;letter-spacing:-.01em;color:var(--ink)}
+.s13 .stepc p{margin:0;font-size:18px;line-height:1.42;color:var(--grey)}
+.s13 .stepc.ai{background:linear-gradient(140deg,rgba(201,181,247,.32),rgba(242,154,212,.26) 55%,rgba(142,194,255,.3));border-color:rgba(185,163,243,.6)}
+.s13 .arrow{display:grid;place-items:center}
+.s13 .arrow svg{width:26px;height:26px;stroke:var(--ink);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.s13 .pts{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.s13 .pts li{display:flex;gap:10px;font-size:18px;line-height:1.35;color:var(--ink)}
+.s13 .pts b{flex:none;width:18px;font-weight:500;color:var(--plum)}
+.s13 .lights{display:flex;gap:8px;margin-top:auto;padding-top:10px}
+.s13 .lights span{flex:1;text-align:center;border-radius:999px;padding:7px 0;font-size:15px;font-weight:500;color:#fff}
+.s13 .facts{position:absolute;left:110px;right:110px;bottom:84px}
+.s13 .facthead{position:absolute;left:110px;bottom:200px;font-size:15px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+
 
 /* ---------- chrome ---------- */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;justify-content:center;align-items:center;gap:10px;
@@ -519,6 +536,34 @@ body{
   </div>
   <aside class="notes">“How well does it work? We test it on scripted scam calls and normal calls, line by line. After a night of tuning, accuracy went up twenty percent, from eighty-three to a hundred percent of lines. Scams caught in time doubled, from half to all of them. And through all of it, zero false alarms: no normal call ever turned red. Each check runs in under seven seconds, on the laptop.” <b>If asked:</b> before = first live run on all 8 test calls (24 lines); after = the 3 demo calls (17 lines), qwen2.5:7b on the demo Mac.</aside>
 </section>
+
+<!-- 13 -->
+<section class="slide s13" data-name="how-it-decides">
+  <div class="pad">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>How it decides</span></div>
+    <h2 class="h h3" style="margin-top:40px"><span class="ink">The AI reads the call.</span> <span class="plum">Plain code makes the call.</span></h2>
+  </div>
+  <div class="pipe">
+    <div class="card stepc"><em>01 · On the laptop</em><h4>Call audio</h4><p>Both sides of the call, from any meeting app. Kept in memory only.</p></div>
+    <div class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div>
+    <div class="card stepc"><em>02 · Whisper</em><h4>Speech to text</h4><p>Turned into text on the laptop every few seconds.</p></div>
+    <div class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div>
+    <div class="card stepc ai"><em>03 · Local AI model</em><h4>Finds tactics</h4><p>Secrecy, threats, a login request, each with the caller's exact words.</p></div>
+    <div class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div>
+    <div class="card stepc"><em>04 · Fixed scoring</em><h4>Points decide</h4>
+      <ul class="pts"><li><b>+</b>Each tactic has a fixed weight</li><li><b>+</b>Breaking a firm rule (firms write their own)</li><li><b>&minus;</b>Safe signals take points away</li></ul>
+      <div class="lights"><span style="background:#1f7a55">Green</span><span style="background:#b7791f">Amber</span><span style="background:#c0392b">Red</span></div>
+    </div>
+  </div>
+  <div class="facthead">How we keep it accurate</div>
+  <div class="facts">
+    <div class="fact"><b>Instructions + examples</b><span>The AI gets a definition and an example line for every tactic</span></div>
+    <div class="fact"><b>Fixed rules in code</b><span>Same tactics, same color, every time, so every warning can be explained</span></div>
+    <div class="fact"><b>Tested on both</b><span>Scripted scam and normal calls replayed to check the AI and the scoring</span></div>
+  </div>
+  <aside class="notes">“How does it decide? The call is turned into text on the laptop every few seconds with Whisper. A local AI model picks out scam tactics, like secrecy or a request for a login, and quotes the caller's exact words. Then fixed scoring rules decide green, amber or red. It's a points system: each tactic has a fixed weight, breaking a firm rule adds points, and firms can write their own rules. Safe signals take points away. We keep it accurate three ways: instructions and examples for the AI, fixed rules in code, and tests that replay scam and normal calls to check both.”</aside>
+</section>
+
 
 </div></div>
 
