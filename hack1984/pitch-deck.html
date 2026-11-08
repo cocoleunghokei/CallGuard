@@ -1,4 +1,4 @@
-<title>Callguard Pitch Deck</title>
+<title>CallGuard Pitch Deck</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,7 +41,11 @@ body{
 .slide.active{display:block}
 .pad{position:absolute;inset:0;padding:84px 110px}
 .labels{display:flex;font-size:17px;color:var(--grey);letter-spacing:.01em}
-.labels span:first-child{width:400px}
+.labels > span:first-child{width:400px}
+.brand{display:inline-flex;align-items:center;gap:9px;color:var(--ink);font-weight:500}
+.brand .mark{width:17px;height:22px;color:var(--ink)}
+.labels .brand{width:400px;flex:none}
+.applogo{width:84px;height:86px;filter:drop-shadow(0 8px 14px rgba(23,21,28,.18))}
 .h{font-weight:300;letter-spacing:-.025em;line-height:1.06;margin:0;text-wrap:balance}
 .h1{font-size:96px}
 .h2{font-size:72px}
@@ -229,12 +233,17 @@ body{
 @media (prefers-reduced-motion: reduce){.pulse::after{animation:none}}
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="cg-mark" viewBox="256 192 512 648"><path d="M512 214 C592 258 664 278 746 286 V500 C746 652 644 764 512 818 C380 764 278 652 278 500 V286 C360 278 432 258 512 214 Z" fill="none" stroke="currentColor" stroke-width="44" stroke-linejoin="round"/><g fill="currentColor"><rect x="340" y="480" width="32" height="70" rx="16"/><rect x="392" y="440" width="32" height="150" rx="16"/><rect x="444" y="390" width="32" height="250" rx="16"/><rect x="496" y="350" width="32" height="330" rx="16"/><rect x="548" y="390" width="32" height="250" rx="16"/><rect x="600" y="440" width="32" height="150" rx="16"/><rect x="652" y="480" width="32" height="70" rx="16"/></g></symbol>
+<linearGradient id="cg-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e4e4e7"/></linearGradient>
+<symbol id="cg-app" viewBox="80 80 864 880"><rect x="100" y="100" width="824" height="824" rx="186" fill="url(#cg-bg)" stroke="#d4d4d8" stroke-width="3"/><use href="#cg-mark" x="256" y="192" width="512" height="648" style="color:#111113"/></symbol>
+</defs></svg>
 <div class="viewport" id="viewport"><div class="stage" id="stage">
 
 <!-- 1 -->
 <section class="slide s1" data-name="story-1">
   <div class="split-left">
-    <div class="labels"><span>Callguard</span><span>A story</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>A story</span></div>
     <div class="stack">
       <h1 class="h h1" style="font-size:72px;white-space:nowrap"><span class="ink">Meet my friend.</span><br><span class="plum">Lawyer. Very smart.</span></h1>
       <p class="body">Works on money-laundering cases.</p>
@@ -272,7 +281,7 @@ body{
 <!-- 4 -->
 <section class="slide s4" data-name="numbers">
   <div class="pad">
-    <div class="labels"><span>Callguard</span><span>The cost of one phone call</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>The cost of one phone call</span></div>
     <div class="row">
       <h2 class="h h2"><span class="ink">She's</span><br><span class="plum">not alone.</span></h2>
       <p class="body">Scammers pretend to be a vendor, a boss or an official, and voice is the fastest-growing way they do it. A phone call skips every email filter a firm has.</p>
@@ -289,7 +298,7 @@ body{
 <!-- 5 -->
 <section class="slide s5" data-name="who">
   <div class="pad">
-    <div class="labels"><span>Callguard</span><span>Who it's for</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Who it's for</span></div>
     <h2 class="h h3 plum" style="margin-top:44px">Small firms that hold other people's money.</h2>
   </div>
   <div class="grid">
@@ -312,7 +321,7 @@ body{
 <!-- 6 -->
 <section class="slide s6" data-name="different">
   <div class="left">
-    <div class="labels"><span>Callguard</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span></div>
     <div class="stack">
       <div class="small" style="font-size:17px">What's different</div>
       <h2 class="h h2" style="font-size:60px"><span class="ink">You can't tell the voice.</span><br><span class="plum">You can tell the script.</span></h2>
@@ -325,7 +334,7 @@ body{
       <div class="q"><h5>On device · judges the caller</h5>
         <div class="dot"><i></i><div>Polygraf Meeting Guard<small>local deployment option</small></div></div></div>
       <div class="q hot"><h5>On device · reads the script</h5>
-        <div class="dot me"><i></i><div>Callguard<small>laptop work calls, any app, firm rules</small></div></div>
+        <div class="dot me"><i></i><div>CallGuard<small>laptop work calls, any app, firm rules</small></div></div>
         <div class="dot"><i></i><div>Google Scam Detection<small>Pixel 9+ and Galaxy S26 phones only</small></div></div></div>
       <div class="q"><h5>Cloud · judges the caller</h5>
         <div class="cloudlist">
@@ -343,20 +352,20 @@ body{
 <section class="slide s7" data-name="demo">
   <div class="iris"></div>
   <div class="inner">
-    <div class="labels"><span>Callguard</span><span>Live demo</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Live demo</span></div>
     <div class="callpill glass">
       <div class="pulse"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/></svg></div>
       <span>Officer Wang is calling…</span>
     </div>
     <h1 class="h h1 ink title">Let's take a call.</h1>
   </div>
-  <aside class="notes"><b>Switch to Meet + Callguard.</b> Click footer “Sent online (0)” → green → amber at “warrant” → click the search flash (“only the agency name left this laptop”) → red at “don't tell your colleagues”: “one warning with the tactic, his exact words, your firm's rule, and the real number to call back. That's this firm's own rule, which they wrote.” → Report scam → hang up, panel wipes. <b>Backup:</b> <code>python -m callguard.server --fake tests/detection/scripts/s1_jess.txt</code></aside>
+  <aside class="notes"><b>Switch to Meet + CallGuard.</b> Click footer “Sent online (0)” → green → amber at “warrant” → click the search flash (“only the agency name left this laptop”) → red at “don't tell your colleagues”: “one warning with the tactic, his exact words, your firm's rule, and the real number to call back. That's this firm's own rule, which they wrote.” → Report scam → hang up, panel wipes. <b>Backup:</b> <code>python -m callguard.server --fake tests/detection/scripts/s1_jess.txt</code></aside>
 </section>
 
 <!-- 8 -->
 <section class="slide s8" data-name="privacy">
   <div class="pad">
-    <div class="labels"><span>Callguard</span><span>What left this device</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>What left this device</span></div>
     <h2 class="h h3" style="margin-top:40px"><span class="ink">Everything runs on the laptop.</span> <span class="plum">Nothing is stored.</span></h2>
   </div>
   <div class="track"><div class="line"></div><div class="nodes">
@@ -386,18 +395,17 @@ body{
 <!-- 9 -->
 <section class="slide s9" data-name="business">
   <div class="pad">
-    <div class="labels"><span>Callguard</span><span>Would they pay · What it costs</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Would they pay · What it costs</span></div>
     <div class="top">
-      <h2 class="h h3 plum" style="font-size:52px">One stopped scam pays for 34 years of Callguard.</h2>
-      <p class="body" style="font-size:22px;padding-top:8px">The buyer is the managing partner. The math is an insurance decision, not a tech decision.</p>
+      <h2 class="h h3 plum" style="font-size:52px">One stopped scam pays for 34 years of CallGuard.</h2>
     </div>
   </div>
   <div class="rows">
     <div class="card"><div><h4>Average scam loss</h4><p>per fake-vendor / fake-boss complaint · FBI IC3 2025</p></div><span class="v mono">$123,000</span></div>
     <div class="card"><div><h4>What insurance pays back</h4><p>policies often exclude or cap scams where an employee sent the money</p></div><span class="v" style="font-size:28px">Often $0</span></div>
-    <div class="card"><div><h4>Callguard, 20 people</h4><p>$10–15 per seat per month</p></div><span class="v mono">$2.4–3.6K<span style="font-size:22px">/yr</span></span></div>
+    <div class="card"><div><h4>CallGuard, 20 people</h4><p>$10–15 per seat per month</p></div><span class="v mono">$2.4–3.6K<span style="font-size:22px">/yr</span></span></div>
   </div>
-  <div class="banner">And it's almost free to run: <b>~95% margin even at $10</b></div>
+  <div class="banner">And it's almost free to run: <b>~95% margin even at $10 per seat per month</b></div>
   <div class="donut">
     <svg viewBox="0 0 400 400" aria-label="Cost breakdown of a $10 seat">
       <circle cx="200" cy="200" r="150" fill="none" stroke="#efeef2" stroke-width="64"/>
@@ -417,14 +425,14 @@ body{
       <div class="tot">Per seat, per month. Search = 20 suspicious calls × $0.008</div>
     </div>
   </div>
-  <aside class="notes">“Would a firm pay? The average business scam reported to the FBI last year cost a hundred and twenty-three thousand dollars. Insurance often won't cover it, and client money is the firm's to pay back. Callguard for 20 people is under four thousand dollars a year. One stopped scam pays for over thirty years. And because the AI runs on the laptop, we pay almost nothing per call. Even at ten dollars a seat, we keep about ninety-five percent.”</aside>
+  <aside class="notes">“Would a firm pay? The average business scam reported to the FBI last year cost a hundred and twenty-three thousand dollars. Insurance often won't cover it, and client money is the firm's to pay back. CallGuard for 20 people is under four thousand dollars a year. One stopped scam pays for over thirty years. And because the AI runs on the laptop, we pay almost nothing per call. Even at ten dollars a seat, we keep about ninety-five percent.”</aside>
 </section>
 
 <!-- 10 -->
 <section class="slide s10" data-name="moat">
   <div class="iris"></div>
   <div class="inner">
-    <div class="labels"><span>Callguard</span><span>Why it's hard to copy</span></div>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Why it's hard to copy</span></div>
     <h2 class="h h3 ink" style="margin-top:40px">Privacy is our feature, our margin, and our moat.</h2>
     <div class="rm"><div class="line"></div><div class="cols">
       <div class="col"><span class="tag ok">Built</span><div class="glass"><h4>The firm's own rules</h4><p>“We never change bank details by phone.” Every call is checked against them. The AI model is the replaceable part.</p></div></div>
@@ -433,7 +441,7 @@ body{
     </div></div>
     <div class="close">
       <div class="h">You can't tell the voice.<br>You can tell the script.</div>
-      <small>Off by default · every byte shown in the log</small>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:14px"><svg class="applogo" aria-label="CallGuard logo"><use href="#cg-app"/></svg><small>Off by default · every byte shown in the log</small></div>
     </div>
   </div>
   <aside class="notes">“Why can't someone copy this? Firms write their own rules, and we check every call against them. The AI model is the replaceable part. Firms trust us with those rules <i>because</i> they never leave the laptop. Next, an opt-in scam-script library: anonymous tactics, never words, so every firm protects every other firm.” <b>(beat)</b> “My friend didn't need a better voice detector. She needed something that heard the script. You can't tell the voice. You can tell the script. Thank you.”</aside>
