@@ -81,7 +81,8 @@ def test_verbose_names_timeout_fallback():
         raise TimeoutError()
 
     rows = verbose_rows(slow)
-    assert all(r["source"] == "fallback" and not r["ok"] for r in rows)
+    # beats with a firm cue phrase come back "fast" (watch from the cue alone); never ok
+    assert all(r["source"] in ("fallback", "fast") and not r["ok"] for r in rows)
     assert rows[0]["notes"][0].startswith("fallback: model call failed (TimeoutError)")
 
 

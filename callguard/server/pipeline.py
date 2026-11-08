@@ -39,11 +39,16 @@ def load_check() -> CheckFn:
 
 
 def load_rules() -> list[Rule]:
+    return load_rules_with_source()[0]
+
+
+def load_rules_with_source() -> tuple[list[Rule], str]:
+    """The firm's custom rules if saved and valid, else the defaults (prd §8.1)."""
     try:
-        from callguard.detection.rules import load_rules as _load  # type: ignore[import-not-found]
+        from callguard.detection.rules import load_rules_with_source as _load  # type: ignore[import-not-found]
         return _load()
     except Exception:
-        return []
+        return [], "default"
 
 
 def load_fake_stream() -> Callable[..., Iterator[TranscriptChunk]]:
@@ -66,7 +71,10 @@ class Pipeline:
                  rules: list[Rule] | None = None, window_seconds: float = WINDOW_SECONDS) -> None:
         self.broadcast = broadcast  # async (type, data) -> None
         self.check_fn = check_fn or load_check()
-        self.rules = rules if rules is not None else load_rules()
+        if rules is not None:
+            self.rules, self.rules_source = rules, "default"
+        else:
+            self.rules, self.rules_source = load_rules_with_source()
         self.window_seconds = window_seconds
         self.window: deque[TranscriptChunk] = deque()
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="detect")

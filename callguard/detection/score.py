@@ -12,6 +12,9 @@ WEIGHT = {
     "payment_request": 0.55, "remote_access": 0.60,
     "personal_data_request": 0.50, "inside_knowledge": 0.20,
 }
+# Any broken firm rule shows at least Watch: the firm's own cues count even
+# when no tactic is detected (Coco, Sat). Danger still needs the full score.
+RULE_FLOOR = 0.40
 STRENGTH = {"clear": 0.9, "hint": 0.5, "phrase": 0.6}
 COMBOS = (
     ("authority", "secrecy"), ("authority", "threat"),
@@ -46,7 +49,7 @@ def best_strength_per_tactic(evidence: Iterable[Evidence]) -> dict[str, float]:
 
 def score(evidence: Iterable[Evidence], rules_broken: Iterable[str] = (),
           safe_signals: Iterable[str] = (), *, model_failed: bool = False) -> tuple[float, Risk]:
-    """Return (confidence, risk), applying G1-G5 after the score formula."""
+    """Return (confidence, risk), applying G1-G5 and the rule floor after the score formula."""
     items = list(evidence)
     strengths = best_strength_per_tactic(items)
     if model_failed and not strengths:  # G5
@@ -70,5 +73,7 @@ def score(evidence: Iterable[Evidence], rules_broken: Iterable[str] = (),
                                               for item in caller_items)  # G3
     if confidence >= 0.75 and (only_soft or not has_teeth or phrase_only):
         confidence = 0.74
+    if rules and confidence < RULE_FLOOR:
+        confidence = RULE_FLOOR
     risk: Risk = "danger" if confidence >= 0.75 else "watch" if confidence >= 0.40 else "low"
     return confidence, risk

@@ -140,7 +140,7 @@ def evaluate(paths: Iterable[Path], *, post: Post | None = None,
                 "tactics": ",".join(result["tactics"]), "ms": elapsed_ms,
                 "source": result.get("source", "model"),
                 "ok": result["risk"] in expected[beat - 1]
-                      and result.get("source") != "fallback",
+                      and result.get("source") not in ("fallback", "fast"),
             }
             if verbose:
                 row["notes"] = diagnose(seen, text, elapsed_ms)
@@ -166,10 +166,11 @@ def print_table(rows: list[dict], summary: dict) -> None:
     print(f"{'script':<22} {'beat':>4}  {'expect':<12} {'got':<7} {'conf':>4}  "
           f"{'tactics':<45} {'ms':>5}  ok")
     for row in rows:
+        failed = f" ({row['source']})" if row["source"] in ("fallback", "fast") else ""
         print(f"{row['script']:<22} {row['beat']:>4}  {row['expect']:<12} "
               f"{row['got']:<7} {row['conf']:>4.2f}  {row['tactics'][:45]:<45} "
               f"{row['ms']:>5.0f}  {'✔' if row['ok'] else 'FAIL'}"
-              f"{' (fallback)' if row['source'] == 'fallback' else ''}")
+              f"{failed}")
         for note in row.get("notes", []):
             print(f"    {note}")
     print(f"SUMMARY beats {summary['passed']}/{summary['beats']} pass · "

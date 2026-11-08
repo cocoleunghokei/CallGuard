@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import time
@@ -33,6 +34,8 @@ class Runtime:
         hub.handle("mark_safe", self._on_mark_safe)
         hub.handle("colleague", self._on_colleague)
         hub.handle("gate_release", self._on_gate_release)
+        hub.handle("save_rules", self._on_save_rules)
+        hub.handle("reset_rules", self._on_reset_rules)
         hub.on_connect.append(self._hello)
         p = self.pipeline
         self.verifier = Verifier(hub.broadcast, p.caller_lines, lambda: p.call_id)
@@ -64,7 +67,8 @@ class Runtime:
 
     async def _model_from_check(self, raw: dict, _shown: dict) -> None:
         """C15: a `fallback` check means the local model didn't answer."""
-        model = "degraded" if raw.get("source") == "fallback" else "ok"
+        # "fast" = the model didn't answer, only the firm's cue phrases were checked
+        model = "degraded" if raw.get("source") in ("fallback", "fast") else "ok"
         if model != self.model:
             self.model = model
             log.info("local model %s", model)
@@ -99,7 +103,7 @@ class Runtime:
     # ------------------------------------------------------------ connect + UI messages
     async def _hello(self, ws: WebSocket) -> None:
         await self.hub.send(ws, "status", self.status())
-        await self.hub.send(ws, "rules", self.pipeline.rules, source="default")
+        await self.hub.send(ws, "rules", self.pipeline.rules, source=self.pipeline.rules_source)
         if self.pipeline.active:
             await self.hub.send(ws, "call", {"state": "started"})
             if self.pipeline.call_risk.shown:
@@ -141,6 +145,52 @@ class Runtime:
             await self.gate.release(how)
             self.pipeline.call_risk.act(how)
 
+    # ------------------------------------------------------------ firm rules (SRV-14, cues only)
+    async def _on_save_rules(self, msg: dict) -> None:
+        """Validate, write the custom file atomically, reload, tell every window.
+
+        Refused during a call: rules never change mid-call, and nothing is
+        written to disk while a call is active (SRV-12b). Never an egress entry.
+        """
+        if self.pipeline.active:
+            await self.hub.broadcast("rules_saved", {"ok": False, "errors": [RULES_IN_CALL]})
+            return
+        from callguard.detection.rules import prepare_rules, validate_rules
+        data = prepare_rules(msg.get("data"))
+        errors = validate_rules(data)
+        if errors:
+            await self.hub.broadcast("rules_saved", {"ok": False, "errors": errors})
+            return
+        try:
+            await asyncio.to_thread(_write_rules, data)
+        except OSError as e:
+            log.warning("saving rules failed: %s", type(e).__name__)
+            await self.hub.broadcast("rules_saved", {"ok": False, "errors": ["Couldn't save the rules on this laptop."]})
+            return
+        await self._reload_rules()
+        await self.hub.broadcast("rules_saved", {"ok": True})
+
+    async def _on_reset_rules(self, msg: dict) -> None:
+        if self.pipeline.active:
+            await self.hub.broadcast("rules_saved", {"ok": False, "errors": [RULES_IN_CALL]})
+            return
+        from callguard.detection.rules import custom_rules_path
+        try:
+            custom_rules_path().unlink(missing_ok=True)
+        except OSError as e:
+            log.warning("resetting rules failed: %s", type(e).__name__)
+            await self.hub.broadcast("rules_saved", {"ok": False, "errors": ["Couldn't reset the rules on this laptop."]})
+            return
+        await self._reload_rules()
+        await self.hub.broadcast("rules_saved", {"ok": True})
+
+    async def _reload_rules(self) -> None:
+        from callguard.server.pipeline import load_rules_with_source
+        p = self.pipeline
+        p.rules, p.rules_source = load_rules_with_source()
+        log.info("rules reloaded: %d %s", len(p.rules), p.rules_source)
+        await self.hub.broadcast("rules", p.rules, source=p.rules_source)
+
     async def run_fake(self, script: str | Path, speed: float = 1.0) -> None:
         await self.hub.wait_for_client()  # don't play the call to an empty room
         await self.set_listening(True)
@@ -175,6 +225,19 @@ class Runtime:
     def close(self) -> None:
         self.gate.close()
         self.pipeline.close()
+
+
+RULES_IN_CALL = "Rules can't be changed during a call. Try again after the call ends."
+
+
+def _write_rules(rules: list) -> None:
+    """Atomic write: a crash mid-save never leaves a half-written rules file."""
+    from callguard.detection.rules import custom_rules_path
+    path = custom_rules_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def _live_stream() -> Iterable:

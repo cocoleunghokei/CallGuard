@@ -8,7 +8,7 @@
 // current check's evidence quotes. Both are deleted on `call ended`.
 
 import { connect } from "./ws.js";
-import { render, bindView, VERIFY_WAIT_MS } from "./view.js";
+import { render, bindView, rulesSaved, VERIFY_WAIT_MS } from "./view.js";
 
 const TAIL_LINES = 3;
 
@@ -18,6 +18,8 @@ export const state = {
   status: null, // {listening, online, model?, gate?}
   rules: [],
   rulesSource: null, // "default" | "custom" | null
+  edit: null, // rules editor draft {rules, errors, rev, busy} while open (UI-14, cues only)
+  rulesNote: "", // "Saved. Applies from the next call." after a save or reset
   // Firm rules that came up this call: id -> times it newly appeared in check.rules_broken.
   // Call metadata only (no transcript); reset on call start and end.
   ruleHits: {},
@@ -54,6 +56,9 @@ const handlers = {
   rules(data, msg) {
     state.rules = Array.isArray(data) ? data : [];
     state.rulesSource = (msg && msg.source) || null;
+  },
+  rules_saved(data) {
+    rulesSaved(state, data);
   },
   call(data) {
     const s = data && data.state;

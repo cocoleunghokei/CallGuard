@@ -124,3 +124,66 @@ def test_loader_skips_bad_entries_and_unknown_tactics(tmp_path):
     ]))
     rules = load_rules(p)
     assert rules == [{"id": "ok", "text": "Fine.", "tactics": ["secrecy"], "enabled": False}]
+
+
+# --- DET-13 (cues only): custom rules file, validation, ids --------------------
+
+from callguard.detection.rules import load_rules_with_source, prepare_rules, validate_rules
+
+GIFT = {"id": "custom_gift_cards", "text": "We never pay in gift cards.", "tactics": [], "keywords": ["gift card"]}
+
+
+def test_shipped_rules_validate():
+    assert validate_rules(RULES) == []
+
+
+def test_cue_only_rule_is_valid_and_matches_on_its_phrase():
+    assert validate_rules([GIFT]) == []
+    assert match_rules([], [GIFT], "Pick up some Gift Cards for me") == ["custom_gift_cards"]
+    assert match_rules(["urgency"], [GIFT], "Please hurry") == []
+
+
+@pytest.mark.parametrize("rules,needle", [
+    ("nope", "must be a list"),
+    ([{**GIFT, "keywords": []}], "at least one phrase"),
+    ([{**GIFT, "keywords": ["ab"]}], "3 to 40 characters"),
+    ([{**GIFT, "keywords": ["x" * 41]}], "3 to 40 characters"),
+    ([{**GIFT, "keywords": ["line\nbreak"]}], "one line"),
+    ([{**GIFT, "keywords": [f"cue {i}" for i in range(11)]}], "at most 10 phrases"),
+    ([{**GIFT, "text": ""}], "1 to 200 characters"),
+    ([{**GIFT, "text": "x" * 201}], "1 to 200 characters"),
+    ([{**GIFT, "tactics": ["made_up"]}], "unknown tactic"),
+    ([{**GIFT, "requires": ["made_up"]}], "unknown tactic"),
+    ([GIFT, GIFT], "duplicate id"),
+    ([{**GIFT, "id": f"r{i}"} for i in range(31)], "At most 30 rules"),
+    ([{**GIFT, "enabled": "yes"}], "on/off"),
+])
+def test_validate_rejects_with_a_reason(rules, needle):
+    errors = validate_rules(rules)
+    assert errors and any(needle in e for e in errors), errors
+
+
+def test_prepare_gives_new_rules_unique_ids():
+    got = prepare_rules([{"text": "Gift cards!", "keywords": ["gift card"]},
+                         {"text": "Gift cards!", "keywords": ["itunes card"]},
+                         {"id": "kept", "text": "Old", "keywords": ["old cue"]}])
+    assert [r["id"] for r in got] == ["custom_gift_cards", "custom_gift_cards_2", "kept"]
+
+
+def test_custom_file_is_preferred_and_bad_file_falls_back(tmp_path):
+    p = tmp_path / "rules.json"
+    assert load_rules_with_source(p) == (RULES, "default"), "missing file"
+    p.write_text(json.dumps([GIFT]))
+    assert load_rules_with_source(p) == ([GIFT], "custom")
+    p.write_text(json.dumps([{**GIFT, "text": ""}]))
+    assert load_rules_with_source(p) == (RULES, "default"), "invalid file"
+    p.write_text("{not json")
+    assert load_rules_with_source(p) == (RULES, "default"), "broken JSON"
+
+
+def test_custom_path_from_env(monkeypatch, tmp_path):
+    from callguard.detection.rules import custom_rules_path
+    monkeypatch.setenv("CALLGUARD_RULES_FILE", str(tmp_path / "x.json"))
+    assert custom_rules_path() == tmp_path / "x.json"
+    monkeypatch.delenv("CALLGUARD_RULES_FILE")
+    assert custom_rules_path().parts[-3:] == ("Application Support", "Callguard", "rules.json")

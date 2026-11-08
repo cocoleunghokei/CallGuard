@@ -122,7 +122,7 @@ python -m callguard.server --browser   # dev only: serve http://localhost:8000 f
 python -m callguard.audio.health    # are the mic and BlackHole inputs ready?
 pytest                              # all tests, offline (browser tests skip without playwright)
 ```
-Live audio needs `CALLGUARD_WHISPER_DIR` (local faster-whisper small model) in `.env`; optional `CALLGUARD_CALLER_DEVICE` (default "BlackHole 2ch"), `CALLGUARD_MIC_DEVICE`, `CALLGUARD_CALL_IDLE_S` (a live call ends after this much silence, default 45). Full demo-machine steps: [ui/DEMO.md](ui/DEMO.md).
+Live audio needs `CALLGUARD_WHISPER_DIR` (local faster-whisper small model) in `.env`; optional `CALLGUARD_CALLER_DEVICE` (default "BlackHole 2ch"), `CALLGUARD_MIC_DEVICE`, `CALLGUARD_CALL_IDLE_S` (a live call ends after this much silence, default 45). The firm's own rules (edited in the app under "Your firm's rules" → "Customise rules") are saved to `~/Library/Application Support/Callguard/rules.json`; `CALLGUARD_RULES_FILE` overrides that path. Full demo-machine steps: [ui/DEMO.md](ui/DEMO.md).
 Whoever first makes one of these work, or changes one, updates this section.
 
 ## 5. How to report status

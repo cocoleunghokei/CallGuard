@@ -109,11 +109,34 @@
         <h2>Latest</h2>
         <ol id="tail" class="said"></ol>
       </section>
-      <!-- Firm rules (T10 / UI-13): read only; editing is UI-14 -->
+      <!-- Firm rules (T10 / UI-13), plus the cue-phrase editor (UI-14, cues only) -->
       <details id="firm-rules" class="sec firm-rules">
         <summary><span id="firm-rules-h">Your firm's rules</span><span id="firm-rules-hits" class="hits-sum"></span></summary>
         <ul id="firm-rules-list" class="firm-list"></ul>
         <p id="firm-rules-src" class="note"></p>
+        <div id="rules-tools" class="rules-tools">
+          <button id="rules-edit" class="btn quiet" type="button">Customise rules</button>
+          <p id="rules-lock" class="note" hidden>You can change the rules after the call.</p>
+          <p id="rules-note" class="note" role="status"></p>
+        </div>
+        <section id="rules-editor" class="rules-editor" hidden aria-labelledby="rules-editor-h">
+          <h2 id="rules-editor-h">Customise your rules</h2>
+          <p class="note">Add phrases to listen for. If the caller says one, the call shows at least Watch.</p>
+          <ul id="rules-edit-list" class="edit-list"></ul>
+          <div class="new-rule">
+            <label for="new-rule-text">Add a rule</label>
+            <div class="cue-add">
+              <input id="new-rule-text" type="text" maxlength="200" autocomplete="off" placeholder="e.g. We never pay anyone in gift cards.">
+              <button id="new-rule-add" class="btn quiet" type="button">Add</button>
+            </div>
+          </div>
+          <ul id="rules-errors" class="rules-errors" role="alert"></ul>
+          <div class="edit-btns">
+            <button id="rules-save" class="btn primary" type="button">Save</button>
+            <button id="rules-cancel" class="btn quiet" type="button">Cancel</button>
+          </div>
+          <button id="rules-reset" class="link reset" type="button">Reset to default rules</button>
+        </section>
       </details>
     </main>
 

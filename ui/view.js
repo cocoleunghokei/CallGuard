@@ -85,6 +85,7 @@ export function bindView(state, redraw) {
     }
     setTimeout(() => ($("copy").textContent = "Copy"), 1500);
   });
+  bindRulesEditor(state);
 }
 
 export function render(state) {
@@ -774,14 +775,22 @@ function renderFirmRules(state) {
   $("firm-rules-h").textContent = `Your firm's rules (${rules.length})`;
   const hits = Object.values(state.ruleHits).filter(Boolean).length;
   $("firm-rules-hits").textContent = hits ? `${hits} came up this call` : "";
+  const editing = !!state.edit;
+  $("firm-rules-list").hidden = editing;
   $("firm-rules-list").replaceChildren(
     ...rules.map((r) => {
       const n = state.ruleHits[r.id] || 0;
       const off = r.enabled === false;
+      const cues = r.keywords || [];
       return h(
         "li",
         { class: [n ? "hit" : "", off ? "off" : ""].filter(Boolean).join(" ") || null },
-        h("span", { text: r.text || String(r.id).replace(/_/g, " ") }),
+        h(
+          "div",
+          { class: "rule-body" },
+          h("span", { text: r.text || String(r.id).replace(/_/g, " ") }),
+          cues.length ? h("span", { class: "cues-line", text: `Listens for: ${cues.map((k) => `“${k}”`).join(", ")}` }) : null,
+        ),
         n ? h("span", { class: "rule-badge", text: `came up ${n}×` }) : null,
         off ? h("span", { class: "rule-badge muted", text: "Off" }) : null,
       );
@@ -789,6 +798,217 @@ function renderFirmRules(state) {
   );
   const src = state.rulesSource === "custom" ? "Set by your firm." : state.rulesSource === "default" ? "Callguard's default rules." : "";
   $("firm-rules-src").textContent = src ? `${src} Kept on this laptop, never sent.` : "Kept on this laptop, never sent.";
+  $("rules-tools").hidden = editing;
+  $("rules-edit").disabled = state.inCall;
+  $("rules-lock").hidden = !state.inCall;
+  $("rules-note").textContent = state.rulesNote || "";
+  renderRulesEditor(state);
+}
+
+// ---------------------------------------------------------------- rules editor (UI-14, cues only)
+// The draft lives in state.edit until Save. The list is rebuilt only when the
+// draft's shape changes (rev), so typing is never interrupted by a re-render.
+
+const CUE_MIN = 3;
+const CUE_MAX = 40;
+const CUES_PER_RULE = 10;
+let editorRev = -1;
+let resetArmed = null; // timer while "Reset" waits for a second click
+
+function editRev(state) {
+  state.edit.rev += 1;
+  rerender();
+}
+
+function addCue(state, rule, raw) {
+  const cue = (raw || "").trim().replace(/\s+/g, " ");
+  const errs = [];
+  const cues = (rule.keywords = rule.keywords || []);
+  if (cue.length < CUE_MIN || cue.length > CUE_MAX) errs.push(`A phrase must be ${CUE_MIN} to ${CUE_MAX} characters.`);
+  else if (cues.some((k) => k.toLowerCase() === cue.toLowerCase())) errs.push(`“${cue}” is already on this rule.`);
+  else if (cues.length >= CUES_PER_RULE) errs.push(`At most ${CUES_PER_RULE} phrases per rule.`);
+  state.edit.errors = errs;
+  if (!errs.length) {
+    cues.push(cue);
+    rule._typing = "";
+  }
+  editRev(state);
+}
+
+function renderRulesEditor(state) {
+  const e = state.edit;
+  $("rules-editor").hidden = !e;
+  if (!e) {
+    editorRev = -1;
+    return;
+  }
+  $("rules-save").disabled = state.inCall || e.busy;
+  $("rules-reset").disabled = state.inCall || e.busy;
+  const errors = [...(state.inCall ? ["You can save after the call ends."] : []), ...e.errors];
+  $("rules-errors").replaceChildren(...errors.map((t) => h("li", { text: t })));
+  if (editorRev === e.rev) return;
+  editorRev = e.rev;
+  $("rules-edit-list").replaceChildren(
+    ...e.rules.map((r, i) => {
+      const key = r.id || `new-${i}`;
+      const isNew = !r.id || r.id.startsWith("custom_");
+      const input = h("input", {
+        type: "text", maxlength: CUE_MAX, autocomplete: "off", "data-key": `cue-in-${key}`,
+        "aria-label": `Add a phrase to: ${r.text}`, placeholder: "Add a phrase, e.g. gift card",
+        oninput: (ev) => (r._typing = ev.target.value),
+        onkeydown: (ev) => {
+          if (ev.key === "Enter") {
+            ev.preventDefault();
+            addCue(state, r, ev.target.value);
+          }
+        },
+      });
+      input.value = r._typing || "";
+      const toggle = h("input", {
+        type: "checkbox", "data-key": `on-${key}`, "aria-label": `Rule on: ${r.text}`,
+        onchange: (ev) => {
+          r.enabled = ev.target.checked;
+          editRev(state);
+        },
+      });
+      toggle.checked = r.enabled !== false;
+      return h(
+        "li",
+        { class: r.enabled === false ? "off" : null },
+        h(
+          "div",
+          { class: "edit-head" },
+          h("label", { class: "switch" }, toggle, h("span", { text: r.enabled === false ? "Off" : "On" })),
+          h("span", { class: "edit-text", text: r.text }),
+          isNew
+            ? h("button", {
+                class: "link", type: "button", text: "Delete", "data-key": `del-${key}`, "aria-label": `Delete rule: ${r.text}`,
+                onclick: () => {
+                  e.rules.splice(i, 1);
+                  editRev(state);
+                },
+              })
+            : null,
+        ),
+        h(
+          "ul",
+          { class: "cue-chips", "aria-label": "Phrases" },
+          ...(r.keywords || []).map((k, j) =>
+            h(
+              "li",
+              { class: "chip" },
+              h("span", { text: k }),
+              h("button", {
+                type: "button", class: "chip-x", text: "×", "data-key": `x-${key}-${j}`, "aria-label": `Remove phrase ${k}`,
+                onclick: () => {
+                  r.keywords.splice(j, 1);
+                  editRev(state);
+                },
+              }),
+            ),
+          ),
+        ),
+        h(
+          "div",
+          { class: "cue-add" },
+          input,
+          h("button", { class: "btn quiet", type: "button", text: "Add", "data-key": `cue-add-${key}`, onclick: () => addCue(state, r, input.value) }),
+        ),
+      );
+    }),
+  );
+}
+
+function bindRulesEditor(state) {
+  $("rules-edit").addEventListener("click", () => {
+    if (state.inCall) return;
+    const copy = (state.rules || []).map((r) => ({ ...r, keywords: [...(r.keywords || [])] }));
+    state.edit = { rules: copy, errors: [], rev: 0, busy: null };
+    state.rulesNote = "";
+    rerender();
+    $("new-rule-text").focus();
+  });
+  $("rules-cancel").addEventListener("click", () => {
+    state.edit = null;
+    rerender();
+    $("rules-edit").focus();
+  });
+  const addRule = () => {
+    const text = $("new-rule-text").value.trim().replace(/\s+/g, " ");
+    if (!text) {
+      state.edit.errors = ["Write the rule first, e.g. “We never pay anyone in gift cards.”"];
+    } else if (text.length > 200) {
+      state.edit.errors = ["A rule must be at most 200 characters."];
+    } else {
+      state.edit.rules.push({ text, tactics: [], keywords: [], enabled: true });
+      state.edit.errors = [];
+      $("new-rule-text").value = "";
+    }
+    editRev(state);
+    const inputs = $("rules-edit-list").querySelectorAll(".cue-add input");
+    if (!state.edit.errors.length && inputs.length) inputs[inputs.length - 1].focus();
+  };
+  $("new-rule-add").addEventListener("click", addRule);
+  $("new-rule-text").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      addRule();
+    }
+  });
+  $("rules-save").addEventListener("click", () => {
+    const e = state.edit;
+    if (!e || state.inCall) return;
+    const empty = e.rules.filter((r) => !(r.tactics || []).length && !(r.keywords || []).length);
+    if (empty.length) {
+      e.errors = empty.map((r) => `“${r.text}” needs at least one phrase to listen for.`);
+      return rerender();
+    }
+    const data = e.rules.map(({ _typing, ...r }) => r);
+    if (!send("save_rules", { data })) {
+      e.errors = ["Not connected to Callguard. Try again in a moment."];
+      return rerender();
+    }
+    e.busy = "save";
+    e.errors = [];
+    rerender();
+  });
+  $("rules-reset").addEventListener("click", () => {
+    const e = state.edit;
+    if (!e || state.inCall) return;
+    if (!resetArmed) {
+      $("rules-reset").textContent = "Click again to delete your changes and use the defaults";
+      resetArmed = setTimeout(() => {
+        resetArmed = null;
+        $("rules-reset").textContent = "Reset to default rules";
+      }, 5000);
+      return;
+    }
+    clearTimeout(resetArmed);
+    resetArmed = null;
+    $("rules-reset").textContent = "Reset to default rules";
+    if (!send("reset_rules")) {
+      e.errors = ["Not connected to Callguard. Try again in a moment."];
+      return rerender();
+    }
+    e.busy = "reset";
+    e.errors = [];
+    rerender();
+  });
+}
+
+/** Server answered a save or reset. */
+export function rulesSaved(state, data) {
+  const e = state.edit;
+  if (data && data.ok) {
+    const what = e && e.busy === "reset" ? "Back to the default rules." : "Saved. Applies from the next call.";
+    state.edit = null;
+    state.rulesNote = what;
+    return;
+  }
+  if (e) {
+    e.busy = null;
+    e.errors = (data && Array.isArray(data.errors) && data.errors.length ? data.errors : ["Couldn't save the rules."]).map(String);
+  }
 }
 
 // ---------------------------------------------------------------- after-call summary (T11 / UI-10)

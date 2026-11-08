@@ -61,3 +61,16 @@ def test_phrase_and_model_agreement_adds_five_points():
 def test_two_safe_signals_are_capped_at_thirty_points():
     assert score([ev("authority")], safe_signals=["callback_known_number",
                                                  "asks_in_writing"])[0] < 0.02
+
+
+def test_a_broken_rule_alone_shows_watch():
+    assert score([], ["custom_gift_cards"]) == (0.40, "watch")
+    conf, risk = score([ev("urgency")], ["r"])  # 0.14 + 0.15 is still under the floor
+    assert risk == "watch" and conf == 0.40
+
+
+def test_rule_floor_is_only_a_floor():
+    assert score([ev("urgency")], [], [])[1] == "low", "no rule, no floor"
+    conf, risk = score([], ["a", "b"])  # two cue-only rules: still Watch, never Danger
+    assert (conf, risk) == (0.40, "watch")
+    assert score([ev("authority"), ev("threat")], ["r"])[1] == "danger", "higher scores are untouched"

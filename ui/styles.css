@@ -295,6 +295,34 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .rule-badge { flex: none; padding: 1px 8px; border-radius: var(--r-pill); font-weight: 600; background: var(--danger-tint); color: var(--danger); white-space: nowrap; }
 .rule-badge.muted { background: var(--idle-tint); color: var(--text); }
 
+/* UI-14 (cues only): firm rules editor */
+.rule-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cues-line { color: var(--muted); overflow-wrap: anywhere; }
+.rules-tools { display: flex; flex-direction: column; gap: var(--s2); margin-top: var(--s2); }
+.rules-editor { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s2); }
+.rules-editor h2 { margin: 0; font-size: var(--t-key); }
+.rules-editor .note { padding: 0; }
+.edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); font-size: var(--t-meta); }
+.edit-list > li { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s2) var(--s3); border-radius: var(--r-card); background: var(--sunken); }
+.edit-list > li.off .edit-text { color: var(--muted); }
+.edit-head { display: flex; align-items: flex-start; gap: var(--s2); }
+.edit-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.switch { display: inline-flex; align-items: center; gap: 4px; flex: none; font-weight: 600; cursor: pointer; }
+.switch input { width: 16px; height: 16px; margin: 0; accent-color: var(--primary); }
+.cue-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.cue-chips:empty { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 8px; border-radius: var(--r-pill); background: var(--bg); border: 1px solid var(--line); max-width: 100%; }
+.chip span { overflow-wrap: anywhere; }
+.chip-x { border: 0; background: none; cursor: pointer; min-width: 24px; min-height: 24px; border-radius: var(--r-pill); color: var(--muted); font-size: 14px; line-height: 1; }
+.cue-add { display: flex; gap: var(--s2); }
+.cue-add input { flex: 1; min-width: 0; min-height: 36px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: var(--t-body); }
+.cue-add .btn { width: auto; flex: none; }
+.new-rule { display: flex; flex-direction: column; gap: 4px; font-size: var(--t-meta); font-weight: 600; }
+.rules-errors { list-style: none; margin: 0; padding: 0; color: var(--danger); font-size: var(--t-meta); }
+.rules-errors:empty { display: none; }
+.edit-btns { display: flex; gap: var(--s2); }
+.link.reset { align-self: flex-start; color: var(--muted); text-decoration: underline; }
+
 /* T11: after-call summary card */
 .sum-card { border: 1px solid var(--line); border-left: 4px solid var(--watch); border-radius: var(--r-card); padding: var(--s3) var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
 .lv-sum-danger .sum-card { border-left-color: var(--danger); }

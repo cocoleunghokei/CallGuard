@@ -158,3 +158,70 @@ def test_listening_true_during_fake_call():
             if m["type"] == "status" and statuses[-1] is False and len(statuses) > 1:
                 break
     assert statuses[0] is False and True in statuses and statuses[-1] is False
+
+
+# ---------------------------------------------------------------- SRV-14 (cues only): firm rules editing
+import json as _json
+
+from callguard.detection.rules import load_rules as _default_rules
+
+GIFT = {"text": "We never pay anyone in gift cards.", "tactics": [], "keywords": ["gift card"], "enabled": True}
+
+
+def idle_client(tmp_path):
+    hub = Hub()
+    rt = Runtime(hub, Pipeline(hub.broadcast, check_fn=lambda w, r: DANGER))
+    return TestClient(create_app(hub, ui_dir=tmp_path, tasks=[])), rt
+
+
+def test_save_rules_writes_custom_file_and_broadcasts(tmp_path, temp_rules_file):
+    client, rt = idle_client(tmp_path)
+    with client, client.websocket_connect("/ws") as ws:
+        assert next_of(ws, "rules")["source"] == "default"
+        ws.send_json({"type": "save_rules", "data": [*_default_rules(), GIFT]})
+        m = next_of(ws, "rules")
+        assert m["source"] == "custom"
+        assert m["data"][-1]["id"] == "custom_we_never_pay_anyone_in_gift_cards"
+        assert next_of(ws, "rules_saved")["data"] == {"ok": True}
+    saved = _json.loads(temp_rules_file.read_text())
+    assert saved[-1]["keywords"] == ["gift card"]
+    assert rt.pipeline.rules_source == "custom" and rt.pipeline.rules[-1]["keywords"] == ["gift card"]
+    assert egress.entries == [], "a rules save is never egress"
+
+
+def test_invalid_save_keeps_previous_rules(tmp_path, temp_rules_file):
+    client, rt = idle_client(tmp_path)
+    before = list(rt.pipeline.rules)
+    with client, client.websocket_connect("/ws") as ws:
+        ws.send_json({"type": "save_rules", "data": [{**GIFT, "keywords": []}]})
+        m = next_of(ws, "rules_saved")
+        assert m["data"]["ok"] is False and "at least one phrase" in m["data"]["errors"][0]
+    assert not temp_rules_file.exists()
+    assert rt.pipeline.rules == before
+
+
+def test_reset_rules_deletes_custom_file(tmp_path, temp_rules_file):
+    temp_rules_file.parent.mkdir(parents=True)
+    temp_rules_file.write_text(_json.dumps([{**GIFT, "id": "custom_gift"}]))
+    client, rt = idle_client(tmp_path)
+    assert rt.pipeline.rules_source == "custom"
+    with client, client.websocket_connect("/ws") as ws:
+        assert next_of(ws, "rules")["source"] == "custom"
+        ws.send_json({"type": "reset_rules"})
+        m = next_of(ws, "rules")
+        assert m["source"] == "default" and m["data"] == _default_rules()
+        assert next_of(ws, "rules_saved")["data"] == {"ok": True}
+    assert not temp_rules_file.exists()
+
+
+def test_rules_cannot_change_during_a_call(tmp_path, temp_rules_file):
+    client, rt, gate = make(tmp_path, [ch("do not tell anyone", 0)])
+    with client, client.websocket_connect("/ws") as ws:
+        next_of(ws, "check")
+        ws.send_json({"type": "save_rules", "data": [GIFT]})
+        m = next_of(ws, "rules_saved")
+        assert m["data"]["ok"] is False and "during a call" in m["data"]["errors"][0]
+        ws.send_json({"type": "reset_rules"})
+        assert next_of(ws, "rules_saved")["data"]["ok"] is False
+        gate.set()
+    assert not temp_rules_file.exists()

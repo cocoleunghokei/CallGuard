@@ -61,11 +61,39 @@ def test_model_exception_returns_valid_low_failure():
     def failing(*args, **kwargs):
         raise TimeoutError("private caller text")
 
-    result = check("caller: Read me the code.", load_rules(), post=failing)
+    result = check("caller: Can you confirm the meeting time?", load_rules(), post=failing)
     assert result["source"] == "fallback"
     assert result["risk"] == "low" and result["confidence"] == 0.0
     assert "failed" in result["reason"]
     assert "private caller text" not in str(result)
+
+
+def test_model_failure_still_hears_firm_cue_phrases():
+    def failing(*args, **kwargs):
+        raise TimeoutError("private caller text")
+
+    result = check("caller: Read me the code.", load_rules(), post=failing)
+    assert result["source"] == "fast"
+    assert result["risk"] == "watch"
+    assert result["rules_broken"] == ["it_never_asks_for_codes"]
+    assert result["evidence"] == [] and "private caller text" not in str(result)
+
+
+def test_cue_only_custom_rule_lifts_a_quiet_call_to_watch():
+    rules = [{"id": "custom_gift_cards", "text": "We never pay anyone in gift cards.",
+              "tactics": [], "keywords": ["gift card"]}]
+    window = "caller: Grab a few gift cards on your way in, I'll explain later."
+    data = reply([], identity=None)  # the model sees no tactic at all
+    result = check(window, rules, post=post_for(data))
+    assert result["source"] == "model"
+    assert result["rules_broken"] == ["custom_gift_cards"]
+    assert result["risk"] == "watch"
+
+
+def test_cue_said_by_employee_does_not_count():
+    rules = [{"id": "custom_gift_cards", "text": "No gift cards.", "tactics": [], "keywords": ["gift card"]}]
+    result = check("caller: Hi.\nyou: I bought a gift card.", rules, post=post_for(reply([])))
+    assert result["rules_broken"] == [] and result["risk"] == "low"
 
 
 def test_bad_json_returns_failure_not_exception():
