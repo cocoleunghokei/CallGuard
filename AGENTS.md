@@ -98,6 +98,8 @@ The code version is `callguard/shared/contracts.py`; this section is the readabl
 | `call` | `{"state": "started | ended"}` |
 | `rules` | `[Rule]`, sent on connect and after every save or reset. The message also has optional top-level `"source": "default | custom"`, `"never_search": ["…"]` (app-edited names, P1) and `"never_search_env": 2` (count from `.env`, P1) |
 | `rules_saved` | `{"ok": true}` or `{"ok": false, "errors": ["…"]}` (P1) |
+| `contacts` | `[{"id": "oit | manager", "role": "IT security (OIT)", "name": "…", "phone": "…"}]`, sent on connect and after every save (also a refused one, so the UI shows what is really saved). Empty strings when not set. Stored only in `~/Library/Application Support/Callguard/contacts.json` |
+| `contacts_saved` | `{"ok": true}` or `{"ok": false, "errors": ["…"]}` |
 
 UI → Server:
 
@@ -109,6 +111,7 @@ UI → Server:
 | `end_call` | | User ended the call in Callguard |
 | `save_rules` | `"data": [Rule]`, optional `"never_search": ["…"]` | P1: save the firm's custom rules and never-search list (refused during a call) |
 | `reset_rules` | | P1: delete the custom rules, back to defaults (keeps the never-search list) |
+| `save_contacts` | `"data": [Contact]` | Save the emergency contacts' name and phone (allowed during a call; roles are fixed) |
 
 ## 4. Commands
 

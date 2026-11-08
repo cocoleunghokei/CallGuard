@@ -14,6 +14,7 @@ from pathlib import Path
 
 import uvicorn
 
+from callguard.server import contacts
 from callguard.server.app import Hub, create_app
 from callguard.server.runtime import Runtime
 
@@ -51,6 +52,7 @@ def load_env() -> None:
 def build_app(args: argparse.Namespace):
     hub = Hub()
     runtime = Runtime(hub)
+    contacts.attach(hub)  # after Runtime, so contacts follow status/rules on connect
     tasks = [runtime.status_loop]
     if args.fake:
         async def fake_call(_hub: Hub) -> None:
