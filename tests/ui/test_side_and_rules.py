@@ -18,7 +18,7 @@ def test_s1_buttons_at_watch_only(ui_server, browser):
     r = Replay(page, ui_server, "s1_government")
     f = r.frame
     r.until(is_watch)
-    assert not f.is_visible("#actions"), "not at low"
+    assert f.is_visible("#actions") and f.is_disabled("#side-safe"), "buttons stay put; nothing to mark safe at low"
     r.one()
     assert f.is_visible("#side-colleague") and f.is_visible("#side-safe")
     f.click("#side-colleague")
@@ -28,7 +28,7 @@ def test_s1_buttons_at_watch_only(ui_server, browser):
     f.click("#side-safe")  # one click is enough outside danger
     assert r.sent()[-1] == {"type": "mark_safe"}
     assert f.inner_text("#hero-word") == "Low" and f.inner_text("#hero-words") == "Marked safe"
-    assert not f.is_visible("#actions")
+    assert f.is_disabled("#side-safe"), "already marked safe"
     page.close()
 
 

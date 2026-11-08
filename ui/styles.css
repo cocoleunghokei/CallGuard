@@ -293,7 +293,7 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 
 /* T11: after-call summary card */
 .sum-card { border: 1px solid var(--line); border-left: 4px solid var(--watch); border-radius: var(--r-card); padding: var(--s3) var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
-.lv-sum-danger .sum-card { border-left-color: var(--danger); }
+.sum-card.lv-sum-danger { border-left-color: var(--danger); }
 .sum-card p { margin: 0; }
 .sum-kind { font-size: var(--t-key); font-weight: 600; }
 .sum-line { font-size: var(--t-meta); color: var(--muted); }
@@ -315,9 +315,7 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
   position: sticky; top: 0; height: 100vh; width: 48px; overflow: hidden;
   display: flex; flex-direction: column; gap: var(--s1); padding: var(--s2) 6px;
   background: var(--sunken); border-right: 1px solid var(--line);
-  transition: width var(--dur);
 }
-.rail.open .rail-in { width: 188px; box-shadow: 8px 0 24px rgba(0, 0, 0, .18); }
 .tabs { display: flex; flex-direction: column; gap: var(--s1); }
 .rail-btn {
   position: relative; display: flex; align-items: center; gap: var(--s3);
@@ -326,17 +324,10 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 }
 .rail-btn:hover { background: var(--bg); color: var(--text); }
 .rail-btn[aria-selected="true"] { background: var(--bg); color: var(--text); font-weight: 600; }
-.rail-btn .lbl { opacity: 0; transition: opacity var(--dur); }
-.rail.open .rail-btn .lbl { opacity: 1; }
-#rail-toggle { margin-bottom: var(--s2); }
-#rail-toggle .lbl { font-weight: 700; color: var(--text); }
 .tab-dot { position: absolute; top: 6px; left: 24px; width: 8px; height: 8px; border-radius: 50%; background: var(--watch); box-shadow: 0 0 0 2px var(--sunken); }
 .tab-dot.lv-dot-danger { background: var(--danger); }
-/* Wide window: the open rail takes space instead of covering the panel. */
 @media (min-width: 701px) {
-  .rail.open { width: 188px; }
-  .rail.open .rail-in { box-shadow: none; }
-  .shell { max-width: 748px; margin: 0 auto; }
+  .shell { max-width: 608px; margin: 0 auto; }
   .shell .panel { max-width: none; margin: 0; border-left: 0; }
 }
 
@@ -360,3 +351,28 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .contact label { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: var(--s2); font-size: var(--t-meta); color: var(--muted); }
 .contact input { min-width: 0; font-size: var(--t-body); padding: 6px var(--s2); border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
 #contacts-msg.err { background: var(--danger-tint); color: var(--danger); }
+
+/* ================= fixed call layout: Latest, What to do, Insights =================
+   Reserved heights so new lines, a Say line or a phone number never push the
+   buttons around mid-call. */
+.tail-box { height: 128px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+.tail-box .said .line { -webkit-line-clamp: 2; }
+.tail-box .note { margin: auto 0; text-align: center; }
+.say { min-height: 82px; }
+.say .none { display: block; color: var(--muted); font-size: var(--t-body); padding-top: 2px; }
+.act { min-height: 84px; display: flex; flex-direction: column; justify-content: flex-start; gap: var(--s2); }
+.actions { margin-top: 0; }
+.btn.quiet:disabled { color: var(--muted); cursor: not-allowed; opacity: .6; }
+#why { min-height: 96px; }
+#why-none { padding: 0 var(--s1); }
+.said-all { max-height: none; }
+
+/* History tab */
+.history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.sum-time { font-size: var(--t-meta); color: var(--muted); }
+#tab-history-dot { background: var(--muted); }
+/* Steady heights: a heading link appearing, a 2-line Say, a long next step or a wrapped button label never shifts what's below. */
+#main .sec > h2 { min-height: 22px; align-items: center; }
+.say { min-height: 96px; }
+.act { min-height: 116px; }
+.side-btns .btn.quiet { height: 52px; min-height: 52px; padding: 6px 10px; line-height: 1.2; }

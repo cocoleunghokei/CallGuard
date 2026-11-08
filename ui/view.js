@@ -102,7 +102,7 @@ export function render(state) {
   renderWhy(state, lv);
   renderTodo(state, lv);
   renderSaid(state);
-  renderTail(state, lv);
+  renderTail(state);
   renderPrivacy(state);
   renderOverlay(state, lv);
   renderActions(state, lv);
@@ -175,9 +175,17 @@ function ruleText(state, id) {
 function renderWhy(state, lv) {
   const c = state.check;
   const fallback = !!(c && c.source === "fallback");
-  const show = state.ui.view === "panel" && !!c && (lv === "watch" || lv === "danger" || fallback);
-  $("why").hidden = !show;
-  if (!show) return;
+  $("why").hidden = !(state.inCall && state.ui.view === "panel");
+  const show = !!c && (lv === "watch" || lv === "danger" || fallback);
+  $("why-none").hidden = show;
+  for (const id of ["reason", "pills", "quote", "rules-broken"]) if (!show) $(id).hidden = true;
+  if (!show) {
+    $("pills").replaceChildren();
+    $("rules-broken").replaceChildren();
+    return;
+  }
+  $("pills").hidden = false;
+  $("rules-broken").hidden = false;
 
   const reason = $("reason");
   reason.textContent = c.reason || "";
@@ -220,8 +228,6 @@ function renderWhy(state, lv) {
   $("rules-broken").replaceChildren(
     ...(c.rules_broken || []).map((id) => h("li", {}, h("b", { text: "Firm rule: " }), ruleText(state, id))),
   );
-
-  $("open-said").hidden = quotes.length === 0;
 }
 
 // ---------------------------------------------------------------- what to do
@@ -268,13 +274,19 @@ function verifyInfo(state) {
 
 function renderTodo(state, lv) {
   const c = state.check;
-  const show = state.ui.view === "panel" && !!c && (lv === "watch" || lv === "danger");
-  $("todo").hidden = !show;
-  if (!show) return;
+  $("todo").hidden = !(state.inCall && state.ui.view === "panel");
+  const show = !!c && (lv === "watch" || lv === "danger");
 
-  const say = sayThis(c.tactics);
-  $("say").hidden = !say;
+  const say = show ? sayThis(c.tactics) : "";
+  $("say-text").hidden = !say;
   $("say-text").textContent = say || "";
+  $("say-none").hidden = !!say;
+  if (!show) {
+    $("num").hidden = true;
+    $("verify-note").hidden = true;
+    $("next-step").textContent = lv === "low" && state.markedSafe ? "Marked safe. Callguard keeps listening." : "No action needed. Callguard keeps listening.";
+    return;
+  }
 
   const vi = verifyInfo(state);
   $("num").hidden = !vi.phone;
@@ -289,23 +301,29 @@ function renderTodo(state, lv) {
 
 // ---------------------------------------------------------------- flagged lines ("See what they said")
 
+function markedLine(text, quotes) {
+  const q = quotes.find((x) => text.includes(x));
+  if (!q) return h("span", { class: "line", text });
+  const at = text.indexOf(q);
+  return h("span", { class: "line" }, text.slice(0, at), h("mark", { text: q }), text.slice(at + q.length));
+}
+
 function renderSaid(state) {
   const c = state.check;
-  if (state.ui.view === "said" && !(c && state.inCall)) state.ui.view = "panel";
+  if (state.ui.view === "said" && !state.inCall) state.ui.view = "panel";
   const show = state.ui.view === "said";
   $("said-view").hidden = !show;
   if (!show) return;
 
-  // One row per distinct quote, in evidence order.
+  // Flagged: one row per distinct caller quote, in evidence order.
   const byQuote = new Map();
-  for (const e of callerQuotes(c)) {
+  for (const e of c ? callerQuotes(c) : []) {
     if (!byQuote.has(e.quote)) byQuote.set(e.quote, []);
     byQuote.get(e.quote).push(e.tactic);
   }
-  const broken = new Set(c.rules_broken || []);
+  const broken = new Set((c && c.rules_broken) || []);
   const rows = [...byQuote].map(([quote, tactics]) => {
-    // Show the whole line around the quote while it is still in the last 3 lines.
-    const line = state.tail.find((t) => t.speaker === "caller" && t.text.includes(quote));
+    const line = state.transcript.find((t) => t.speaker === "caller" && t.text.includes(quote));
     const text = line ? line.text : quote;
     const at = text.indexOf(quote);
     const p = h("p", {}, text.slice(0, at), h("mark", { text: quote }), text.slice(at + quote.length));
@@ -318,7 +336,17 @@ function renderSaid(state) {
     );
     return h("li", {}, h("span", { class: "who", text: "Caller" }), h("div", {}, p, tags));
   });
+  $("flagged-h").hidden = rows.length === 0;
   $("flagged").replaceChildren(...rows);
+
+  // Everything said this call, oldest first, caller quotes marked.
+  const quotes = [...byQuote.keys()];
+  $("said-latest").replaceChildren(
+    ...state.transcript.map((t) => {
+      const you = t.speaker === "you";
+      return h("li", {}, h("span", { class: you ? "who you" : "who", text: you ? "You" : "Caller" }), you ? h("span", { class: "line", text: t.text }) : markedLine(t.text, quotes));
+    }),
+  );
 }
 
 // ---------------------------------------------------------------- E latest lines
@@ -330,13 +358,11 @@ function tailItems(state) {
   });
 }
 
-function renderTail(state, lv) {
+function renderTail(state) {
   $("tail").replaceChildren(...tailItems(state));
-  $("said-latest").replaceChildren(...tailItems(state));
-  $("said-latest-h").hidden = state.tail.length === 0;
-  // At watch and danger the Why / What to do sections take this space.
-  const quiet = lv === "low" || (lv !== "idle" && $("why").hidden);
-  $("latest").hidden = !state.inCall || state.tail.length === 0 || state.ui.view !== "panel" || !quiet;
+  $("tail-empty").hidden = state.tail.length > 0;
+  $("latest").hidden = !state.inCall || state.ui.view !== "panel";
+  $("open-said").hidden = state.transcript.length === 0;
   $("end-call").hidden = !state.inCall;
 }
 
@@ -344,7 +370,7 @@ function renderTail(state, lv) {
 function clearCallDom() {
   for (const id of ["ov-ask", "cb-number", "cb-src", "ov-toast", "ov-report"]) $(id).textContent = "";
   $("safe-input").value = "";
-  for (const id of ["pills", "quote", "rules-broken", "flagged", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
+  for (const id of ["pills", "quote", "rules-broken", "flagged", "said-latest", "tail", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
   for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step", "ov-claim", "ov-verify", "ov-say-text", "ov-next"]) $(id).textContent = "";
   $("reason").removeAttribute("title");
 }
@@ -748,8 +774,8 @@ function bindSideButtons(state) {
 }
 
 function renderActions(state, lv) {
-  const show = state.inCall && state.ui.view === "panel" && lv === "watch";
-  $("actions").hidden = !show;
+  // Always on screen during a call, so the buttons never move; "Mark as safe" only means something at Watch.
+  $("side-safe").disabled = !(state.inCall && (lv === "watch" || lv === "danger") && !state.markedSafe);
   if (!state.inCall) {
     $("panel-toast").hidden = true;
     $("panel-toast").replaceChildren();
@@ -783,13 +809,9 @@ function renderFirmRules(state) {
 
 // ---------------------------------------------------------------- sidebar tabs
 
-const TABS = { call: "main", rules: "firm-rules", contacts: "contacts" };
+const TABS = { call: "main", rules: "firm-rules", history: "history", contacts: "contacts" };
 
 function renderTabs(state, lv) {
-  const rail = $("rail");
-  rail.classList.toggle("open", state.railOpen);
-  $("rail-toggle").setAttribute("aria-expanded", String(state.railOpen));
-  $("rail-toggle").setAttribute("aria-label", state.railOpen ? "Hide section names" : "Show section names");
   for (const [tab, panel] of Object.entries(TABS)) {
     const on = state.tab === tab;
     const btn = $(`tab-${tab}`);
@@ -808,14 +830,9 @@ function renderTabs(state, lv) {
 }
 
 function bindTabs(state) {
-  $("rail-toggle").addEventListener("click", () => {
-    state.railOpen = !state.railOpen;
-    rerender();
-  });
   const order = Object.keys(TABS);
   const pick = (tab) => {
     state.tab = tab;
-    if (!window.matchMedia("(min-width: 701px)").matches) state.railOpen = false; // narrow: the open rail covers the panel
     rerender();
   };
   for (const tab of order) {
@@ -948,35 +965,54 @@ export function summaryText(sum) {
 }
 
 function bindSummary(state) {
-  $("sum-dismiss").addEventListener("click", () => {
-    state.summary = null; // gone from memory, not just hidden
-    rerender();
-  });
-  $("sum-copy").addEventListener("click", async () => {
-    if (!state.summary) return;
-    try {
-      await navigator.clipboard.writeText(summaryText(state.summary));
-      $("sum-copy").textContent = "Copied";
-    } catch {
-      $("sum-copy").textContent = "Copy failed";
+  $("history-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const sum = state.history.find((x) => x.id === id);
+    if (!sum) return;
+    if (btn.dataset.act === "remove") {
+      state.history = state.history.filter((x) => x.id !== id); // gone from memory, not just hidden
+      rerender();
+      return;
     }
-    setTimeout(() => ($("sum-copy").textContent = "Copy summary"), 1500);
+    try {
+      await navigator.clipboard.writeText(summaryText(sum));
+      btn.textContent = "Copied";
+    } catch {
+      btn.textContent = "Copy failed";
+    }
+    setTimeout(() => (btn.textContent = "Copy summary"), 1500);
   });
 }
 
+let historyDrawn = null; // redraw only on change, so a "Copied" label isn't wiped by other messages
+
 function renderSummary(state) {
-  const sum = state.summary;
-  const show = !!sum && !state.inCall;
-  $("summary").hidden = !show;
-  if (!show) {
-    for (const id of ["sum-pills", "sum-rules"]) $(id).replaceChildren();
-    for (const id of ["sum-kind", "sum-line"]) $(id).textContent = "";
-    return;
-  }
-  $("summary").className = `sec summary lv-sum-${sum.peak}`;
-  $("sum-kind").textContent = callKind(sum.tactics);
-  const level = sum.peak === "danger" ? "Reached Danger" : "Reached Watch";
-  $("sum-line").textContent = [level, signsCount(sum.tactics.length), sum.outcome ? OUTCOME[sum.outcome] : null].filter(Boolean).join(" · ");
-  $("sum-pills").replaceChildren(...sum.tactics.map((t) => h("span", { class: "pill", title: plainWords(t), text: shortWords(t) })));
-  $("sum-rules").replaceChildren(...sum.rules.map((text) => h("li", {}, h("b", { text: "Firm rule: " }), text)));
+  if (state.tab === "history") state.historyUnseen = false;
+  $("tab-history-dot").hidden = !state.historyUnseen;
+  $("history-empty").hidden = state.history.length > 0;
+  const sig = state.history.map((x) => x.id).join(",");
+  if (sig === historyDrawn) return;
+  historyDrawn = sig;
+  $("history-list").replaceChildren(
+    ...state.history.map((sum) => {
+      const level = sum.peak === "danger" ? "Reached Danger" : "Reached Watch";
+      return h(
+        "li",
+        { class: `sum-card lv-sum-${sum.peak}` },
+        h("p", { class: "sum-time", text: `Call ended ${sum.ended}` }),
+        h("p", { class: "sum-kind", text: callKind(sum.tactics) }),
+        h("p", { class: "sum-line", text: [level, signsCount(sum.tactics.length), sum.outcome ? OUTCOME[sum.outcome] : null].filter(Boolean).join(" · ") }),
+        sum.tactics.length ? h("div", { class: "pills" }, ...sum.tactics.map((t) => h("span", { class: "pill", title: plainWords(t), text: shortWords(t) }))) : null,
+        sum.rules.length ? h("ul", { class: "rules" }, ...sum.rules.map((text) => h("li", {}, h("b", { text: "Firm rule: " }), text))) : null,
+        h(
+          "div",
+          { class: "sum-btns" },
+          h("button", { class: "pill-btn", type: "button", "data-act": "copy", "data-id": sum.id, text: "Copy summary" }),
+          h("button", { class: "pill-btn", type: "button", "data-act": "remove", "data-id": sum.id, text: "Remove" }),
+        ),
+      );
+    }),
+  );
 }

@@ -14,29 +14,29 @@
     <symbol id="i-watch" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 4.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></symbol>
     <symbol id="i-danger" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></symbol>
     <symbol id="i-lock-laptop" viewBox="0 0 24 24"><path d="M4 16V7a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7v9M2 18.5h20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="10.5" width="6" height="4.5" rx="1" fill="currentColor"/><path d="M10.3 10.5V9.3a1.7 1.7 0 0 1 3.4 0v1.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
-    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="i-call" viewBox="0 0 24 24"><path d="M6.6 3.5h2.6l1.4 4.2-2 1.4a12 12 0 0 0 6.3 6.3l1.4-2 4.2 1.4v2.6a2 2 0 0 1-2.1 2A16.5 16.5 0 0 1 4.6 5.6a2 2 0 0 1 2-2.1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
     <symbol id="i-rules" viewBox="0 0 24 24"><path d="M6 3.5h9l3.5 3.5v13.5H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 11h6.5M9 14.5h6.5M9 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-contacts" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v3.5H8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8v4.5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </svg>
 
   <div class="shell">
-  <!-- Sidebar: Call / Firm rules / Emergency contacts. Collapsed to icons by default. -->
+  <!-- Sidebar: icons only (names are tooltips and screen-reader labels). -->
   <nav id="rail" class="rail" aria-label="Callguard sections">
     <div class="rail-in">
-      <button id="rail-toggle" class="rail-btn" type="button" aria-expanded="false" aria-label="Show section names">
-        <svg width="20" height="20"><use href="#i-menu"/></svg><span class="lbl">Callguard</span>
-      </button>
       <div role="tablist" aria-orientation="vertical" class="tabs">
         <button id="tab-call" class="rail-btn" role="tab" type="button" data-tab="call" aria-selected="true" aria-controls="main" title="Call">
-          <svg width="20" height="20"><use href="#i-call"/></svg><span class="lbl">Call</span><span id="tab-call-dot" class="tab-dot" hidden></span>
+          <svg width="20" height="20"><use href="#i-call"/></svg><span class="lbl sr-only">Call</span><span id="tab-call-dot" class="tab-dot" hidden></span>
         </button>
         <button id="tab-rules" class="rail-btn" role="tab" type="button" data-tab="rules" aria-selected="false" aria-controls="firm-rules" title="Firm rules">
-          <svg width="20" height="20"><use href="#i-rules"/></svg><span class="lbl">Firm rules</span><span id="tab-rules-dot" class="tab-dot lv-dot-danger" hidden></span>
+          <svg width="20" height="20"><use href="#i-rules"/></svg><span class="lbl sr-only">Firm rules</span><span id="tab-rules-dot" class="tab-dot lv-dot-danger" hidden></span>
+        </button>
+        <button id="tab-history" class="rail-btn" role="tab" type="button" data-tab="history" aria-selected="false" aria-controls="history" title="History">
+          <svg width="20" height="20"><use href="#i-history"/></svg><span class="lbl sr-only">History</span><span id="tab-history-dot" class="tab-dot" hidden></span>
         </button>
         <button id="tab-contacts" class="rail-btn" role="tab" type="button" data-tab="contacts" aria-selected="false" aria-controls="contacts" title="Emergency contacts">
-          <svg width="20" height="20"><use href="#i-contacts"/></svg><span class="lbl">Emergency contacts</span>
+          <svg width="20" height="20"><use href="#i-contacts"/></svg><span class="lbl sr-only">Emergency contacts</span>
         </button>
       </div>
     </div>
@@ -72,65 +72,59 @@
         <button id="show-warning" class="hero-btn" type="button" hidden>Show the warning</button>
       </section>
 
-      <!-- After-call summary (T11 / UI-10). No transcript, no quotes. -->
-      <section id="summary" class="sec summary" hidden aria-labelledby="summary-h">
-        <h2 id="summary-h">Last call</h2>
-        <div class="sum-card">
-          <p id="sum-kind" class="sum-kind"></p>
-          <p id="sum-line" class="sum-line"></p>
-          <div id="sum-pills" class="pills"></div>
-          <ul id="sum-rules" class="rules"></ul>
-          <div class="sum-btns">
-            <button id="sum-copy" class="pill-btn" type="button">Copy summary</button>
-            <button id="sum-dismiss" class="pill-btn" type="button">Dismiss</button>
-          </div>
-          <p class="note">Only this summary is kept, in memory, until you dismiss it. Nothing the caller said is kept.</p>
+
+      <!-- Fixed call layout (Coco, Sat): Latest, What to do, Insights. During a call
+           all three are always on screen with reserved space, so nothing jumps. -->
+
+      <!-- 1. Latest lines (T4) -->
+      <section id="latest" class="sec" hidden aria-labelledby="latest-h">
+        <h2><span id="latest-h">Latest</span><button id="open-said" class="link" type="button" hidden>View full transcript ›</button></h2>
+        <div class="tail-box">
+          <ol id="tail" class="said"></ol>
+          <p id="tail-empty" class="note">Waiting for the first words…</p>
         </div>
       </section>
 
-      <!-- D: why -->
+      <!-- 2. What to do: say, act, buttons -->
+      <section id="todo" class="sec" hidden aria-labelledby="todo-h">
+        <h2 id="todo-h">What to do</h2>
+        <div id="say" class="say"><small>Say</small><q id="say-text" hidden></q><span id="say-none" class="none">Nothing yet. Keep listening.</span></div>
+        <div class="act">
+          <div id="num" class="num" hidden>
+            <div><small id="num-src"></small><b id="num-phone"></b></div>
+            <button id="copy" class="pill-btn" type="button">Copy</button>
+          </div>
+          <p id="verify-note" class="note" hidden></p>
+          <p id="next-step" class="next"></p>
+        </div>
+        <!-- G: buttons (T10 / UI-9). Outside danger, one click is enough. -->
+        <div id="actions" class="actions">
+          <div class="side-btns">
+            <button id="side-colleague" class="btn quiet" type="button">Ask a colleague for help</button>
+            <button id="side-safe" class="btn quiet" type="button">Mark as safe</button>
+          </div>
+          <p id="panel-toast" class="toast" role="status" hidden></p>
+        </div>
+      </section>
+
+      <!-- 3. Insights: why it looks like a script -->
       <section id="why" class="sec" hidden aria-labelledby="why-h">
-        <h2 id="why-h">Why <button id="open-said" class="link" type="button">See what they said ›</button></h2>
+        <h2 id="why-h">Insights</h2>
+        <p id="why-none" class="note">No warning signs so far.</p>
         <p id="reason" class="reason" tabindex="0"></p>
         <div id="pills" class="pills"></div>
         <blockquote id="quote" class="quote" hidden></blockquote>
         <ul id="rules-broken" class="rules"></ul>
       </section>
 
-      <!-- What to do -->
-      <section id="todo" class="sec" hidden aria-labelledby="todo-h">
-        <h2 id="todo-h">What to do</h2>
-        <div id="say" class="say" hidden><small>Say</small><q id="say-text"></q></div>
-        <div id="num" class="num" hidden>
-          <div><small id="num-src"></small><b id="num-phone"></b></div>
-          <button id="copy" class="pill-btn" type="button">Copy</button>
-        </div>
-        <p id="verify-note" class="note" hidden></p>
-        <p id="next-step" class="next"></p>
-      </section>
-
-      <!-- G: actions at Watch (T10 / UI-9). Outside danger, one click is enough. -->
-      <div id="actions" class="actions" hidden>
-        <div class="side-btns">
-          <button id="side-colleague" class="btn quiet" type="button">Ask a colleague for help</button>
-          <button id="side-safe" class="btn quiet" type="button">Mark as safe</button>
-        </div>
-        <p id="panel-toast" class="toast" role="status" hidden></p>
-      </div>
-
-      <!-- "See what they said": flagged lines for this call -->
+      <!-- Full transcript for this call: memory only, deleted when the call ends -->
       <section id="said-view" class="sec" hidden aria-labelledby="said-h">
-        <h2 id="said-h"><button id="close-said" class="link back" type="button">‹ Back</button><span>Flagged lines this call</span></h2>
+        <h2 id="said-h"><button id="close-said" class="link back" type="button">‹ Back</button><span>Full transcript</span></h2>
+        <h2 id="flagged-h">Flagged lines</h2>
         <ol id="flagged" class="said flagged"></ol>
-        <h2 id="said-latest-h">Latest</h2>
-        <ol id="said-latest" class="said"></ol>
-        <p class="note">Deleted when the call ends. Never saved or sent.</p>
-      </section>
-
-      <!-- E: latest lines (T4) -->
-      <section id="latest" class="sec" hidden>
-        <h2>Latest</h2>
-        <ol id="tail" class="said"></ol>
+        <h2 id="said-latest-h">Everything said this call</h2>
+        <ol id="said-latest" class="said said-all"></ol>
+        <p class="note">Kept in memory only. Deleted when the call ends. Never saved or sent.</p>
       </section>
     </main>
 
@@ -140,6 +134,14 @@
       <p id="firm-rules-empty" class="note" hidden>No rules loaded yet.</p>
       <ul id="firm-rules-list" class="firm-list"></ul>
       <p id="firm-rules-src" class="note"></p>
+    </section>
+
+    <!-- History tab (T11 / UI-10): one card per flagged call this session. No transcript, no quotes. -->
+    <section id="history" class="body tabview" role="tabpanel" aria-labelledby="history-h" hidden>
+      <h2 id="history-h" class="view-h">History</h2>
+      <p id="history-empty" class="note">No flagged calls yet. Calls that reach Watch or Danger show here.</p>
+      <ol id="history-list" class="history"></ol>
+      <p class="note">Kept in memory until you remove a card or close Callguard. Nothing the caller said is kept.</p>
     </section>
 
     <!-- Emergency contacts tab: who to call when a call feels wrong. Set on this laptop. -->

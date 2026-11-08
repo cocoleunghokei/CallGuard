@@ -4,14 +4,16 @@
 // Handlers update `state`; view.js draws it. Messages come from the real
 // Server, or from the replay harness via ?ws=fake (ui/dev/replay.html).
 //
-// Privacy: transcript text lives only in state.tail (last 3 lines) and in the
-// current check's evidence quotes. Both are deleted on `call ended`.
+// Privacy: transcript text lives only in memory: state.tail (last 3 lines),
+// state.transcript (this call, for "View full transcript") and the current
+// check's evidence quotes. All are deleted on `call ended`; never stored or sent.
 
 import { connect } from "./ws.js";
 import { render, bindView, VERIFY_WAIT_MS } from "./view.js";
 import { loadContacts } from "./contacts.js";
 
 const TAIL_LINES = 3;
+const TRANSCRIPT_MAX = 600; // ~30 min of 3 s chunks
 
 export const state = {
   connected: false,
@@ -26,9 +28,14 @@ export const state = {
   // After-call summary (T11). During a call: peak level, tactics seen, last way out.
   // Tactic ids and counts only, never transcript or quotes. Becomes `summary` on call end.
   callLog: { peak: "low", tactics: [], outcome: null },
-  summary: null, // {peak, tactics, outcome, rules: [rule text]} until dismissed or the next call
+  // History tab: one summary per flagged call this session, newest first.
+  // {id, ended: "HH:MM", peak, tactics, outcome, rules: [rule text]}; memory only, removed one by one.
+  history: [],
+  historyUnseen: false, // dot on the History tab until it is opened
   inCall: false,
   tail: [], // last TAIL_LINES TranscriptChunks, current call only
+  // Whole call, for "View full transcript" (Coco, Sat). Memory only, capped, deleted on call end.
+  transcript: [],
   check: null, // latest ScamCheck
   verify: null,
   gate: null, // {state, reason, release_in, until} while not "off"; `until` = local ms when the countdown ends
@@ -46,9 +53,8 @@ export const state = {
   overlay: { open: false, opens: 0, seen: [], mode: "warning" },
   calls: 0, // calls started this session; tags egress entries "This call" vs "Earlier today"
   ui: { expanded: null, view: "panel", egressOpen: false, egressEntry: null }, // open pill, view, egress panel, open entry seq
-  // Sidebar: which tab is shown and whether the rail shows names. Not reset by calls.
-  tab: "call", // "call" | "rules" | "contacts"
-  railOpen: false,
+  // Sidebar: which tab is shown. Not reset by calls.
+  tab: "call", // "call" | "rules" | "history" | "contacts"
   contacts: loadContacts(), // [{id, role, name, phone}], set on this laptop, never sent
   editContact: null, // id of the contact being edited
   contactsNote: null, // {ok, text} after a save, from `contacts_saved`
@@ -80,7 +86,11 @@ const handlers = {
   call(data) {
     const s = data && data.state;
     if (s !== "started" && s !== "ended") return;
-    state.summary = s === "ended" && state.inCall ? summarize() : null;
+    const sum = s === "ended" && state.inCall ? summarize() : null;
+    if (sum) {
+      state.history.unshift(sum);
+      if (state.tab !== "history") state.historyUnseen = true;
+    }
     wipeCall();
     state.inCall = s === "started";
     if (state.inCall) state.calls += 1;
@@ -88,6 +98,8 @@ const handlers = {
   transcript(data) {
     if (!data || typeof data.text !== "string") return;
     state.tail.push(data);
+    state.transcript.push(data);
+    if (state.transcript.length > TRANSCRIPT_MAX) state.transcript.splice(0, state.transcript.length - TRANSCRIPT_MAX);
     if (state.tail.length > TAIL_LINES) state.tail.splice(0, state.tail.length - TAIL_LINES);
   },
   check(data) {
@@ -161,7 +173,10 @@ function summarize() {
   const log = state.callLog;
   if (log.peak !== "watch" && log.peak !== "danger") return null;
   const hit = new Set(Object.keys(state.ruleHits));
+  const now = new Date();
   return {
+    id: `${now.getTime()}-${state.calls}`,
+    ended: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     peak: log.peak,
     tactics: [...log.tactics],
     outcome: log.outcome,
@@ -172,6 +187,7 @@ function summarize() {
 function wipeCall() {
   state.tail.length = 0;
   state.check = null;
+  state.transcript.length = 0;
   state.verify = null;
   state.verifyWait = null;
   state.gate = null;
