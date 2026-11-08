@@ -209,6 +209,16 @@ body{
 .banner{font-size:22px;font-weight:400;color:var(--ink);text-align:center}
 .banner b{font-weight:500;color:var(--plum)}
 
+.stats.four{grid-template-columns:repeat(4,1fr);bottom:100px}
+.stats.four .big{font-size:68px}
+.stats.four .big .u{font-size:34px}
+.stat.market{background:linear-gradient(120deg,rgba(201,181,247,.35),rgba(242,154,212,.3) 55%,rgba(142,194,255,.35));border-color:rgba(185,163,243,.6)}
+.donut.big2{position:absolute;left:110px;right:110px;top:330px;bottom:90px;gap:80px}
+.donut.big2 .ring{width:400px;height:400px}
+.donut.big2 .center b{font-size:80px}
+.donut.big2 .center span{font-size:18px}
+.donut.big2 .legend div{font-size:20px;padding:10px 18px}
+.donut.big2 .legend .tot{font-size:17px;max-width:460px;padding-top:6px}
 /* s10 moat */
 .s10 .iris{position:absolute;inset:0}
 .s10 .inner{position:absolute;inset:0;padding:84px 110px;z-index:1}
@@ -413,48 +423,45 @@ body{
 </section>
 
 <!-- 9 -->
-<section class="slide s9" data-name="business">
+<section class="slide s9" data-name="pay">
   <div class="pad">
-    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Would they pay · What it costs</span></div>
-    <h2 class="h h3 plum" style="font-size:52px;margin-top:40px">One stopped scam pays for 34 years of CallGuard.</h2>
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Why firms will pay</span></div>
+    <h2 class="h h2" style="margin-top:56px"><span class="ink">One stopped scam</span><br><span class="plum">pays for 34 years of CallGuard.</span></h2>
   </div>
-  <div class="cols">
-    <div class="col">
-      <div class="colhead">Would they pay?</div>
-      <div class="rows">
-        <div class="card"><div><h4>Average scam loss</h4><p>per fake-vendor / fake-boss complaint · FBI IC3 2025</p></div><span class="v mono">$123,000</span></div>
-        <div class="card"><div><h4>What insurance pays back</h4><p>policies often exclude or cap scams where an employee sent the money</p></div><span class="v" style="font-size:30px">Often $0</span></div>
-        <div class="card"><div><h4>CallGuard, 20 people</h4><p>$10–15 per seat per month</p></div><span class="v mono">$2.4–3.6K<span style="font-size:22px">/yr</span></span></div>
-        <div class="card market"><div><h4>What we can earn</h4><p>~30K US firms with 10+ staff × ~20 seats × $15/mo</p></div><span class="v mono">$100M+<span style="font-size:22px">/yr</span></span></div>
-      </div>
+  <div class="stats four">
+    <div class="card stat"><div class="big mono">$123<span class="u">K</span></div><div class="small">average loss per fake-vendor / fake-boss scam</div><div class="src">FBI IC3 2025</div></div>
+    <div class="card stat"><div class="big">Often $0</div><div class="small">paid back by insurance. Policies often exclude scams where an employee sent the money</div><div class="src">Gallagher, Aon</div></div>
+    <div class="card stat"><div class="big mono">$3.6<span class="u">K/yr</span></div><div class="small">CallGuard for a 20-person firm, at $15 per seat per month</div><div class="src">Target price, $10–15</div></div>
+    <div class="card stat market"><div class="big mono">$100<span class="u">M+/yr</span></div><div class="small">what we can earn: ~30K US firms with 10+ staff × ~20 seats</div><div class="src">Rounded estimate</div></div>
+  </div>
+  <aside class="notes">“Would a firm pay? The average business scam reported to the FBI last year cost a hundred and twenty-three thousand dollars. Insurance often won't cover it, and client money is the firm's to pay back. CallGuard for 20 people is thirty-six hundred dollars a year. One stopped scam pays for thirty-four years. And across the thirty thousand bigger firms alone, that's over a hundred million dollars a year we can earn.”</aside>
+</section>
+
+<!-- 9b -->
+<section class="slide s9b" data-name="margin">
+  <div class="pad">
+    <div class="labels"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#cg-mark"/></svg>CallGuard</span><span>Cost to run and margin</span></div>
+    <h2 class="h h2" style="margin-top:56px"><span class="ink">Almost free to run.</span><br><span class="plum">~95% margin, even at $10 a seat.</span></h2>
+  </div>
+  <div class="donut big2">
+    <div class="ring">
+      <svg viewBox="0 0 400 400" aria-label="Cost breakdown of a $10 seat">
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#efeef2" stroke-width="64"/>
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2730" stroke-width="64" stroke-dasharray="899.4 942.5" transform="rotate(-90 200 200)"/>
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#e95bb8" stroke-width="64" stroke-dasharray="28.3 942.5" stroke-dashoffset="-899.4" transform="rotate(-90 200 200)"/>
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#7fb4f6" stroke-width="64" stroke-dasharray="15.1 942.5" stroke-dashoffset="-927.7" transform="rotate(-90 200 200)"/>
+      </svg>
+      <div class="center"><b class="mono">95%</b><span>margin per seat</span></div>
     </div>
-    <div class="col">
-      <div class="colhead">What it costs to run</div>
-      <div class="donut">
-        <div class="ring">
-          <svg viewBox="0 0 400 400" aria-label="Cost breakdown of a $10 seat">
-            <circle cx="200" cy="200" r="150" fill="none" stroke="#efeef2" stroke-width="64"/>
-            <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2730" stroke-width="64"
-              stroke-dasharray="899.4 942.5" transform="rotate(-90 200 200)"/>
-            <circle cx="200" cy="200" r="150" fill="none" stroke="#e95bb8" stroke-width="64"
-              stroke-dasharray="28.3 942.5" stroke-dashoffset="-899.4" transform="rotate(-90 200 200)"/>
-            <circle cx="200" cy="200" r="150" fill="none" stroke="#7fb4f6" stroke-width="64"
-              stroke-dasharray="15.1 942.5" stroke-dashoffset="-927.7" transform="rotate(-90 200 200)"/>
-          </svg>
-          <div class="center"><b class="mono">95%</b><span>margin per seat</span></div>
-        </div>
-        <div class="legend">
-          <div><i style="background:#2a2730"></i>Margin · $9.54</div>
-          <div><i style="background:#e95bb8"></i>Payment fees · ~$0.30</div>
-          <div><i style="background:#7fb4f6"></i>Search · $0.16</div>
-          <div><i style="background:#efeef2;border:1px solid #d8d6de"></i>AI model + transcription · $0</div>
-          <div class="tot">Per seat, per month. Search = 20 suspicious calls × $0.008</div>
-        </div>
-      </div>
-      <div class="banner">Almost free to run: <b>~95% margin even at $10 a seat</b></div>
+    <div class="legend">
+      <div><i style="background:#2a2730"></i>Margin · $9.54</div>
+      <div><i style="background:#e95bb8"></i>Payment fees · ~$0.30</div>
+      <div><i style="background:#7fb4f6"></i>Search · $0.16</div>
+      <div><i style="background:#efeef2;border:1px solid #d8d6de"></i>AI model + transcription · $0, runs on the laptop</div>
+      <div class="tot">Per seat, per month, at $10. Search = 20 suspicious calls × $0.008. A cloud AI tool pays for every minute of every call.</div>
     </div>
   </div>
-  <aside class="notes">“Would a firm pay? The average business scam reported to the FBI last year cost a hundred and twenty-three thousand dollars. Insurance often won't cover it, and client money is the firm's to pay back. CallGuard for 20 people is under four thousand dollars a year. One stopped scam pays for over thirty years. And because the AI runs on the laptop, we pay almost nothing per call. Even at ten dollars a seat, we keep about ninety-five percent. And across the thirty thousand bigger firms alone, that's over a hundred million dollars a year we can earn.”</aside>
+  <aside class="notes">“And it's cheap to run. The AI and the transcription run on the laptop, so we pay nothing per call, just one search when a call looks suspicious, less than a cent. A cloud tool pays for every minute of every call. Even at ten dollars a seat, we keep about ninety-five percent.”</aside>
 </section>
 
 <!-- 10 -->
