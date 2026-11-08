@@ -68,6 +68,11 @@ def score(evidence: Iterable[Evidence], rules_broken: Iterable[str] = (),
                     and item.get("tactic") in tactics]
     phrase_only = bool(caller_items) and all(item.get("strength") == "phrase"
                                               for item in caller_items)  # G3
+    # G6: a clear ask that breaks a firm rule is danger on its own, unless the
+    # caller also gave a safe signal (Coco's call, Sun: S2/S3/S4 stuck at watch).
+    clear_ask = any(strengths[t] >= STRENGTH["clear"] for t in tactics & ASK_TACTICS)
+    if clear_ask and rules and not safe and not phrase_only:
+        confidence = max(confidence, 0.75)
     if confidence >= 0.75 and (only_soft or not has_teeth or phrase_only):
         confidence = 0.74
     risk: Risk = "danger" if confidence >= 0.75 else "watch" if confidence >= 0.40 else "low"
