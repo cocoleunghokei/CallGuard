@@ -307,3 +307,59 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 /* UI-16: recent public report line on the warning */
 .ov-report { margin: 0; font-size: var(--t-meta); color: var(--text); }
 .ov-report b { color: var(--danger); }
+
+/* Header: one word, "Offline" only when it matters */
+#hero-sub:has(#hero-words:empty):has(.bar:empty) { display: none; }
+
+/* ================= sidebar (Call / Firm rules / Emergency contacts) ================= */
+.shell { min-height: 100%; display: flex; }
+.shell > .panel { flex: 1; min-width: 0; }
+.rail { flex: none; width: 48px; position: relative; z-index: 5; }
+.rail-in {
+  position: sticky; top: 0; height: 100vh; width: 48px; overflow: hidden;
+  display: flex; flex-direction: column; gap: var(--s1); padding: var(--s2) 6px;
+  background: var(--sunken); border-right: 1px solid var(--line);
+  transition: width var(--dur);
+}
+.rail.open .rail-in { width: 188px; box-shadow: 8px 0 24px rgba(0, 0, 0, .18); }
+.tabs { display: flex; flex-direction: column; gap: var(--s1); }
+.rail-btn {
+  position: relative; display: flex; align-items: center; gap: var(--s3);
+  width: 100%; min-height: 36px; padding: 8px; border: 0; border-radius: 8px;
+  background: none; color: var(--muted); cursor: pointer; text-align: left; white-space: nowrap;
+}
+.rail-btn:hover { background: var(--bg); color: var(--text); }
+.rail-btn[aria-selected="true"] { background: var(--bg); color: var(--text); font-weight: 600; }
+.rail-btn .lbl { opacity: 0; transition: opacity var(--dur); }
+.rail.open .rail-btn .lbl { opacity: 1; }
+#rail-toggle { margin-bottom: var(--s2); }
+#rail-toggle .lbl { font-weight: 700; color: var(--text); }
+.tab-dot { position: absolute; top: 6px; left: 24px; width: 8px; height: 8px; border-radius: 50%; background: var(--watch); box-shadow: 0 0 0 2px var(--sunken); }
+.tab-dot.lv-dot-danger { background: var(--danger); }
+/* Wide window: the open rail takes space instead of covering the panel. */
+@media (min-width: 701px) {
+  .rail.open { width: 188px; }
+  .rail.open .rail-in { box-shadow: none; }
+  .shell { max-width: 748px; margin: 0 auto; }
+  .shell .panel { max-width: none; margin: 0; border-left: 0; }
+}
+
+/* Tab views */
+.tabview { padding-top: var(--s2); gap: var(--s3); }
+.view-h { margin: 0; font-size: var(--t-key); font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); }
+.view-h .hits-sum { font-size: var(--t-meta); font-weight: 600; }
+.firm-list { margin-top: 0; }
+
+/* Emergency contacts */
+.contacts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.contact { display: flex; justify-content: space-between; align-items: center; gap: var(--s3); padding: var(--s3); border-radius: var(--r-card); background: var(--sunken); }
+.contact .c-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.contact .role { font-size: var(--t-meta); color: var(--muted); }
+.contact b { font-size: var(--t-key); overflow-wrap: anywhere; }
+.contact .c-phone { font-size: var(--t-key); font-variant-numeric: tabular-nums; }
+.contact .unset { color: var(--muted); font-weight: 400; font-size: var(--t-body); }
+.contact .c-btns { display: flex; gap: var(--s1); flex: none; }
+.contact.editing { display: block; }
+.contact form { display: flex; flex-direction: column; gap: var(--s2); }
+.contact label { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: var(--s2); font-size: var(--t-meta); color: var(--muted); }
+.contact input { min-width: 0; font-size: var(--t-body); padding: 6px var(--s2); border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }

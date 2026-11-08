@@ -9,6 +9,7 @@
 
 import { connect } from "./ws.js";
 import { render, bindView, VERIFY_WAIT_MS } from "./view.js";
+import { loadContacts } from "./contacts.js";
 
 const TAIL_LINES = 3;
 
@@ -45,6 +46,11 @@ export const state = {
   overlay: { open: false, opens: 0, seen: [], mode: "warning" },
   calls: 0, // calls started this session; tags egress entries "This call" vs "Earlier today"
   ui: { expanded: null, view: "panel", egressOpen: false, egressEntry: null }, // open pill, view, egress panel, open entry seq
+  // Sidebar: which tab is shown and whether the rail shows names. Not reset by calls.
+  tab: "call", // "call" | "rules" | "contacts"
+  railOpen: false,
+  contacts: loadContacts(), // [{id, role, name, phone}], set on this laptop, never sent
+  editContact: null, // id of the contact being edited
 };
 
 const handlers = {
@@ -125,6 +131,7 @@ function openOverlayFor(tactics) {
   o.seen.push(...fresh);
   if (o.open) return; // update in place
   if (o.opens === 0 || fresh.length) {
+    state.tab = "call"; // the warning belongs to the call, whatever tab was open
     o.open = true;
     o.mode = "warning";
     o.opens += 1; // the view plays the tone once per open

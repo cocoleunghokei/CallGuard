@@ -63,6 +63,7 @@ export function bindView(state, redraw) {
   $("end-call").addEventListener("click", () => send("end_call"));
   bindExits(state);
   bindSideButtons(state);
+  bindTabs(state);
   bindSummary(state);
   $("show-warning").addEventListener("click", () => {
     state.overlay.open = true; // not a new open: no tone
@@ -107,6 +108,8 @@ export function render(state) {
   renderActions(state, lv);
   renderFirmRules(state);
   renderSummary(state);
+  renderTabs(state, lv);
+  renderContacts(state);
 
   if (focusKey) {
     const el = document.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
@@ -120,12 +123,12 @@ function renderHeader(state) {
   const s = state.status;
   const listening = !!(s && s.listening);
   $("badge").classList.toggle("off", !listening);
-  $("badge-text").textContent = listening ? "Listening locally · nothing stored" : "Not listening · nothing stored";
+  $("badge-text").textContent = listening ? "Listening" : "Not listening";
 
+  // Online is the normal case, so only "Offline" is shown (search is skipped then).
   const online = !s || s.online !== false; // unknown counts as online until told
   $("net").classList.toggle("off", !online);
-  $("net-text").textContent = online ? "Online" : "Offline";
-  $("pause").hidden = !(s && s.gate === "on");
+  $("net").hidden = online;
 
   $("consent").hidden = state.consentDismissed;
 }
@@ -154,7 +157,7 @@ function renderHero(state, lv) {
   const bar = $("hero-bar");
   const c = state.check && typeof state.check.confidence === "number" ? state.check.confidence : null;
   if (lv === "idle") {
-    $("hero-words").textContent = "Callguard starts when a call does.";
+    $("hero-words").textContent = "";
     bar.replaceChildren();
   } else if (state.markedSafe) {
     $("hero-words").textContent = "Marked safe";
@@ -379,9 +382,9 @@ export function sentCount(state) {
 /** One line for small spaces (the footer, and T6's overlay foot). */
 export function egressSummary(state) {
   const sent = state.egress.filter((e) => SENT.has(e.status));
-  if (sent.length === 0) return "Nothing has left this device";
-  if (sent.length === 1) return `1 item left: “${sent[0].sent}”`;
-  return `${sent.length} items left this device`;
+  if (sent.length === 0) return "Nothing sent online";
+  if (sent.length === 1) return `1 search sent: “${sent[0].sent}”`;
+  return `${sent.length} searches sent`;
 }
 
 /** "19:02:11" from "2026-11-07T19:02:11" (the Server's local time). */
@@ -770,7 +773,7 @@ function renderActions(state, lv) {
 
 function renderFirmRules(state) {
   const rules = state.rules || [];
-  $("firm-rules").hidden = rules.length === 0 || state.ui.view !== "panel";
+  $("firm-rules-empty").hidden = rules.length > 0;
   $("firm-rules-h").textContent = `Your firm's rules (${rules.length})`;
   const hits = Object.values(state.ruleHits).filter(Boolean).length;
   $("firm-rules-hits").textContent = hits ? `${hits} came up this call` : "";
@@ -789,6 +792,149 @@ function renderFirmRules(state) {
   );
   const src = state.rulesSource === "custom" ? "Set by your firm." : state.rulesSource === "default" ? "Callguard's default rules." : "";
   $("firm-rules-src").textContent = src ? `${src} Kept on this laptop, never sent.` : "Kept on this laptop, never sent.";
+}
+
+// ---------------------------------------------------------------- sidebar tabs
+
+const TABS = { call: "main", rules: "firm-rules", contacts: "contacts" };
+
+function renderTabs(state, lv) {
+  const rail = $("rail");
+  rail.classList.toggle("open", state.railOpen);
+  $("rail-toggle").setAttribute("aria-expanded", String(state.railOpen));
+  $("rail-toggle").setAttribute("aria-label", state.railOpen ? "Hide section names" : "Show section names");
+  for (const [tab, panel] of Object.entries(TABS)) {
+    const on = state.tab === tab;
+    const btn = $(`tab-${tab}`);
+    btn.setAttribute("aria-selected", String(on));
+    btn.tabIndex = on ? 0 : -1;
+    $(panel).hidden = !on;
+  }
+  // Away from the call tab, a dot on it says the call needs a look.
+  const dot = $("tab-call-dot");
+  const alert = state.tab !== "call" && (lv === "watch" || lv === "danger");
+  dot.hidden = !alert;
+  dot.className = `tab-dot lv-dot-${lv}`;
+  $("tab-call").setAttribute("aria-label", alert ? `Call, ${lv === "danger" ? "stop and verify" : "worth a second look"}` : "Call");
+  const hits = Object.values(state.ruleHits).filter(Boolean).length;
+  $("tab-rules-dot").hidden = !(hits && state.tab !== "rules");
+}
+
+function bindTabs(state) {
+  $("rail-toggle").addEventListener("click", () => {
+    state.railOpen = !state.railOpen;
+    rerender();
+  });
+  const order = Object.keys(TABS);
+  const pick = (tab) => {
+    state.tab = tab;
+    if (!window.matchMedia("(min-width: 701px)").matches) state.railOpen = false; // narrow: the open rail covers the panel
+    rerender();
+  };
+  for (const tab of order) {
+    const btn = $(`tab-${tab}`);
+    btn.addEventListener("click", () => pick(tab));
+    btn.addEventListener("keydown", (e) => {
+      const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      const next = order[(order.indexOf(tab) + step + order.length) % order.length];
+      pick(next);
+      $(`tab-${next}`).focus();
+    });
+  }
+  $("contacts-list").addEventListener("click", (e) => contactAction(state, e));
+  $("contacts-list").addEventListener("submit", (e) => {
+    e.preventDefault();
+    saveContactForm(state, e.target);
+  });
+}
+
+// ---------------------------------------------------------------- emergency contacts
+
+let contactsDrawn = null; // redraw only on change, so typing in the edit form survives other messages
+
+function renderContacts(state) {
+  const sig = JSON.stringify([state.contacts, state.editContact]);
+  if (sig === contactsDrawn) return;
+  contactsDrawn = sig;
+  $("contacts-list").replaceChildren(
+    ...state.contacts.map((c) => {
+      if (state.editContact === c.id) {
+        return h(
+          "li",
+          { class: "contact editing" },
+          h(
+            "form",
+            { "data-id": c.id },
+            h("small", { class: "role", text: c.role }),
+            h("label", {}, h("span", { text: "Name" }), h("input", { name: "name", type: "text", value: c.name, autocomplete: "off", maxlength: "60" })),
+            h("label", {}, h("span", { text: "Phone" }), h("input", { name: "phone", type: "tel", value: c.phone, autocomplete: "off", maxlength: "30" })),
+            h(
+              "div",
+              { class: "c-btns" },
+              h("button", { class: "pill-btn", type: "submit", text: "Save" }),
+              h("button", { class: "pill-btn", type: "button", "data-act": "cancel", text: "Cancel" }),
+            ),
+          ),
+        );
+      }
+      return h(
+        "li",
+        { class: "contact" },
+        h(
+          "div",
+          { class: "c-main" },
+          h("small", { class: "role", text: c.role }),
+          h("b", { class: c.name ? null : "unset", text: c.name || "Not set yet" }),
+          c.phone ? h("span", { class: "c-phone", text: c.phone }) : h("span", { class: "c-phone unset", text: "No number" }),
+        ),
+        h(
+          "div",
+          { class: "c-btns" },
+          c.phone ? h("button", { class: "pill-btn", type: "button", "data-act": "copy", "data-id": c.id, text: "Copy" }) : null,
+          h("button", { class: "pill-btn", type: "button", "data-act": "edit", "data-id": c.id, "aria-label": `Edit ${c.role}`, text: "Edit" }),
+        ),
+      );
+    }),
+  );
+  if (state.editContact) {
+    const first = $("contacts-list").querySelector("input");
+    if (first) first.focus();
+  }
+}
+
+async function contactAction(state, e) {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const act = btn.dataset.act;
+  if (act === "edit") {
+    state.editContact = btn.dataset.id;
+  } else if (act === "cancel") {
+    state.editContact = null;
+  } else if (act === "copy") {
+    const c = state.contacts.find((x) => x.id === btn.dataset.id);
+    try {
+      await navigator.clipboard.writeText(c.phone);
+      btn.textContent = "Copied";
+    } catch {
+      btn.textContent = "Copy failed";
+    }
+    setTimeout(() => (btn.textContent = "Copy"), 1500);
+    return;
+  }
+  rerender();
+}
+
+function saveContactForm(state, form) {
+  const id = form.dataset.id;
+  const name = form.elements.name.value.trim();
+  const phone = form.elements.phone.value.trim();
+  state.contacts = state.contacts.map((c) => (c.id === id ? { ...c, name, phone } : c));
+  state.editContact = null;
+  rerender();
+  const edit = $("contacts-list").querySelector(`button[data-act="edit"][data-id="${CSS.escape(id)}"]`);
+  if (edit) edit.focus();
 }
 
 // ---------------------------------------------------------------- after-call summary (T11 / UI-10)

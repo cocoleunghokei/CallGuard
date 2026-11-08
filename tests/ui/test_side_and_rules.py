@@ -38,17 +38,20 @@ def test_s2_bank_rule_badge_and_reset(scheme, ui_server, browser):
     r = Replay(page, ui_server, "s2_vendor_bank")
     f = r.frame
     r.until(is_check)  # rules arrived, call started
-    assert "Your firm's rules (5)" in f.inner_text("#firm-rules summary")
+    assert not f.is_visible("#firm-rules"), "rules live in their own tab"
+    f.click("#tab-rules")
+    assert "Your firm's rules (5)" in f.inner_text("#firm-rules-h")
+    f.click("#tab-call")
     # danger opens the overlay; mark safe by hand to look at the panel underneath
     while r.next_index() < len(r.steps) and not (is_check(r.steps[r.next_index()]) and r.steps[r.next_index()]["data"]["risk"] == "danger"):
         r.one()
     r.one()
     r.mark_safe()
-    f.click("#firm-rules summary")
+    f.click("#tab-rules")
     rows = f.locator("#firm-rules-list li")
     bank = [rows.nth(i).inner_text() for i in range(rows.count()) if "bank details because of a phone call" in rows.nth(i).inner_text()]
     assert bank and "came up 1×" in bank[0]
-    assert "1 came up this call" in f.inner_text("#firm-rules summary")
+    assert "1 came up this call" in f.inner_text("#firm-rules .view-h")
     assert not f.evaluate(CONTRAST), "text below 4.5:1"
     r.until(is_end)
     r.one()

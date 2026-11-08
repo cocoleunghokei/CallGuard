@@ -35,7 +35,7 @@ Screens and the fixture step that shows each one: [SCREENS.md](SCREENS.md). Flow
   python -m callguard.server                 # live: listens to the Zoom call
   ```
   The Callguard window opens on top (400 × 760). Put it at the right edge of the screen, Zoom on the left.
-- Check the header: "Listening locally · nothing stored", "Online", "Safe pause on". No yellow banner. A banner "Basic checks only, local model unavailable" means Ollama isn't answering; an audio banner means the mic or BlackHole isn't heard.
+- Check the header: just "Listening" ("Offline" appears next to it only with the Wi-Fi off). No yellow banner. A banner "Basic checks only, local model unavailable" means Ollama isn't answering; an audio banner means the mic or BlackHole isn't heard.
 
 **No caller available / audio trouble?** Play a scripted call through the real pipeline instead (same window, same model, no mic):
 ```bash
@@ -53,10 +53,10 @@ Open `http://localhost:8080/dev/replay.html?f=s1_government&autoplay=1&speed=1`.
 
 | # | Say / do | Callguard shows |
 |---|---|---|
-| 1 | Show the window before the call. Click the footer "Nothing has left this device" | Grey "Not on a call"; the empty "What left this device (0)" panel. Click it again to close |
+| 1 | Show the window before the call. Click the footer "Nothing sent online" | Grey "Not on a call"; the empty "Sent online (0)" panel ("Your call stays on this laptop"). Click it again to close |
 | 2 | Caller ("David from the Department of Justice") opens politely | Call starts, green "Low · No clear signs", last 3 lines under "Latest" |
 | 3 | Caller: "…your firm is under investigation…" | Amber "Watch": the reason, "Claims authority" / "Threatens you" pills (click one: the exact words), a "Say this" line, "Checking Department of Justice's public number…" |
-| 4 | Point at the footer | It flashes once: `1 item left: "Department of Justice"`. Click it: that name is the **only** thing sent, to api.tavily.com |
+| 4 | Point at the footer | It flashes once: `1 search sent: "Department of Justice"`. Click it: that name is the **only** thing sent, to api.tavily.com |
 | 5 | Caller: "…don't tell your colleagues…" | Red warning fills the window, one short tone, the Mac notification (fixed text, no caller words). Tactics with their quotes, the firm rule, the real public number |
 | 6 | Caller asks for bank details; presenter tries to type (it still works: nothing is blocked) | "This call is asking for bank details. Verify before you send anything…", "🔒 Pause ends in 2:00" counting down. Callguard keeps focus |
 | 7 | Click **Hang up and call back** | "Hang up now": the verified number, big, with Copy number |

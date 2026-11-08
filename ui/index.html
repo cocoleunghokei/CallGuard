@@ -14,21 +14,45 @@
     <symbol id="i-watch" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 4.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></symbol>
     <symbol id="i-danger" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></symbol>
     <symbol id="i-lock-laptop" viewBox="0 0 24 24"><path d="M4 16V7a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7v9M2 18.5h20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="10.5" width="6" height="4.5" rx="1" fill="currentColor"/><path d="M10.3 10.5V9.3a1.7 1.7 0 0 1 3.4 0v1.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-call" viewBox="0 0 24 24"><path d="M6.6 3.5h2.6l1.4 4.2-2 1.4a12 12 0 0 0 6.3 6.3l1.4-2 4.2 1.4v2.6a2 2 0 0 1-2.1 2A16.5 16.5 0 0 1 4.6 5.6a2 2 0 0 1 2-2.1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-rules" viewBox="0 0 24 24"><path d="M6 3.5h9l3.5 3.5v13.5H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 11h6.5M9 14.5h6.5M9 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-contacts" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </svg>
+
+  <div class="shell">
+  <!-- Sidebar: Call / Firm rules / Emergency contacts. Collapsed to icons by default. -->
+  <nav id="rail" class="rail" aria-label="Callguard sections">
+    <div class="rail-in">
+      <button id="rail-toggle" class="rail-btn" type="button" aria-expanded="false" aria-label="Show section names">
+        <svg width="20" height="20"><use href="#i-menu"/></svg><span class="lbl">Callguard</span>
+      </button>
+      <div role="tablist" aria-orientation="vertical" class="tabs">
+        <button id="tab-call" class="rail-btn" role="tab" type="button" data-tab="call" aria-selected="true" aria-controls="main" title="Call">
+          <svg width="20" height="20"><use href="#i-call"/></svg><span class="lbl">Call</span><span id="tab-call-dot" class="tab-dot" hidden></span>
+        </button>
+        <button id="tab-rules" class="rail-btn" role="tab" type="button" data-tab="rules" aria-selected="false" aria-controls="firm-rules" title="Firm rules">
+          <svg width="20" height="20"><use href="#i-rules"/></svg><span class="lbl">Firm rules</span><span id="tab-rules-dot" class="tab-dot lv-dot-danger" hidden></span>
+        </button>
+        <button id="tab-contacts" class="rail-btn" role="tab" type="button" data-tab="contacts" aria-selected="false" aria-controls="contacts" title="Emergency contacts">
+          <svg width="20" height="20"><use href="#i-contacts"/></svg><span class="lbl">Emergency contacts</span>
+        </button>
+      </div>
+    </div>
+  </nav>
 
   <div id="panel" class="panel">
     <!-- A: header -->
     <header class="top">
-      <span id="badge" class="badge"><span class="dot"></span><span id="badge-text">Listening locally · nothing stored</span></span>
-      <span id="net" class="net"><span class="dot"></span><span id="net-text">Online</span><span id="pause" class="pause" hidden> · Safe pause on</span></span>
+      <span id="badge" class="badge"><span class="dot"></span><span id="badge-text">Listening</span></span>
+      <span id="net" class="net off" hidden><span class="dot"></span><span id="net-text">Offline</span></span>
     </header>
 
     <div id="consent" class="consent">
       <div class="consent-body">
-        Checks run on this laptop. Nothing is recorded.
         <details>
-          <summary>Why?</summary>
+          <summary>How it works</summary>
           <p>Callguard listens to this call on your laptop and warns you when it sounds like a pressure script. Audio and words are never saved or sent, and are deleted when the call ends. The only thing ever looked up online is the name of the organization the caller claims to be.</p>
         </details>
       </div>
@@ -40,12 +64,12 @@
     <p id="b-model" class="banner" role="status" hidden>Basic checks only, local model unavailable</p>
     <p id="b-audio" class="banner" role="status" hidden></p>
 
-    <main id="main" class="body">
+    <main id="main" class="body" role="tabpanel" aria-labelledby="tab-call">
       <!-- C: status hero -->
       <section id="hero" class="hero lv-idle" aria-live="polite">
         <div class="ic"><svg width="26" height="26"><use id="hero-icon" href="#i-idle"/></svg></div>
         <h1 id="hero-word">Not on a call</h1>
-        <p id="hero-sub" class="sub"><span id="hero-words">Callguard starts when a call does.</span><span id="hero-bar" class="bar" aria-hidden="true"></span></p>
+        <p id="hero-sub" class="sub"><span id="hero-words"></span><span id="hero-bar" class="bar" aria-hidden="true"></span></p>
         <button id="show-warning" class="hero-btn" type="button" hidden>Show the warning</button>
       </section>
 
@@ -109,31 +133,42 @@
         <h2>Latest</h2>
         <ol id="tail" class="said"></ol>
       </section>
-      <!-- Firm rules (T10 / UI-13): read only; editing is UI-14 -->
-      <details id="firm-rules" class="sec firm-rules">
-        <summary><span id="firm-rules-h">Your firm's rules</span><span id="firm-rules-hits" class="hits-sum"></span></summary>
-        <ul id="firm-rules-list" class="firm-list"></ul>
-        <p id="firm-rules-src" class="note"></p>
-      </details>
     </main>
+
+    <!-- Firm rules tab (T10 / UI-13): read only; editing is UI-14 -->
+    <section id="firm-rules" class="body tabview" role="tabpanel" aria-labelledby="firm-rules-h" hidden>
+      <h2 class="view-h"><span id="firm-rules-h">Your firm's rules</span><span id="firm-rules-hits" class="hits-sum"></span></h2>
+      <p id="firm-rules-empty" class="note" hidden>No rules loaded yet.</p>
+      <ul id="firm-rules-list" class="firm-list"></ul>
+      <p id="firm-rules-src" class="note"></p>
+    </section>
+
+    <!-- Emergency contacts tab: who to call when a call feels wrong. Set on this laptop. -->
+    <section id="contacts" class="body tabview" role="tabpanel" aria-labelledby="contacts-h" hidden>
+      <h2 id="contacts-h" class="view-h">Emergency contacts</h2>
+      <p class="note">Unsure about a call? Hang up and call one of these. Never use a number the caller gave you.</p>
+      <ul id="contacts-list" class="contacts"></ul>
+      <p class="note">Never sent. Changes here last until you close Callguard.</p>
+    </section>
 
     <!-- F: what left this device (T5). The empty state is the feature. -->
     <footer id="priv" class="priv">
       <section id="egress" class="egress" hidden aria-labelledby="egress-h">
-        <h2 id="egress-h">What left this device (<span id="egress-n">0</span>)</h2>
+        <h2 id="egress-h">Sent online (<span id="egress-n">0</span>)</h2>
         <div id="egress-empty" class="egress-empty">
           <svg width="40" height="40" class="ok"><use href="#i-lock-laptop"/></svg>
-          <div><b>Nothing has left this device</b><p>Your call audio and words stay on this laptop.</p></div>
+          <div><b>Your call stays on this laptop</b><p>Audio and words are never sent. If Callguard looks up a company the caller names, that search shows here.</p></div>
         </div>
         <div id="egress-list"></div>
       </section>
       <div id="priv-row" class="priv-row">
         <button id="priv-btn" class="priv-btn" type="button" aria-expanded="false" aria-controls="egress">
-          <svg id="priv-ic" class="ok" width="14" height="14"><use id="priv-icon" href="#i-low"/></svg><span id="priv-text">Nothing has left this device</span><span id="priv-skipped" class="skipped"></span><span class="go" aria-hidden="true">›</span>
+          <svg id="priv-ic" class="ok" width="14" height="14"><use id="priv-icon" href="#i-low"/></svg><span id="priv-text">Nothing sent online</span><span id="priv-skipped" class="skipped"></span><span class="go" aria-hidden="true">›</span>
         </button>
         <button id="end-call" class="link end" type="button" hidden>End call</button>
       </div>
     </footer>
+  </div>
   </div>
 
   <!-- Danger overlay (T6 / UI-4). Fills the Callguard window, never the screen. -->
