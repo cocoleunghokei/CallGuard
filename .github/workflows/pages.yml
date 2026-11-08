@@ -1,5 +1,5 @@
 # Publishes the judge demo to GitHub Pages on every push to main.
-# Site layout: pages/index.html at the root, ui/ copied to app/, so the replay
+# Site layout: pages/index.html at the root, ui/ copied to ui/ (same URLs as the old branch site), plus the pitch deck, so the replay
 # always plays the recorded calls through the current UI. Static files only:
 # no Server, no model, no API keys.
 # One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
@@ -8,7 +8,7 @@ name: Judge demo (GitHub Pages)
 on:
   push:
     branches: [main]
-    paths: ["ui/**", "pages/**", ".github/workflows/pages.yml"]
+    paths: ["ui/**", "pages/**", "hack1984/deck-public/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -32,8 +32,13 @@ jobs:
         run: |
           mkdir -p _site
           cp -r pages/. _site/
-          cp -r ui _site/app
-          rm -f _site/app/AGENTS.md
+          cp -r ui _site/ui
+          rm -f _site/ui/AGENTS.md
+          # The pitch deck keeps the link it had on the old branch site.
+          if [ -d hack1984/deck-public ]; then
+            mkdir -p _site/hack1984
+            cp -r hack1984/deck-public _site/hack1984/deck-public
+          fi
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
