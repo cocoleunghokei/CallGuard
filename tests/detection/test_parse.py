@@ -189,3 +189,53 @@ def test_fuzz_never_raises(raw, window):
 def test_fuzz_non_objects_return_none():
     for raw in [None, "", "not json at all", "{", "[1, 2, 3]", '"just a string"', "42", "null"]:
         assert parse(raw, WINDOW) is None
+
+
+# --- live transcripts: chunk joins + near match (Coco's live S1 run, Sun) -------
+
+LIVE = (
+    "caller: I am Officer Weng from Diminish.\n"
+    "caller: of public security in Beijing.\n"
+    "you: Uh, yes. Sorry, what is this?\n"
+    "caller: as a\n"
+    "caller: The police officer, I must tell you your name is Lee.\n"
+    "caller: to a money laundering case in Sun Jin.\n"
+    "caller: You are a suspect and the warrant has\n"
+    "caller: an issue.\n"
+    "you: I'm a lawyer. I don't do the...\n"
+    "caller: We know about the cases you were\n"
+    "caller: on. Officers can come to arrest."
+)
+
+
+def test_consecutive_chunks_of_one_speaker_are_joined():
+    lines = split_window("caller: You are a suspect and\ncaller: a warrant\nyou: what\ncaller: ok")
+    assert lines == [("caller", "You are a suspect and a warrant"), ("you", "what"), ("caller", "ok")]
+
+
+@pytest.mark.parametrize("quote, found", [
+    ("As a police officer", "as a The police officer"),
+    ("You are a suspect and a warrant has been issued", "You are a suspect and the warrant has an issue"),
+    ("I'm Officer Wang from the Ministry of Public Security",
+     "I am Officer Weng from Diminish. of public security"),
+    ("We know about the cases you work on", "We know about the cases you were on"),
+])
+def test_near_match_survives_live_mishearings(quote, found):
+    assert find_in_caller(quote, split_window(LIVE)) == found
+
+
+@pytest.mark.parametrize("quote", [
+    "give me your password", "Do not tell your colleagues", "I'm a lawyer",
+    "wire the money to this account today", "You are not a suspect at all, sorry",
+])
+def test_near_match_still_drops_what_the_caller_never_said(quote):
+    assert find_in_caller(quote, split_window(LIVE)) is None
+
+
+def test_live_split_scores_amber_from_caller_3():
+    from callguard.detection.score import score
+    out = parse(reply(evidence=[ev("authority", "As a police officer"),
+                                ev("threat", "You are a suspect and a warrant has been issued")]), LIVE)
+    assert out["tactics"] == ["authority", "threat"]
+    assert all(e["quote"] in LIVE.replace("\ncaller: ", " ") for e in out["evidence"])
+    assert score(out["evidence"])[1] == "watch"

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import re
+from difflib import SequenceMatcher
 from typing import Any, Iterable
 
 from callguard.shared.contracts import SAFE_SIGNALS, TACTICS
@@ -56,7 +57,12 @@ def split_window(window: Any) -> list[Line]:
         if isinstance(speaker, str) and isinstance(text, str):
             speaker = speaker.strip().lower()
             if speaker in ("caller", "you") and text.strip():
-                lines.append((speaker, text.strip()))
+                if lines and lines[-1][0] == speaker:
+                    # Live audio cuts speech into ~3 s chunks mid-sentence; join a
+                    # speaker's consecutive chunks so quotes can span the cut.
+                    lines[-1] = (speaker, f"{lines[-1][1]} {text.strip()}")
+                else:
+                    lines.append((speaker, text.strip()))
     return lines
 
 
@@ -94,19 +100,89 @@ def _strip_quote(q: str) -> str:
 
 
 def find_in_caller(quote: str, lines: list[Line]) -> str | None:
-    """Return the window's own text for `quote` if it appears in a caller line, else None."""
+    """Return the window's own text for `quote` if it appears in a caller line, else None.
+
+    Exact (case/whitespace-insensitive) match first; then a word-level near match
+    that tolerates live mishearings (see `_near_match`).
+    """
     q = _strip_quote(quote)
     if not q:
         return None
     nq, _ = _norm_with_index(q)
-    for speaker, text in lines:
-        if speaker != "caller":
-            continue
+    callers = [text for speaker, text in lines if speaker == "caller"]
+    for text in callers:
         nt, idx = _norm_with_index(text)
         at = nt.find(nq)
         if at >= 0:
             return text[idx[at]: idx[at + len(nq) - 1] + 1]
+    for text in callers:
+        found = _near_match(q, text)
+        if found:
+            return found
     return None
+
+
+# --- near match (live transcripts) ---------------------------------------------
+# Whisper drops or adds small words ("as a / The police officer"), splits words
+# ("has been issued" -> "has an issue") and the model tidies up what it quotes
+# ("I'm" for "I am"). A quote still counts when its words line up with a caller
+# line after ignoring filler and contractions, with a few word edits allowed:
+# 0 for quotes under 5 words (after filler is dropped), 1 for 5-7, 2 for 8+. The kept quote is
+# always the caller line's own text, so evidence stays word-for-word.
+
+_WORD = re.compile(r"[a-z0-9]+(?:'[a-z]+)?")
+_FILLER = frozenset({"a", "an", "the", "uh", "um", "er", "ah", "oh"})
+_CONTRACTIONS = {"can't": ("can", "not"), "won't": ("will", "not"), "i'm": ("i", "am")}
+_SUFFIXES = {"n't": "not", "'re": "are", "'ll": "will", "'ve": "have"}
+
+
+def _words(text: str) -> list[tuple[str, int, int]]:
+    """(word, start, end) for each normalised word of `text`; offsets point into `text`."""
+    out: list[tuple[str, int, int]] = []
+    for m in _WORD.finditer(text.translate(_QUOTE_MAP).lower()):
+        w, s, e = m.group(), m.start(), m.end()
+        if w in _CONTRACTIONS:
+            parts: tuple[str, ...] = _CONTRACTIONS[w]
+        else:
+            parts = (w,)
+            for suf, full in _SUFFIXES.items():
+                if w.endswith(suf) and len(w) > len(suf):
+                    parts = (w[: -len(suf)], full)
+                    break
+        out.extend((p, s, e) for p in parts if p not in _FILLER)
+    return out
+
+
+def _same_word(a: str, b: str) -> bool:
+    if a == b:
+        return True
+    if min(len(a), len(b)) < 4:
+        return False
+    return SequenceMatcher(None, a, b).ratio() >= 0.8  # issued/issue, laundering/launderin
+
+
+def _near_match(quote: str, text: str) -> str | None:
+    q = [w for w, _, _ in _words(quote)]
+    t = _words(text)
+    if not q or not t:
+        return None
+    budget = 0 if len(q) < 5 else 1 if len(q) < 8 else 2
+    # Approximate substring match on words (edit distance, free start in `t`).
+    # prev[j] = (cost, start index in t) for q[:i] ending just before t[j].
+    prev = [(0, j) for j in range(len(t) + 1)]
+    for i in range(1, len(q) + 1):
+        cur = [(i, 0)]
+        for j in range(1, len(t) + 1):
+            sub = prev[j - 1][0] + (0 if _same_word(q[i - 1], t[j - 1][0]) else 1)
+            options = [(sub, prev[j - 1][1]), (prev[j][0] + 1, prev[j][1]),
+                       (cur[j - 1][0] + 1, cur[j - 1][1])]
+            cur.append(min(options))
+        prev = cur
+    cost, end = min((c, j) for j, (c, _) in enumerate(prev) if j > 0)
+    start = prev[end][1]
+    if cost > budget or end <= start:
+        return None
+    return text[t[start][1]: t[end - 1][2]]
 
 
 def _cut(text: str, limit: int) -> str:
