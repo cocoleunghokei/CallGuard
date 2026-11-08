@@ -1,7 +1,7 @@
 // Draws `state` (see app.js) into ui/index.html. Never logs, never stores.
 // The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
 
-import { plainWords, shortWords, sayThis, signsWords, mmss, HEADS_UP, callKind, OUTCOME } from "./copy.js";
+import { plainWords, shortWords, sayThis, signsWords, HEADS_UP, callKind, OUTCOME } from "./copy.js";
 import { send } from "./ws.js";
 
 /** How long the verify line says "Checking…" before it gives up and hides. */
@@ -570,12 +570,6 @@ function renderOverlay(state, lv) {
   const c = state.check;
   $("ov-h").textContent = "Scam detected";
 
-  // The pause (gate): its reason, a local countdown, and the soft-focus line.
-  const g = state.gate;
-  const locked = !!(g && g.state === "locked");
-  $("ov-lock").hidden = !locked;
-  $("ov-count").textContent = locked && g.until ? mmss((g.until - Date.now()) / 1000) : "";
-  if (locked && !g.until) $("ov-lock").hidden = true;
   $("safe-hold").disabled = !isSafe();
 
   const vi = verifyInfo(state);
@@ -710,7 +704,6 @@ function finishHold(state) {
   send("mark_safe");
   send("gate_release", { how: "mark_safe" });
   state.callLog.outcome = "mark_safe";
-  state.gate = null;
   state.markedSafe = true;
   state.overlay.open = false;
   rerender();
@@ -721,8 +714,7 @@ function bindExits(state) {
     send("colleague");
     send("gate_release", { how: "colleague" });
     state.callLog.outcome = "colleague";
-    state.gate = null;
-    rerender();
+      rerender();
     toast(...headsUpLines());
   });
 

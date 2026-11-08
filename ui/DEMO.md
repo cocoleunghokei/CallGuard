@@ -58,7 +58,7 @@ Open `http://localhost:8080/dev/replay.html?f=s1_government&autoplay=1&speed=1`.
 | 3 | Caller: "…your firm is under investigation…" | Amber "Watch": the reason, "Claims authority" / "Threatens you" pills (click one: the exact words), a "Say this" line, "Checking Department of Justice's public number…" |
 | 4 | Point at the footer | It flashes once: `1 search sent: "Department of Justice"`. Click it: that name is the **only** thing sent, to api.tavily.com |
 | 5 | Caller: "…don't tell your colleagues…" | Red warning fills the window, one short tone, the Mac notification (fixed text, no caller words). Tactics with their quotes, the firm rule, the real public number |
-| 6 | Caller asks for bank details; presenter tries to type (it still works: nothing is blocked) | "This call is asking for bank details. Verify before you send anything…", "🔒 Pause ends in 2:00" counting down. Callguard keeps focus |
+| 6 | Caller asks for bank details | The warning adds "Asks for client or personal data" with the caller's words under Insights; it stays up until an exit or the call ends |
 | 7 | Click **Report scam** | Toast "Heads-up for IT and your manager" with the fixed message and "Demo: not sent…"; the real public number stays on the warning |
 | 8 | Hang up in Zoom and wait (the call ends after 45 s of silence; set `CALLGUARD_CALL_IDLE_S` lower for the demo) | Panel wipes: no lines, no quotes left on screen or in memory |
 | 9 | **Wi-Fi off**, run the call again | Header "Offline". Everything works the same, the lookup says "Offline, search skipped. Use the number on file." and the egress entry reads "Offline, not sent" |

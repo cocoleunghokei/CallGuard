@@ -122,9 +122,9 @@ def test_status_sent_first_on_connect(tmp_path, monkeypatch):
         assert ws.receive_json() == {"type": "status", "data": {"listening": False, "online": False, "gate": "off"}}
 
 
-def test_gate_mode_default_on(monkeypatch):
+def test_gate_mode_default_off(monkeypatch):
     monkeypatch.delenv("CALLGUARD_GATE", raising=False)
-    assert Runtime.gate_mode() == "on"
+    assert Runtime.gate_mode() == "off"
 
 
 def test_online_change_is_pushed(monkeypatch):

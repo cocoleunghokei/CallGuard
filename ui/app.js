@@ -38,7 +38,6 @@ export const state = {
   transcript: [],
   check: null, // latest ScamCheck
   verify: null,
-  gate: null, // {state, reason, release_in, until} while not "off"; `until` = local ms when the countdown ends
   markedSafe: false, // user took the "it's safe" exit; cleared by the next check (the Server decides after that)
   // Verify line: when we started waiting for the claimed org's number. The
   // Server never looks up some identities (an internal team, a partner), so
@@ -48,7 +47,7 @@ export const state = {
   // Danger overlay (T6). Sticky: opens on danger, closes only on call end, mark
   // safe, or a release (T7).
   // `seen` = tactics already warned about this call; a closed overlay reopens
-  // only for a new one (same no re-nagging rule as the gate, prd 7.5).
+  // only for a new one (no re-nagging, prd 7.5).
   // mode: always "warning" (the "Hang up and call back" exit was removed, Coco Sat).
   overlay: { open: false, opens: 0, seen: [], mode: "warning" },
   calls: 0, // calls started this session; tags egress entries "This call" vs "Earlier today"
@@ -125,21 +124,7 @@ const handlers = {
   verify(data) {
     state.verify = data || null;
   },
-  gate(data) {
-    const wasLocked = !!(state.gate && state.gate.state === "locked");
-    if (data && data.state && data.state !== "off") {
-      const sec = Number(data.release_in);
-      state.gate = { ...data, until: Number.isFinite(sec) && sec > 0 ? Date.now() + sec * 1000 : null };
-      return;
-    }
-    state.gate = null;
-    // Auto-release with no exit taken: step back to the red side panel (prd 7.5).
-    // "Show the warning" reopens it; danger stays on the panel.
-    if (wasLocked && state.overlay.open && state.overlay.mode === "warning") {
-      state.overlay.open = false;
-      if (!state.callLog.outcome) state.callLog.outcome = "timed_out";
-    }
-  },
+  // `gate` (the safe-path pause) is ignored: the pause was removed (Coco, Sat).
   egress(data) {
     if (!data) return;
     state.egress.unshift({ ...data, seq: state.egress.length + 1, call: state.inCall ? state.calls : 0 });
@@ -190,7 +175,6 @@ function wipeCall() {
   state.transcript.length = 0;
   state.verify = null;
   state.verifyWait = null;
-  state.gate = null;
   state.ui.expanded = null;
   state.ui.view = "panel";
   state.ui.ovFull = false;
@@ -200,19 +184,6 @@ function wipeCall() {
   state.brokenNow = [];
   state.callLog = { peak: "low", tactics: [], outcome: null };
 }
-
-// The pause countdown ticks here, re-synced by every `gate` message. At 0:00
-// it releases locally too, in case the Server's `gate off` is late.
-let shownSec = null;
-setInterval(() => {
-  const g = state.gate;
-  if (!g || g.state !== "locked" || !g.until) return;
-  const left = Math.ceil((g.until - Date.now()) / 1000);
-  if (left <= 0) handlers.gate({ state: "off" });
-  else if (left === shownSec) return; // only redraw when the shown time changes
-  shownSec = left;
-  render(state);
-}, 250);
 
 bindView(state, () => render(state));
 render(state);

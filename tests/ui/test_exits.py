@@ -39,32 +39,21 @@ def locked_s1(page, ui_server):
     r = Replay(page, ui_server, "s1_government")
     assert r.until(is_gate_locked)
     r.one()
-    assert r.frame.is_visible("#ov-lock")
+    assert r.frame.is_visible("#overlay")
     # Clicking the harness's Step button moved keyboard focus to the parent page;
     # hand it back to where the overlay put it (checked in test_overlay.py).
     r.frame.focus("#ov-colleague")
     return r
 
 
-def test_lock_line_and_countdown(ui_server, browser):
+def test_no_pause_warning_stays_until_an_exit(ui_server, browser):
+    """The pause was removed (Coco, Sat): `gate` is ignored, no countdown, no step-back."""
     page = browser.new_page()
     r = locked_s1(page, ui_server)
     f = r.frame
-    assert "Paused" in f.inner_text("#ov-lock"), "the banner stays one line; the pause is a small countdown in the foot"
-    assert f.inner_text("#ov-count") in {"2:00", "1:59"}, "starts from gate.release_in (120 s)"
-    # Ticks locally: reaches 1:58 within ~2 s (allow slack for a loaded test machine).
-    f.wait_for_function("document.getElementById('ov-count').textContent === '1:58'", timeout=4000)
-    page.close()
-
-
-def test_auto_release_steps_back_to_the_red_panel(ui_server, browser):
-    page = browser.new_page()
-    r = locked_s1(page, ui_server)
-    f = r.frame
-    r.one()  # gate off, no exit taken
-    assert not f.is_visible("#overlay")
-    assert f.inner_text("#hero-word") == "Danger"
-    assert f.is_visible("#show-warning")
+    assert f.locator("#ov-lock, #ov-count").count() == 0
+    r.one()  # the Server's gate off (sent only when CALLGUARD_GATE=on): nothing changes
+    assert f.is_visible("#overlay")
     assert r.sent() == []
     page.close()
 
@@ -78,7 +67,7 @@ def test_enter_and_esc_never_take_an_exit(ui_server, browser):
         page.keyboard.press("Enter")
         page.keyboard.press("Escape")
         page.keyboard.press("Tab")
-    assert f.is_visible("#overlay") and f.is_visible("#ov-lock")
+    assert f.is_visible("#overlay")
     assert r.sent() == []
     page.close()
 
@@ -87,7 +76,6 @@ def test_check_with_a_colleague(ui_server, browser):
     page = browser.new_page()
     r = locked_s1(page, ui_server)
     f = r.frame
-    page.keyboard.press("Tab")
     assert f.evaluate("document.activeElement.id") == "ov-colleague"
     page.keyboard.press(" ")
     assert r.sent() == [{"type": "colleague"}, {"type": "gate_release", "how": "colleague"}]
@@ -95,7 +83,7 @@ def test_check_with_a_colleague(ui_server, browser):
     assert "Heads-up for IT and your manager" in toast and "Demo: not sent" in toast
     assert "Department of Justice" not in toast, "fixed wording only, nothing from the call"
     assert f.inner_text("#priv-text").startswith("1 search sent"), "the heads-up adds nothing to the egress log"
-    assert f.is_visible("#overlay") and not f.is_visible("#ov-lock")
+    assert f.is_visible("#overlay")
     page.close()
 
 
@@ -152,7 +140,6 @@ def test_exits_work_without_a_gate(button, ui_server, browser):
     r = Replay(page, ui_server, "s1_government")
     r.until(is_danger)
     r.one()
-    assert not r.frame.is_visible("#ov-lock")
     r.frame.click(button)
     assert r.sent()[-1]["type"] == "gate_release"
     page.close()

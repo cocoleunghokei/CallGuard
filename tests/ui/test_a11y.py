@@ -56,7 +56,7 @@ def _tab_all(page, frame, limit=30):
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
-@pytest.mark.parametrize("beat", ["watch", "locked", "panel_danger"])
+@pytest.mark.parametrize("beat", ["watch", "locked"])
 def test_demo_path_contrast_and_focus(beat, scheme, ui_server, browser):
     page = browser.new_page(color_scheme=scheme)
     r = Replay(page, ui_server, "s1_government")
@@ -69,9 +69,6 @@ def test_demo_path_contrast_and_focus(beat, scheme, ui_server, browser):
         r.until(is_gate_locked)
         r.one()
         start = "#ov-colleague"
-        if beat == "panel_danger":
-            r.one()  # auto-release: back to the red panel
-            start = "#show-warning"
     assert not f.evaluate(CONTRAST), "text below 4.5:1"
     f.focus(start)
     seen, bad = _tab_all(page, f)

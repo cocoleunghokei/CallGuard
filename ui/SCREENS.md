@@ -20,11 +20,9 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 | 5 | Verified number | 10 (17.4 s) | "Public number · justice.gov (202) 514-2000" with Copy |
 | 6 | Danger, F3 | 13 (25.9 s) | Warning opens over the panel with one tone, focus on "Report scam": claimed identity, 3 signs with quotes, firm rule, "Real public number…", Say, next step, egress line at the foot |
 | 7 | New sign, updated in place | 15 (32.9 s) | 4th sign "Asks for client or personal data" + second firm rule, no second tone |
-| 8 | Pause, F4 | 16 (33.6 s) | Red top adds "This call is asking for bank details…", "🔒 Pause ends in 2:00" counting down, "Callguard is keeping focus…". Enter and Esc do nothing |
 | 9 | Exit: Report scam | at step 16, click | Toast "Heads-up for IT and your manager", the fixed message, "Demo: not sent…"; nothing added to "Sent online". Log: `colleague`, `gate_release how="colleague"` |
 | 9c | Exit: it's safe | at step 16, type SAFE, hold "Hold 3 s" | Warning closes, "Low · Marked safe". Log: `mark_safe`, `gate_release how="mark_safe"` |
-| 10 | Pause runs out (no exit taken) | 17 (48.6 s) | Back to the red panel "Danger", "Show the warning" button reopens it (no tone) |
-| 11 | Call ended, F9 | 18 (49.1 s) | Grey idle again, no transcript anywhere; the egress entry stays under "Earlier today". History tab gets a dot; its card: "Call ended HH:MM", "Someone posing as an official", "Reached Danger · 4 warning signs · you reported it" (or "the pause ran out"), sign pills, firm rules, Copy summary, Remove |
+| 11 | Call ended, F9 | 18 (49.1 s) | Grey idle again, no transcript anywhere; the egress entry stays under "Earlier today". History tab gets a dot; its card: "Call ended HH:MM", "Someone posing as an official", "Reached Danger · 4 warning signs · you reported it" (no outcome if no exit was taken), sign pills, firm rules, Copy summary, Remove |
 
 ## Wi-Fi off, fixture `offline` (F7)
 
@@ -32,7 +30,7 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 |---|---|---|
 | Offline header | 1 (0 s) | Grey dot, "Offline" in bold |
 | Lookup skipped | 9–10 (16.0–16.1 s) | Footer stays "Nothing sent online · 1 skipped"; entry shows "Offline, not sent"; verify line "Offline, search skipped. Use the number on file." |
-| Still caught | 13–16 | Same warning and pause as S1, verify line offline |
+| Still caught | 13–16 | Same warning as S1, verify line offline |
 
 ## Other states
 

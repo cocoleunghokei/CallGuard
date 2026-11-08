@@ -69,14 +69,14 @@ def test_card_after_report(name, kind, outcome, ui_server, browser):
     page.close()
 
 
-def test_pause_ran_out(ui_server, browser):
+def test_no_exit_taken(ui_server, browser):
     page = browser.new_page()
     r = Replay(page, ui_server, "s1_government")
-    play_to_end(r)  # no exit taken: the pause runs out before the call ends
+    play_to_end(r)  # no exit taken: the card names no outcome (the pause, and "ran out", are gone)
     r.frame.click("#tab-history")
-    assert "the pause ran out" in r.frame.inner_text(f"{CARD} .sum-line")
+    line = r.frame.inner_text(f"{CARD} .sum-line")
+    assert line.startswith("Reached Danger · ") and "pause" not in line
     page.close()
-
 
 def test_watch_only_call_and_mark_safe(ui_server, browser):
     page = browser.new_page()
