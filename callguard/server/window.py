@@ -6,10 +6,14 @@ thread and the window runs on the main thread. The window is titled
 full-screen). Nothing here hooks the keyboard or mouse.
 
 The web Notification API is not available inside the native window, so on
-danger the server posts the macOS notification itself with `osascript`,
-using FIXED copy only (macOS keeps notification history on disk: never the
+danger the server posts the macOS notification itself, using FIXED copy only (macOS keeps notification history on disk: never the
 caller's words, a name or a number). Once when the call first reaches danger,
 then only for a new ask tactic in the same call.
+
+Run as Callguard.app (callguard/server/macapp/build.sh), the notification is
+posted natively: it shows the Callguard icon and clicking it brings the window
+back. Run as plain `python -m callguard.server`, it falls back to `osascript`,
+which macOS shows as coming from Script Editor.
 
 pywebview and AppKit are imported lazily so pytest runs on Linux without them.
 """
@@ -58,13 +62,65 @@ def notification_body(ask_tactics: set[str]) -> str:
     return NOTIFY_DEFAULT
 
 
-def notify_macos(body: str) -> None:
-    """Post a macOS notification with a sound. `body` must be fixed copy."""
-    if body not in NOTIFY_BODY.values() and body != NOTIFY_DEFAULT:
-        raise ValueError("notification text must be fixed copy")
+BUNDLE_ID = "com.hack1984.callguard"  # keep in sync with macapp/setup.py
+_on_click: Callable[[], None] | None = None  # set by run_window: bring the window back
+_native: Any = None  # (center, delegate) once set up; the delegate must stay referenced
+
+
+def _clicked() -> None:
+    if _on_click is not None:
+        try:
+            _on_click()
+        except Exception as e:
+            log.warning("notification click failed: %s", type(e).__name__)
+
+
+def _deliver_native(title: str, body: str) -> None:
+    """Main thread only. Post through the app's own notification center."""
+    global _native
+    import objc  # type: ignore[import-not-found]
+    from Foundation import NSObject, NSUserNotification, NSUserNotificationCenter  # type: ignore[import-not-found]
+    if _native is None:
+        class CallguardNotificationDelegate(NSObject):
+            @objc.typedSelector(b"Z@:@@")
+            def userNotificationCenter_shouldPresentNotification_(self, center, note):
+                return True  # show the banner even though Callguard is the front app
+
+            @objc.typedSelector(b"v@:@@")
+            def userNotificationCenter_didActivateNotification_(self, center, note):
+                _clicked()
+
+        center = NSUserNotificationCenter.defaultUserNotificationCenter()
+        delegate = CallguardNotificationDelegate.alloc().init()
+        center.setDelegate_(delegate)
+        _native = (center, delegate)
+    note = NSUserNotification.alloc().init()
+    note.setTitle_(title)
+    note.setInformativeText_(body)
+    note.setSoundName_("Sosumi")
+    _native[0].deliverNotification_(note)
+
+
+def _post_native(title: str, body: str) -> bool:
+    """True if posted as Callguard.app; False when not running from the app bundle."""
+    if sys.platform != "darwin":
+        return False
+    try:
+        from Foundation import NSBundle  # type: ignore[import-not-found]
+        from PyObjCTools import AppHelper  # type: ignore[import-not-found]
+        if NSBundle.mainBundle().bundleIdentifier() != BUNDLE_ID:
+            return False
+        AppHelper.callAfter(_deliver_native, title, body)
+        return True
+    except Exception as e:
+        log.warning("native notification unavailable: %s", type(e).__name__)
+        return False
+
+
+def _post_osascript(title: str, body: str) -> None:
     if sys.platform != "darwin" or not shutil.which("osascript"):
         return
-    script = f'display notification "{body}" with title "{NOTIFY_TITLE}" sound name "Sosumi"'
+    script = f'display notification "{body}" with title "{title}" sound name "Sosumi"'
     try:
         subprocess.Popen(["osascript", "-e", script],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -72,16 +128,18 @@ def notify_macos(body: str) -> None:
         log.warning("notification failed: %s", type(e).__name__)
 
 
+def notify_macos(body: str) -> None:
+    """Post a macOS notification with a sound. `body` must be fixed copy."""
+    if body not in NOTIFY_BODY.values() and body != NOTIFY_DEFAULT:
+        raise ValueError("notification text must be fixed copy")
+    if not _post_native(NOTIFY_TITLE, body):
+        _post_osascript(NOTIFY_TITLE, body)
+
+
 def notify_colleague_macos() -> None:
     """Local P0 heads-up with fixed copy; no transcript, identity, or contact data."""
-    if sys.platform != "darwin" or not shutil.which("osascript"):
-        return
-    script = f'display notification "{COLLEAGUE_BODY}" with title "{COLLEAGUE_TITLE}" sound name "Sosumi"'
-    try:
-        subprocess.Popen(["osascript", "-e", script],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except OSError as e:
-        log.warning("colleague notification failed: %s", type(e).__name__)
+    if not _post_native(COLLEAGUE_TITLE, COLLEAGUE_BODY):
+        _post_osascript(COLLEAGUE_TITLE, COLLEAGUE_BODY)
 
 
 class DangerAlert:
@@ -170,6 +228,8 @@ def run_window(app: Any, runtime: Any, host: str = "127.0.0.1", port: int = 8000
         window.show()
         _activate_app()
 
+    global _on_click
+    _on_click = bring_to_front  # clicking the notification brings the window back
     alert = DangerAlert(bring_to_front)
     runtime.pipeline.on_check.append(alert)
     runtime.pipeline.on_call_end.append(alert.reset)

@@ -13,8 +13,24 @@ Read the root [AGENTS.md](../../AGENTS.md) first. You own `callguard/audio/` and
 - [x] `stream_chunks()` combining both, plus `fake_stream(script_path)` that replays a written script, for the other lanes and for tests
 
 **P1**
-- [ ] Continuity calls, only if the test passed
+- [ ] AUD-8 Continuity calls, only if the test passed. **Blocked by carrier (Sat 23:30):** the Lyca U.S. line does not relay calls to the Mac; the HK line rings on the Mac but costs a fee to test. Code side done: the output-route warning in `audio_health()` and the supervised `--call` check (see **Continuity calls** below). Stays open until a real iPhone call answered on the Mac transcribes
 - [x] AUD-9 `audio_ok()` and `audio_health()` check device readiness and optional in-memory signal peaks (Server status/UI wiring pending)
+
+## Continuity calls (AUD-8)
+An iPhone call answered on the Mac plays through FaceTime. Capture uses the same route as Zoom: system output → **Multi-Output Device** (speakers + BlackHole 2ch) → `capture.py` reads BlackHole as `caller`. What can go wrong, and what catches it:
+- FaceTime moves the output off Multi-Output (now or mid-call): `audio_health()` sets `route_warning` ("Sound goes to MacBook Pro Speakers…"). It is advisory: `ok` stays true because the mic still works. A renamed Multi-Output Device can be named in `CALLGUARD_OUTPUT_DEVICE`. A custom `CALLGUARD_CALLER_DEVICE` that is not BlackHole (speakerphone route) skips the check
+- AirPods/Bluetooth output skips BlackHole: same warning, with "use the Mac speakers"
+- FaceTime holds the mic: the supervised check reports "No mic sound heard…" with the FaceTime → Video → Microphone hint
+- PortAudio reads the device list once per process, so the route is checked at app start and on each status retry, not live mid-call. A mid-call switch shows up as a silent caller in the supervised check
+
+Hardware test (plan §5, about 5 min), nothing is saved:
+```bash
+python -m callguard.audio.health                   # devices + output route; exit 1 on any warning
+python -m callguard.audio.health --call 30         # answer the iPhone call on the Mac and speak
+python -m callguard.audio.health --call 30 --route "Zoom (Mac speakers)"   # other rows
+python -m callguard.audio.transcribe --check --seconds 30   # transcript column (80-char tail)
+```
+`--call` prints a row ready to paste into the plan's results table, e.g. `| Continuity (Mac speakers) | ✅ level 0.071 | ✅ level 0.004 | | |`.
 
 ## Rules for this lane
 - Audio stays in memory. Never call `sf.write` or save a WAV outside the standalone test script
@@ -30,3 +46,5 @@ Read the root [AGENTS.md](../../AGENTS.md) first. You own `callguard/audio/` and
 - [Sat 17:58] Done: AUD-6 replays all 8 Detection scripts, skips sub-threshold mic audio, and checks fake/live paths with open, os.open, and soundfile.write guarded against writes; 14 audio tests pass offline | Next: Coco review; P0 Audio code complete | Needs: Coco to pin sounddevice==0.5.6, numpy==2.3.5, faster-whisper==1.2.1 in requirements.txt and retest caller audio on a later call; Server to wire stream_chunks() into the live path. Mac mic transcribed at 2.364 s first chunk and 1.175 s second chunk; first exceeds the 1.5 s target
 - [Sat 18:03] Done: Mac caller check showed RMS 0.0155 and transcript chunks at 1.337, 1.167, and 1.189 s; added optional `--seconds N` to both CLI checks so caller and mic can speak in one window; 14 audio tests pass offline | Next: Coco review and a 30 s two-speaker check | Needs: Coco to pin sounddevice==0.5.6, numpy==2.3.5, faster-whisper==1.2.1 in requirements.txt; Server to wire stream_chunks() into the live path
 - [Sat 18:11] Done: AUD-9 Audio-side health probe (`audio_ok`, `audio_health`): missing BlackHole/mic or unsupported 16 kHz input returns a plain warning, optional supervised signal check uses in-memory peak RMS; 19 audio tests pass offline. Coco's Google Meet run transcribed both speakers at about 1.2 s per speech chunk | Next: Coco review; AUD-8 stays gated on the separate Continuity test | Needs: Coco to add optional `Status.audio_ok` (bool) and `Status.audio_message` (str) to the shared contract, then Server to publish `audio_health()` in status and handle capture startup errors, UI to display its warning; Coco to pin sounddevice==0.5.6, numpy==2.3.5, faster-whisper==1.2.1 in requirements.txt
+- [Sat 21:43] Done: AUD-8 code side: `audio_health()` gives an advisory `route_warning` when the Mac's sound output is not a Multi-Output/BlackHole device (FaceTime switched it) or is Bluetooth/AirPods; silent-caller/mic messages now say how to fix the Continuity route; `python -m callguard.audio.health --call N [--route LABEL]` runs a supervised in-memory level check and prints a results-table row; 25 audio tests pass offline (579 in the full suite) | Next: Coco runs `--call 30` on a real iPhone call answered on the Mac; tick AUD-8 only if the caller transcribes | Needs: Coco to fill the Continuity row in plan §5 from the `--call` output, add an optional `Status.audio_warning` (str) to the contract, and add the `health --call` command and `CALLGUARD_OUTPUT_DEVICE` to root AGENTS.md §4; Server to publish `AudioHealth.route_warning` as `audio_warning`; UI to show it as a non-blocking banner (today the banner only shows when `audio_ok` is false)
+- [Sat 23:30] Blocked: AUD-1 Continuity row cannot be run. Coco's Mac side is set up correctly (FaceTime "Calls from iPhone" on, U.S. number listed, `python -m callguard.audio.health` says "Audio inputs are ready." with no route warning), but calls to the Lyca U.S. number never ring on the Mac, with Wi-Fi Calling on or off. Lyca very likely doesn't support Wi-Fi Calling on other devices. The HK line rings on the Mac but each test call costs a fee. Per plan §5 ("retry once, then drop"), AUD-8 is dropped for the demo | Next: Coco runs `python -m callguard.audio.health --call 30 --route "FaceTime Audio (Mac speakers)"` during a FaceTime Audio call. That uses the same FaceTime playback as Continuity, but over the internet instead of the carrier | Needs: Coco to record the Continuity row in plan §5 as "Not verified: Lyca U.S. line doesn't relay calls to the Mac", add the FaceTime Audio row, and say "Zoom, Meet and FaceTime" in the pitch instead of "iPhone calls answered on your Mac"
