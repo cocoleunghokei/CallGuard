@@ -35,7 +35,7 @@ Screens and the fixture step that shows each one: [SCREENS.md](SCREENS.md). Flow
   python -m callguard.server                 # live: listens to the Zoom call
   ```
   The Callguard window opens on top (400 × 760). Put it at the right edge of the screen, Zoom on the left.
-- Check the header: "Listening locally · nothing stored", "Online", "Safe pause on". No yellow banner. A banner "Basic checks only, local model unavailable" means Ollama isn't answering; an audio banner means the mic or BlackHole isn't heard.
+- Check the header: just "Listening" ("Offline" appears next to it only with the Wi-Fi off). No yellow banner. If Ollama isn't answering there is no banner, so check it first (`ollama list`); watch reasons will say "Basic checks only". An audio banner means the mic or BlackHole isn't heard.
 
 **No caller available / audio trouble?** Play a scripted call through the real pipeline instead (same window, same model, no mic):
 ```bash
@@ -53,21 +53,21 @@ Open `http://localhost:8080/dev/replay.html?f=s1_government&autoplay=1&speed=1`.
 
 | # | Say / do | Callguard shows |
 |---|---|---|
-| 1 | Show the window before the call. Click the footer "Nothing has left this device" | Grey "Not on a call"; the empty "What left this device (0)" panel. Click it again to close |
+| 1 | Show the window before the call. Click the footer "Nothing sent online" | Grey "Not on a call"; the empty "Sent online (0)" panel ("Your call stays on this laptop"). Click it again to close |
 | 2 | Caller ("David from the Department of Justice") opens politely | Call starts, green "Low · No clear signs", last 3 lines under "Latest" |
 | 3 | Caller: "…your firm is under investigation…" | Amber "Watch": the reason, "Claims authority" / "Threatens you" pills (click one: the exact words), a "Say this" line, "Checking Department of Justice's public number…" |
-| 4 | Point at the footer | It flashes once: `1 item left: "Department of Justice"`. Click it: that name is the **only** thing sent, to api.tavily.com |
+| 4 | Point at the footer | It flashes once: `1 search sent: "Department of Justice"`. Click it: that name is the **only** thing sent, to api.tavily.com |
 | 5 | Caller: "…don't tell your colleagues…" | Red warning fills the window, one short tone, the Mac notification (fixed text, no caller words). Tactics with their quotes, the firm rule, the real public number |
-| 6 | Caller asks for bank details; presenter tries to type (it still works: nothing is blocked) | "This call is asking for bank details. Verify before you send anything…", "🔒 Pause ends in 2:00" counting down. Callguard keeps focus |
-| 7 | Click **Hang up and call back** | "Hang up now": the verified number, big, with Copy number |
-| 8 | Hang up in Zoom, click **End call** (or wait 45 s of silence) | Panel wipes: no lines, no quotes left on screen or in memory |
+| 6 | Caller asks for bank details | The warning adds "Asks for client or personal data" with the caller's words under Insights; it stays up until an exit or the call ends |
+| 7 | Click **Report scam** | Toast "Heads-up for IT and your manager" with the fixed message and "Demo: not sent…"; the real public number stays on the warning |
+| 8 | Hang up in Zoom and wait (the call ends after 45 s of silence; set `CALLGUARD_CALL_IDLE_S` lower for the demo) | Panel wipes: no lines, no quotes left on screen or in memory |
 | 9 | **Wi-Fi off**, run the call again | Header "Offline". Everything works the same, the lookup says "Offline, search skipped. Use the number on file." and the egress entry reads "Offline, not sent" |
 
-The other two exits, if asked: **Check with a colleague** (toast + a local Mac notification), and **Type SAFE + hold 3 s** (meter back to green, "Marked safe").
+The other exit, if asked: **Type SAFE + hold 3 s** (meter back to green, "Marked safe").
 
 ## 4. Backup video (due Sun 09:00, file stays off-repo)
 
 1. Wi-Fi on. `python -m callguard.server --fake tests/detection/scripts/s1_government.txt`
-2. QuickTime → New Screen Recording, select the Callguard window plus a little of the desktop. Start, then let the replay play steps 1–8 above (click the egress footer at step 4, Hang up and call back at step 7).
+2. QuickTime → New Screen Recording, select the Callguard window plus a little of the desktop. Start, then let the replay play steps 1–8 above (click the egress footer at step 4, Report scam at step 7).
 3. Wi-Fi off, restart the same command, record step 9.
 4. Save outside the repo.

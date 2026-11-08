@@ -50,5 +50,7 @@ def test_say_lines_match_prd_18_3():
 def test_no_banned_words_in_ui_copy():
     files = [UI / "index.html", *sorted(UI.glob("*.js"))]
     for f in files:
-        hits = BANNED.findall(f.read_text(encoding="utf-8"))
+        # Coco's call (Sat): "Scam detected" (warning title) and "Report scam" (button). Only those phrases.
+        text = f.read_text(encoding="utf-8").replace("Scam detected", "").replace("Report scam", "")
+        hits = BANNED.findall(text)
         assert not hits, f"{f.name}: {hits}"

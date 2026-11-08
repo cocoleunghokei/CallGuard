@@ -120,24 +120,42 @@ class RulesSaved(TypedDict):
     errors: NotRequired[list[str]]
 
 
+# v3: emergency contacts (UI "Emergency contacts" tab). Local file only, never sent.
+class Contact(TypedDict):
+    id: str  # "oit" | "manager"
+    role: str  # fixed label, e.g. "IT security (OIT)"
+    name: str  # "" when not set
+    phone: str  # "" when not set
+
+
+class ContactsSaved(TypedDict):
+    ok: bool
+    errors: NotRequired[list[str]]
+
+
 # WebSocket message: {"type": MessageType, "data": ...}
 # data per type: transcript=TranscriptChunk, check=ScamCheck, verify=Verify,
 # egress=EgressEntry, status=Status, gate=Gate, call=Call,
 # rules=list[Rule] (optional top-level "source": "default" | "custom",
 #   "never_search": list[str] app-edited names, "never_search_env": int, P1),
-# rules_saved=RulesSaved
+# rules_saved=RulesSaved, contacts=list[Contact], contacts_saved=ContactsSaved
 MessageType = Literal[
     "transcript", "check", "verify", "egress", "status",
     # v2
     "gate", "call", "rules", "rules_saved",
+    # v3
+    "contacts", "contacts_saved",
 ]
 
 # UI -> Server: {"type": ClientMessageType, ...}
 # gate_release carries "how": "hang_up" | "colleague" | "mark_safe";
 # save_rules carries "data": list[Rule], optional "never_search": list[str] (P1);
-# reset_rules resets rules only, never the never-search list
+# reset_rules resets rules only, never the never-search list;
+# save_contacts carries "data": list[Contact] (allowed during a call)
 ClientMessageType = Literal[
     "colleague", "mark_safe",
     # v2
     "gate_release", "end_call", "save_rules", "reset_rules",
+    # v3
+    "save_contacts",
 ]

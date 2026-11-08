@@ -112,7 +112,7 @@ export function mmss(sec) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** "Check with a colleague" heads-up (Coco, Sat): goes to the firm's IT team and
+/** "Report scam" heads-up (Coco, Sat): goes to the firm's IT team and
  *  the user's line manager, fixed wording only, never anything from the call.
  *  The hackathon build shows it here and sends nothing, so it says so: the
  *  "What left this device" log must stay true. */
@@ -142,7 +142,7 @@ export function callKind(tactics) {
 
 export const OUTCOME = {
   hang_up: "you hung up to call back",
-  colleague: "you checked with a colleague",
+  colleague: "you reported it",
   mark_safe: "you marked it safe",
   timed_out: "the pause ran out",
 };

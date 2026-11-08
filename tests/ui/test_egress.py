@@ -15,9 +15,9 @@ FIXTURES = UI / "dev" / "fixtures"
 
 def test_markup_has_header_count_and_empty_state():
     html = (UI / "index.html").read_text(encoding="utf-8")
-    assert re.search(r'What left this device \(<span id="egress-n">0</span>\)', html)
-    assert "Nothing has left this device" in html
-    assert "Your call audio and words stay on this laptop." in html
+    assert re.search(r'Sent online \(<span id="egress-n">0</span>\)', html)
+    assert "Nothing sent online" in html
+    assert "Your call stays on this laptop" in html
     assert 'id="priv-btn"' in html and 'aria-controls="egress"' in html
 
 
@@ -67,9 +67,9 @@ def _play(page, ui_server, name):
 def test_b1_stays_empty(ui_server, browser):
     page = browser.new_page()
     frame, during = _play(page, ui_server, "b1_vendor_invoice")
-    assert "What left this device (0)" in during
+    assert "Sent online (0)" in during
     assert frame.is_visible("#egress-empty")
-    assert frame.inner_text("#priv-text") == "Nothing has left this device"
+    assert frame.inner_text("#priv-text") == "Nothing sent online"
     page.close()
 
 
@@ -77,10 +77,10 @@ def test_b1_stays_empty(ui_server, browser):
 def test_s1_shows_one_org_entry(name, status, ui_server, browser):
     page = browser.new_page()
     frame, during = _play(page, ui_server, name)
-    assert "What left this device (1)" in during
+    assert "Sent online (1)" in during
     assert frame.locator(".eg-row").count() == 1
     row = frame.inner_text(".eg-row")
     assert "Department of Justice" in row and "api.tavily.com" in row and status in row
-    expected = "1 item left" if name == "s1_government" else "Nothing has left this device"
+    expected = "1 search sent" if name == "s1_government" else "Nothing sent online"
     assert frame.inner_text("#priv-text").startswith(expected)
     page.close()

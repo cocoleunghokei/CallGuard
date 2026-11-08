@@ -23,12 +23,12 @@ const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 
 // Recording mode (T9 backup video): ?clean=1 hides the dev controls; f= takes a
-// comma list played back to back with a title card between; exit=hang_up|colleague
+// comma list played back to back with a title card between; exit=colleague
 // clicks that exit `exit_after` seconds after the pause locks (hands-free take).
 const CLEAN = params.get("clean") === "1";
 const PLAYLIST = (params.get("f") || "").split(",").filter((n) => FIXTURES.includes(n));
 const GAP_S = Number(params.get("gap")) || 4;
-const AUTO_EXIT = { hang_up: "ov-hangup", colleague: "ov-colleague" }[params.get("exit")] || null;
+const AUTO_EXIT = { colleague: "ov-colleague" }[params.get("exit")] || null;
 const EXIT_AFTER_S = Number(params.get("exit_after")) || 4;
 const CARDS = {
   s1_government: "A call from “the Department of Justice”",

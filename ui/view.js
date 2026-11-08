@@ -1,7 +1,7 @@
 // Draws `state` (see app.js) into ui/index.html. Never logs, never stores.
 // The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
 
-import { plainWords, shortWords, sayThis, signsWords, askLine, mmss, HEADS_UP, callKind, OUTCOME } from "./copy.js";
+import { plainWords, shortWords, sayThis, signsWords, HEADS_UP, callKind, OUTCOME } from "./copy.js";
 import { send } from "./ws.js";
 
 /** How long the verify line says "Checking…" before it gives up and hides. */
@@ -60,14 +60,18 @@ export function bindView(state, redraw) {
     rerender();
     $("open-said").focus();
   });
-  $("end-call").addEventListener("click", () => send("end_call"));
   bindExits(state);
   bindSideButtons(state);
+  bindTabs(state);
+  $("ov-full").addEventListener("click", () => {
+    state.ui.ovFull = !state.ui.ovFull;
+    rerender();
+  });
   bindSummary(state);
   $("show-warning").addEventListener("click", () => {
     state.overlay.open = true; // not a new open: no tone
     rerender();
-    $("ov-hangup").focus();
+    $("ov-colleague").focus();
   });
   $("overlay").addEventListener("keydown", (e) => overlayKeys(e));
   $("priv-btn").addEventListener("click", () => {
@@ -101,12 +105,14 @@ export function render(state) {
   renderWhy(state, lv);
   renderTodo(state, lv);
   renderSaid(state);
-  renderTail(state, lv);
+  renderTail(state);
   renderPrivacy(state);
   renderOverlay(state, lv);
   renderActions(state, lv);
   renderFirmRules(state);
   renderSummary(state);
+  renderTabs(state, lv);
+  renderContacts(state);
 
   if (focusKey) {
     const el = document.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
@@ -120,12 +126,12 @@ function renderHeader(state) {
   const s = state.status;
   const listening = !!(s && s.listening);
   $("badge").classList.toggle("off", !listening);
-  $("badge-text").textContent = listening ? "Listening locally · nothing stored" : "Not listening · nothing stored";
+  $("badge-text").textContent = listening ? "Listening" : "Not listening";
 
+  // Online is the normal case, so only "Offline" is shown (search is skipped then).
   const online = !s || s.online !== false; // unknown counts as online until told
   $("net").classList.toggle("off", !online);
-  $("net-text").textContent = online ? "Online" : "Offline";
-  $("pause").hidden = !(s && s.gate === "on");
+  $("net").hidden = online;
 
   $("consent").hidden = state.consentDismissed;
 }
@@ -134,8 +140,7 @@ function renderHeader(state) {
 
 function renderBanners(state) {
   $("b-conn").hidden = state.connected;
-  const model = state.status && state.status.model;
-  $("b-model").hidden = !(state.connected && (model === "degraded" || model === "offline"));
+  // No banner for a degraded model (Coco, Sat): the check's own reason says "Basic checks only".
   // Live mode: the Server says when the mic or BlackHole input isn't working (AUD-9).
   const audioBad = !!(state.connected && state.status && state.status.audio_ok === false);
   $("b-audio").hidden = !audioBad;
@@ -151,23 +156,12 @@ function renderHero(state, lv) {
   $("hero-icon").setAttribute("href", L.icon);
   $("hero-word").textContent = L.word;
 
-  const bar = $("hero-bar");
+  // Words only, no signs bar (Coco, Sat).
   const c = state.check && typeof state.check.confidence === "number" ? state.check.confidence : null;
-  if (lv === "idle") {
-    $("hero-words").textContent = "Callguard starts when a call does.";
-    bar.replaceChildren();
-  } else if (state.markedSafe) {
-    $("hero-words").textContent = "Marked safe";
-    bar.replaceChildren();
-  } else if (c == null) {
-    // No confidence: no bar. The default words still name the level.
-    $("hero-words").textContent = DEFAULT_SIGNS[lv];
-    bar.replaceChildren();
-  } else {
-    const segs = Math.max(0, Math.min(10, Math.round(c * 10)));
-    $("hero-words").textContent = signsWords(segs);
-    bar.replaceChildren(...Array.from({ length: 10 }, (_, i) => h("i", { class: i < segs ? "on" : null })));
-  }
+  if (lv === "idle") $("hero-words").textContent = "";
+  else if (state.markedSafe) $("hero-words").textContent = "Marked safe";
+  else if (c == null) $("hero-words").textContent = DEFAULT_SIGNS[lv];
+  else $("hero-words").textContent = signsWords(Math.max(0, Math.min(10, Math.round(c * 10))));
 }
 
 // ---------------------------------------------------------------- D why
@@ -184,9 +178,17 @@ function ruleText(state, id) {
 function renderWhy(state, lv) {
   const c = state.check;
   const fallback = !!(c && c.source === "fallback");
-  const show = state.ui.view === "panel" && !!c && (lv === "watch" || lv === "danger" || fallback);
-  $("why").hidden = !show;
-  if (!show) return;
+  $("why").hidden = !(state.inCall && state.ui.view === "panel");
+  const show = !!c && (lv === "watch" || lv === "danger" || fallback);
+  $("why-none").hidden = show;
+  for (const id of ["reason", "pills", "quote", "rules-broken"]) if (!show) $(id).hidden = true;
+  if (!show) {
+    $("pills").replaceChildren();
+    $("rules-broken").replaceChildren();
+    return;
+  }
+  $("pills").hidden = false;
+  $("rules-broken").hidden = false;
 
   const reason = $("reason");
   reason.textContent = c.reason || "";
@@ -229,8 +231,6 @@ function renderWhy(state, lv) {
   $("rules-broken").replaceChildren(
     ...(c.rules_broken || []).map((id) => h("li", {}, h("b", { text: "Firm rule: " }), ruleText(state, id))),
   );
-
-  $("open-said").hidden = quotes.length === 0;
 }
 
 // ---------------------------------------------------------------- what to do
@@ -277,13 +277,19 @@ function verifyInfo(state) {
 
 function renderTodo(state, lv) {
   const c = state.check;
-  const show = state.ui.view === "panel" && !!c && (lv === "watch" || lv === "danger");
-  $("todo").hidden = !show;
-  if (!show) return;
+  $("todo").hidden = !(state.inCall && state.ui.view === "panel");
+  const show = !!c && (lv === "watch" || lv === "danger");
 
-  const say = sayThis(c.tactics);
-  $("say").hidden = !say;
+  const say = show ? sayThis(c.tactics) : "";
+  $("say-text").hidden = !say;
   $("say-text").textContent = say || "";
+  $("say-none").hidden = !!say;
+  if (!show) {
+    $("num").hidden = true;
+    $("verify-note").hidden = true;
+    $("next-step").textContent = ""; // nothing to do yet: empty, its space stays reserved
+    return;
+  }
 
   const vi = verifyInfo(state);
   $("num").hidden = !vi.phone;
@@ -298,23 +304,29 @@ function renderTodo(state, lv) {
 
 // ---------------------------------------------------------------- flagged lines ("See what they said")
 
+function markedLine(text, quotes) {
+  const q = quotes.find((x) => text.includes(x));
+  if (!q) return h("span", { class: "line", text });
+  const at = text.indexOf(q);
+  return h("span", { class: "line" }, text.slice(0, at), h("mark", { text: q }), text.slice(at + q.length));
+}
+
 function renderSaid(state) {
   const c = state.check;
-  if (state.ui.view === "said" && !(c && state.inCall)) state.ui.view = "panel";
+  if (state.ui.view === "said" && !state.inCall) state.ui.view = "panel";
   const show = state.ui.view === "said";
   $("said-view").hidden = !show;
   if (!show) return;
 
-  // One row per distinct quote, in evidence order.
+  // Flagged: one row per distinct caller quote, in evidence order.
   const byQuote = new Map();
-  for (const e of callerQuotes(c)) {
+  for (const e of c ? callerQuotes(c) : []) {
     if (!byQuote.has(e.quote)) byQuote.set(e.quote, []);
     byQuote.get(e.quote).push(e.tactic);
   }
-  const broken = new Set(c.rules_broken || []);
+  const broken = new Set((c && c.rules_broken) || []);
   const rows = [...byQuote].map(([quote, tactics]) => {
-    // Show the whole line around the quote while it is still in the last 3 lines.
-    const line = state.tail.find((t) => t.speaker === "caller" && t.text.includes(quote));
+    const line = state.transcript.find((t) => t.speaker === "caller" && t.text.includes(quote));
     const text = line ? line.text : quote;
     const at = text.indexOf(quote);
     const p = h("p", {}, text.slice(0, at), h("mark", { text: quote }), text.slice(at + quote.length));
@@ -327,7 +339,17 @@ function renderSaid(state) {
     );
     return h("li", {}, h("span", { class: "who", text: "Caller" }), h("div", {}, p, tags));
   });
+  $("flagged-h").hidden = rows.length === 0;
   $("flagged").replaceChildren(...rows);
+
+  // Everything said this call, oldest first, caller quotes marked.
+  const quotes = [...byQuote.keys()];
+  $("said-latest").replaceChildren(
+    ...state.transcript.map((t) => {
+      const you = t.speaker === "you";
+      return h("li", {}, h("span", { class: you ? "who you" : "who", text: you ? "You" : "Caller" }), you ? h("span", { class: "line", text: t.text }) : markedLine(t.text, quotes));
+    }),
+  );
 }
 
 // ---------------------------------------------------------------- E latest lines
@@ -339,21 +361,18 @@ function tailItems(state) {
   });
 }
 
-function renderTail(state, lv) {
+function renderTail(state) {
   $("tail").replaceChildren(...tailItems(state));
-  $("said-latest").replaceChildren(...tailItems(state));
-  $("said-latest-h").hidden = state.tail.length === 0;
-  // At watch and danger the Why / What to do sections take this space.
-  const quiet = lv === "low" || (lv !== "idle" && $("why").hidden);
-  $("latest").hidden = !state.inCall || state.tail.length === 0 || state.ui.view !== "panel" || !quiet;
-  $("end-call").hidden = !state.inCall;
+  $("tail-empty").hidden = state.tail.length > 0;
+  $("latest").hidden = !state.inCall || state.ui.view !== "panel";
+  $("open-said").hidden = state.transcript.length === 0;
 }
 
 /** Call content leaves the DOM, not just the screen (UI-7, F9). */
 function clearCallDom() {
-  for (const id of ["ov-ask", "cb-number", "cb-src", "ov-toast", "ov-report"]) $(id).textContent = "";
+  for (const id of ["ov-toast", "ov-report"]) $(id).textContent = "";
   $("safe-input").value = "";
-  for (const id of ["pills", "quote", "rules-broken", "flagged", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
+  for (const id of ["pills", "quote", "rules-broken", "flagged", "said-latest", "tail", "ov-tactics", "ov-rules", "ov-tail"]) $(id).replaceChildren();
   for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step", "ov-claim", "ov-verify", "ov-say-text", "ov-next"]) $(id).textContent = "";
   $("reason").removeAttribute("title");
 }
@@ -379,9 +398,9 @@ export function sentCount(state) {
 /** One line for small spaces (the footer, and T6's overlay foot). */
 export function egressSummary(state) {
   const sent = state.egress.filter((e) => SENT.has(e.status));
-  if (sent.length === 0) return "Nothing has left this device";
-  if (sent.length === 1) return `1 item left: “${sent[0].sent}”`;
-  return `${sent.length} items left this device`;
+  if (sent.length === 0) return "Nothing sent online";
+  if (sent.length === 1) return `1 search sent: “${sent[0].sent}”`;
+  return `${sent.length} searches sent`;
 }
 
 /** "19:02:11" from "2026-11-07T19:02:11" (the Server's local time). */
@@ -494,6 +513,19 @@ function tone() {
   }
 }
 
+/** Cover the panel below its header, not the sidebar or the "Listening" line. */
+function placeOverlay() {
+  const panel = $("panel").getBoundingClientRect();
+  const top = document.querySelector(".top").getBoundingClientRect().bottom;
+  const ov = $("overlay");
+  ov.style.left = `${Math.max(0, panel.left)}px`;
+  ov.style.width = `${panel.width}px`;
+  ov.style.top = `${Math.max(0, top)}px`;
+}
+window.addEventListener("resize", () => {
+  if (!$("overlay").hidden) placeOverlay();
+});
+
 function focusables() {
   return [...$("overlay").querySelectorAll("button, [href], input, [tabindex]:not([tabindex='-1'])")].filter((el) => !el.disabled && el.offsetParent !== null);
 }
@@ -524,43 +556,35 @@ function overlayKeys(e) {
 
 function renderOverlay(state, lv) {
   const o = state.overlay;
-  const open = !!(o && o.open && state.inCall && state.check && lv === "danger");
+  // Shown on the Call tab only; the sidebar and the header stay usable around it.
+  const open = !!(o && o.open && state.inCall && state.check && lv === "danger" && state.tab === "call");
   const wasOpen = !$("overlay").hidden;
   $("overlay").hidden = !open;
-  $("panel").inert = open;
+  $("main").inert = open;
+  $("priv").inert = open;
   $("show-warning").hidden = !(lv === "danger" && !open && state.inCall);
+  if (open) placeOverlay();
   if (!o || o.opens < lastOpens) lastOpens = 0; // new call
   if (!open) return;
 
   const c = state.check;
-  const callback = o.mode === "callback";
-  $("ov-h").textContent = callback ? "Hang up now" : "Stop and verify this call";
-  $("ov-sub").hidden = callback;
-  $("ov-body").hidden = callback;
-  $("ov-exits").hidden = callback;
-  $("ov-callback").hidden = !callback;
-  $("ov-cb-actions").hidden = !callback;
+  $("ov-h").textContent = "Scam detected";
 
-  // The pause (gate): its reason, a local countdown, and the soft-focus line.
-  const g = state.gate;
-  const locked = !callback && !!(g && g.state === "locked");
-  $("ov-lock").hidden = !locked;
-  $("ov-ask").textContent = locked ? askLine(g, c.tactics) : "";
-  $("ov-count").textContent = locked && g.until ? mmss((g.until - Date.now()) / 1000) : "";
-  $("ov-count").parentElement.hidden = !(locked && g.until);
   $("safe-hold").disabled = !isSafe();
 
   const vi = verifyInfo(state);
-  if (callback) {
-    $("cb-number").textContent = vi.phone || "Use the number on file";
-    $("cb-number").classList.toggle("none", !vi.phone);
-    $("cb-src").textContent = vi.phone ? [c.claimed_identity, vi.host].filter(Boolean).join(" · ") : "";
-    $("cb-copy").hidden = !vi.phone;
-  }
-  const conf = typeof c.confidence === "number" ? c.confidence : null;
-  const segs = conf == null ? null : Math.max(0, Math.min(10, Math.round(conf * 10)));
-  $("ov-words").textContent = segs == null ? "Strong signs" : signsWords(segs);
-  $("ov-bar").replaceChildren(...(segs == null ? [] : Array.from({ length: 10 }, (_, i) => h("i", { class: i < segs ? "on" : null }))));
+  // Latest lines: the same 3 as the call screen, or the whole call when expanded.
+  const full = !!state.ui.ovFull;
+  $("ov-full").setAttribute("aria-expanded", String(full));
+  $("ov-full").textContent = full ? "Show less ‹" : "View full transcript ›";
+  $("ov-full").hidden = state.transcript.length <= state.tail.length;
+  $("ov-tail-box").classList.toggle("full", full);
+  $("ov-tail").replaceChildren(
+    ...(full ? state.transcript : state.tail).map((t) => {
+      const you = t.speaker === "you";
+      return h("li", {}, h("span", { class: you ? "who you" : "who", text: you ? "You" : "Caller" }), h("span", { class: "line", text: t.text }));
+    }),
+  );
 
   $("ov-claim").hidden = !c.claimed_identity;
   $("ov-claim").replaceChildren(...(c.claimed_identity ? ["The caller claims to be: ", h("b", { text: c.claimed_identity })] : []));
@@ -594,13 +618,15 @@ function renderOverlay(state, lv) {
   // One-line egress summary at the foot (T5 item 5): the privacy proof stays visible.
   $("ov-egress").replaceChildren(privIcon(sentCount(state) === 0), egressSummary(state));
 
-  const primary = callback ? (vi.phone ? $("cb-copy") : $("overlay")) : $("ov-hangup");
+  const primary = $("ov-colleague");
   if (o.opens > lastOpens) {
     lastOpens = o.opens;
     tone();
-    primary.focus();
+    primary.focus({ preventScroll: true }); // keep the banner on screen
+    $("overlay").scrollTop = 0;
   } else if (!wasOpen) {
-    primary.focus();
+    primary.focus({ preventScroll: true });
+    $("overlay").scrollTop = 0;
   }
 }
 
@@ -678,39 +704,18 @@ function finishHold(state) {
   send("mark_safe");
   send("gate_release", { how: "mark_safe" });
   state.callLog.outcome = "mark_safe";
-  state.gate = null;
   state.markedSafe = true;
   state.overlay.open = false;
   rerender();
 }
 
 function bindExits(state) {
-  $("ov-hangup").addEventListener("click", () => {
-    send("gate_release", { how: "hang_up" });
-    state.callLog.outcome = "hang_up";
-    state.gate = null;
-    state.overlay.mode = "callback";
-    rerender();
-    ($("cb-copy").hidden ? $("overlay") : $("cb-copy")).focus();
-  });
   $("ov-colleague").addEventListener("click", () => {
     send("colleague");
     send("gate_release", { how: "colleague" });
     state.callLog.outcome = "colleague";
-    state.gate = null;
-    rerender();
+      rerender();
     toast(...headsUpLines());
-  });
-  $("cb-copy").addEventListener("click", async () => {
-    const phone = state.verify && state.verify.phone;
-    if (!phone) return;
-    try {
-      await navigator.clipboard.writeText(phone);
-      $("cb-copy").textContent = "Copied";
-    } catch {
-      $("cb-copy").textContent = "Copy failed";
-    }
-    setTimeout(() => ($("cb-copy").textContent = "Copy number"), 1500);
   });
 
   // "I've verified, it's safe": type SAFE, then hold 3 s. No single click or key does it.
@@ -758,8 +763,8 @@ function bindSideButtons(state) {
 }
 
 function renderActions(state, lv) {
-  const show = state.inCall && state.ui.view === "panel" && lv === "watch";
-  $("actions").hidden = !show;
+  // Always on screen during a call, so the buttons never move; "Mark as safe" only means something at Watch.
+  $("side-safe").disabled = !(state.inCall && (lv === "watch" || lv === "danger") && !state.markedSafe);
   if (!state.inCall) {
     $("panel-toast").hidden = true;
     $("panel-toast").replaceChildren();
@@ -770,7 +775,7 @@ function renderActions(state, lv) {
 
 function renderFirmRules(state) {
   const rules = state.rules || [];
-  $("firm-rules").hidden = rules.length === 0 || state.ui.view !== "panel";
+  $("firm-rules-empty").hidden = rules.length > 0;
   $("firm-rules-h").textContent = `Your firm's rules (${rules.length})`;
   const hits = Object.values(state.ruleHits).filter(Boolean).length;
   $("firm-rules-hits").textContent = hits ? `${hits} came up this call` : "";
@@ -791,6 +796,148 @@ function renderFirmRules(state) {
   $("firm-rules-src").textContent = src ? `${src} Kept on this laptop, never sent.` : "Kept on this laptop, never sent.";
 }
 
+// ---------------------------------------------------------------- sidebar tabs
+
+const TABS = { call: "main", rules: "firm-rules", history: "history", contacts: "contacts" };
+
+function renderTabs(state, lv) {
+  for (const [tab, panel] of Object.entries(TABS)) {
+    const on = state.tab === tab;
+    const btn = $(`tab-${tab}`);
+    btn.setAttribute("aria-selected", String(on));
+    btn.tabIndex = on ? 0 : -1;
+    $(panel).hidden = !on;
+  }
+  // Away from the call tab, a dot on it says the call needs a look.
+  const dot = $("tab-call-dot");
+  const alert = state.tab !== "call" && (lv === "watch" || lv === "danger");
+  dot.hidden = !alert;
+  dot.className = `tab-dot lv-dot-${lv}`;
+  $("tab-call").setAttribute("aria-label", alert ? `Call, ${lv === "danger" ? "Scam detected" : "worth a second look"}` : "Call");
+  const hits = Object.values(state.ruleHits).filter(Boolean).length;
+  $("tab-rules-dot").hidden = !(hits && state.tab !== "rules");
+}
+
+function bindTabs(state) {
+  const order = Object.keys(TABS);
+  const pick = (tab) => {
+    state.tab = tab;
+    rerender();
+  };
+  for (const tab of order) {
+    const btn = $(`tab-${tab}`);
+    btn.addEventListener("click", () => pick(tab));
+    btn.addEventListener("keydown", (e) => {
+      const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      const next = order[(order.indexOf(tab) + step + order.length) % order.length];
+      pick(next);
+      $(`tab-${next}`).focus();
+    });
+  }
+  $("contacts-list").addEventListener("click", (e) => contactAction(state, e));
+  $("contacts-list").addEventListener("submit", (e) => {
+    e.preventDefault();
+    saveContactForm(state, e.target);
+  });
+}
+
+// ---------------------------------------------------------------- emergency contacts
+
+let contactsDrawn = null; // redraw only on change, so typing in the edit form survives other messages
+
+function renderContacts(state) {
+  const note = state.contactsNote;
+  $("contacts-msg").hidden = !note;
+  $("contacts-msg").textContent = note ? note.text : "";
+  $("contacts-msg").classList.toggle("err", !!(note && !note.ok));
+  const sig = JSON.stringify([state.contacts, state.editContact]);
+  if (sig === contactsDrawn) return;
+  contactsDrawn = sig;
+  $("contacts-list").replaceChildren(
+    ...state.contacts.map((c) => {
+      if (state.editContact === c.id) {
+        return h(
+          "li",
+          { class: "contact editing" },
+          h(
+            "form",
+            { "data-id": c.id },
+            h("small", { class: "role", text: c.role }),
+            h("label", {}, h("span", { text: "Name" }), h("input", { name: "name", type: "text", value: c.name, autocomplete: "off", maxlength: "60" })),
+            h("label", {}, h("span", { text: "Phone" }), h("input", { name: "phone", type: "tel", value: c.phone, autocomplete: "off", maxlength: "30" })),
+            h(
+              "div",
+              { class: "c-btns" },
+              h("button", { class: "pill-btn", type: "submit", text: "Save" }),
+              h("button", { class: "pill-btn", type: "button", "data-act": "cancel", text: "Cancel" }),
+            ),
+          ),
+        );
+      }
+      return h(
+        "li",
+        { class: "contact" },
+        h(
+          "div",
+          { class: "c-main" },
+          h("small", { class: "role", text: c.role }),
+          h("b", { class: c.name ? null : "unset", text: c.name || "Not set yet" }),
+          c.phone ? h("span", { class: "c-phone", text: c.phone }) : h("span", { class: "c-phone unset", text: "No number" }),
+        ),
+        h(
+          "div",
+          { class: "c-btns" },
+          c.phone ? h("button", { class: "pill-btn", type: "button", "data-act": "copy", "data-id": c.id, text: "Copy" }) : null,
+          h("button", { class: "pill-btn", type: "button", "data-act": "edit", "data-id": c.id, "aria-label": `Edit ${c.role}`, text: "Edit" }),
+        ),
+      );
+    }),
+  );
+  if (state.editContact) {
+    const first = $("contacts-list").querySelector("input");
+    if (first) first.focus();
+  }
+}
+
+async function contactAction(state, e) {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const act = btn.dataset.act;
+  if (act === "edit") {
+    state.editContact = btn.dataset.id;
+  } else if (act === "cancel") {
+    state.editContact = null;
+  } else if (act === "copy") {
+    const c = state.contacts.find((x) => x.id === btn.dataset.id);
+    try {
+      await navigator.clipboard.writeText(c.phone);
+      btn.textContent = "Copied";
+    } catch {
+      btn.textContent = "Copy failed";
+    }
+    setTimeout(() => (btn.textContent = "Copy"), 1500);
+    return;
+  }
+  rerender();
+}
+
+function saveContactForm(state, form) {
+  const id = form.dataset.id;
+  const name = form.elements.name.value.trim();
+  const phone = form.elements.phone.value.trim();
+  state.contacts = state.contacts.map((c) => (c.id === id ? { ...c, name, phone } : c));
+  state.editContact = null;
+  // The Server checks and saves them to one local file, then answers `contacts_saved`.
+  state.contactsNote = send("save_contacts", { data: state.contacts })
+    ? null
+    : { ok: false, text: "Not connected, so not saved. Your change lasts until you close Callguard." };
+  rerender();
+  const edit = $("contacts-list").querySelector(`button[data-act="edit"][data-id="${CSS.escape(id)}"]`);
+  if (edit) edit.focus();
+}
+
 // ---------------------------------------------------------------- after-call summary (T11 / UI-10)
 
 function signsCount(n) {
@@ -807,35 +954,54 @@ export function summaryText(sum) {
 }
 
 function bindSummary(state) {
-  $("sum-dismiss").addEventListener("click", () => {
-    state.summary = null; // gone from memory, not just hidden
-    rerender();
-  });
-  $("sum-copy").addEventListener("click", async () => {
-    if (!state.summary) return;
-    try {
-      await navigator.clipboard.writeText(summaryText(state.summary));
-      $("sum-copy").textContent = "Copied";
-    } catch {
-      $("sum-copy").textContent = "Copy failed";
+  $("history-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const sum = state.history.find((x) => x.id === id);
+    if (!sum) return;
+    if (btn.dataset.act === "remove") {
+      state.history = state.history.filter((x) => x.id !== id); // gone from memory, not just hidden
+      rerender();
+      return;
     }
-    setTimeout(() => ($("sum-copy").textContent = "Copy summary"), 1500);
+    try {
+      await navigator.clipboard.writeText(summaryText(sum));
+      btn.textContent = "Copied";
+    } catch {
+      btn.textContent = "Copy failed";
+    }
+    setTimeout(() => (btn.textContent = "Copy summary"), 1500);
   });
 }
 
+let historyDrawn = null; // redraw only on change, so a "Copied" label isn't wiped by other messages
+
 function renderSummary(state) {
-  const sum = state.summary;
-  const show = !!sum && !state.inCall;
-  $("summary").hidden = !show;
-  if (!show) {
-    for (const id of ["sum-pills", "sum-rules"]) $(id).replaceChildren();
-    for (const id of ["sum-kind", "sum-line"]) $(id).textContent = "";
-    return;
-  }
-  $("summary").className = `sec summary lv-sum-${sum.peak}`;
-  $("sum-kind").textContent = callKind(sum.tactics);
-  const level = sum.peak === "danger" ? "Reached Danger" : "Reached Watch";
-  $("sum-line").textContent = [level, signsCount(sum.tactics.length), sum.outcome ? OUTCOME[sum.outcome] : null].filter(Boolean).join(" · ");
-  $("sum-pills").replaceChildren(...sum.tactics.map((t) => h("span", { class: "pill", title: plainWords(t), text: shortWords(t) })));
-  $("sum-rules").replaceChildren(...sum.rules.map((text) => h("li", {}, h("b", { text: "Firm rule: " }), text)));
+  if (state.tab === "history") state.historyUnseen = false;
+  $("tab-history-dot").hidden = !state.historyUnseen;
+  $("history-empty").hidden = state.history.length > 0;
+  const sig = state.history.map((x) => x.id).join(",");
+  if (sig === historyDrawn) return;
+  historyDrawn = sig;
+  $("history-list").replaceChildren(
+    ...state.history.map((sum) => {
+      const level = sum.peak === "danger" ? "Reached Danger" : "Reached Watch";
+      return h(
+        "li",
+        { class: `sum-card lv-sum-${sum.peak}` },
+        h("p", { class: "sum-time", text: `Call ended ${sum.ended}` }),
+        h("p", { class: "sum-kind", text: callKind(sum.tactics) }),
+        h("p", { class: "sum-line", text: [level, signsCount(sum.tactics.length), sum.outcome ? OUTCOME[sum.outcome] : null].filter(Boolean).join(" · ") }),
+        sum.tactics.length ? h("div", { class: "pills" }, ...sum.tactics.map((t) => h("span", { class: "pill", title: plainWords(t), text: shortWords(t) }))) : null,
+        sum.rules.length ? h("ul", { class: "rules" }, ...sum.rules.map((text) => h("li", {}, h("b", { text: "Firm rule: " }), text))) : null,
+        h(
+          "div",
+          { class: "sum-btns" },
+          h("button", { class: "pill-btn", type: "button", "data-act": "copy", "data-id": sum.id, text: "Copy summary" }),
+          h("button", { class: "pill-btn", type: "button", "data-act": "remove", "data-id": sum.id, text: "Remove" }),
+        ),
+      );
+    }),
+  );
 }

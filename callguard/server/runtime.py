@@ -52,7 +52,7 @@ class Runtime:
     # ------------------------------------------------------------ status (SRV-6)
     @staticmethod
     def gate_mode() -> str:
-        return "off" if os.environ.get("CALLGUARD_GATE", "on").strip().lower() == "off" else "on"
+        return "on" if os.environ.get("CALLGUARD_GATE", "off").strip().lower() == "on" else "off"
 
     def status(self) -> Status:
         s: dict = {"listening": self.listening, "online": self.online, "gate": self.gate_mode()}

@@ -12,6 +12,8 @@ def clean_egress(monkeypatch):
     monkeypatch.setattr(egress, "_transport", None)
     monkeypatch.setattr(egress, "_probe", lambda *a, **k: False)
     monkeypatch.delenv("CALLGUARD_OFFLINE", raising=False)
+    # The pause is off by default in the app; these tests still cover its code, so turn it on.
+    monkeypatch.setenv("CALLGUARD_GATE", "on")
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
     yield
     egress.entries.clear()

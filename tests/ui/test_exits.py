@@ -15,8 +15,9 @@ UI = pathlib.Path(__file__).resolve().parents[2] / "ui"
 def test_exit_buttons_in_tab_order():
     html = (UI / "index.html").read_text(encoding="utf-8")
     exits = html[html.index('id="ov-exits"') :]
-    order = [exits.index(x) for x in ['id="ov-hangup"', 'id="ov-colleague"', 'id="safe-input"', 'id="safe-hold"']]
-    assert order == sorted(order), "Tab order must be hang up -> colleague -> SAFE input -> hold"
+    assert 'id="ov-hangup"' not in exits, "the hang-up exit was removed (Coco, Sat)"
+    order = [exits.index(x) for x in ['id="ov-colleague"', 'id="safe-input"', 'id="safe-hold"']]
+    assert order == sorted(order), "Tab order must be Report scam -> SAFE input -> hold"
     assert re.search(r'<button id="safe-hold"[^>]*\bdisabled\b', html), "hold starts disabled"
     assert "tabindex=\"1" not in html and "tabindex=\"2" not in html, "no positive tabindex"
 
@@ -38,32 +39,21 @@ def locked_s1(page, ui_server):
     r = Replay(page, ui_server, "s1_government")
     assert r.until(is_gate_locked)
     r.one()
-    assert r.frame.is_visible("#ov-lock")
+    assert r.frame.is_visible("#overlay")
     # Clicking the harness's Step button moved keyboard focus to the parent page;
     # hand it back to where the overlay put it (checked in test_overlay.py).
-    r.frame.focus("#ov-hangup")
+    r.frame.focus("#ov-colleague")
     return r
 
 
-def test_lock_line_and_countdown(ui_server, browser):
+def test_no_pause_warning_stays_until_an_exit(ui_server, browser):
+    """The pause was removed (Coco, Sat): `gate` is ignored, no countdown, no step-back."""
     page = browser.new_page()
     r = locked_s1(page, ui_server)
     f = r.frame
-    assert "asking for bank details" in f.inner_text("#ov-ask")
-    assert f.inner_text("#ov-count") in {"2:00", "1:59"}, "starts from gate.release_in (120 s)"
-    # Ticks locally: reaches 1:58 within ~2 s (allow slack for a loaded test machine).
-    f.wait_for_function("document.getElementById('ov-count').textContent === '1:58'", timeout=4000)
-    page.close()
-
-
-def test_auto_release_steps_back_to_the_red_panel(ui_server, browser):
-    page = browser.new_page()
-    r = locked_s1(page, ui_server)
-    f = r.frame
-    r.one()  # gate off, no exit taken
-    assert not f.is_visible("#overlay")
-    assert f.inner_text("#hero-word") == "Danger"
-    assert f.is_visible("#show-warning")
+    assert f.locator("#ov-lock, #ov-count").count() == 0
+    r.one()  # the Server's gate off (sent only when CALLGUARD_GATE=on): nothing changes
+    assert f.is_visible("#overlay")
     assert r.sent() == []
     page.close()
 
@@ -72,30 +62,13 @@ def test_enter_and_esc_never_take_an_exit(ui_server, browser):
     page = browser.new_page()
     r = locked_s1(page, ui_server)
     f = r.frame
-    assert f.evaluate("document.activeElement.id") == "ov-hangup"
-    for _ in range(4):  # visit every exit by keyboard, pressing Enter and Esc on each
+    assert f.evaluate("document.activeElement.id") == "ov-colleague"
+    for _ in range(3):  # visit every exit by keyboard, pressing Enter and Esc on each
         page.keyboard.press("Enter")
         page.keyboard.press("Escape")
         page.keyboard.press("Tab")
-    assert f.is_visible("#overlay") and f.is_visible("#ov-lock")
+    assert f.is_visible("#overlay")
     assert r.sent() == []
-    page.close()
-
-
-def test_hang_up_and_call_back(ui_server, browser):
-    page = browser.new_page()
-    r = locked_s1(page, ui_server)
-    f = r.frame
-    page.keyboard.press(" ")  # focus starts on the primary
-    assert r.sent() == [{"type": "gate_release", "how": "hang_up"}]
-    assert f.is_visible("#ov-callback") and not f.is_visible("#ov-lock")
-    assert f.inner_text("#cb-number") == "(202) 514-2000"
-    assert f.evaluate("document.activeElement.id") == "cb-copy"
-    r.one()  # gate off from the Server: the call-back card stays
-    assert f.is_visible("#ov-callback")
-    r.until(is_end)
-    r.one()
-    assert not f.is_visible("#overlay")
     page.close()
 
 
@@ -103,15 +76,14 @@ def test_check_with_a_colleague(ui_server, browser):
     page = browser.new_page()
     r = locked_s1(page, ui_server)
     f = r.frame
-    page.keyboard.press("Tab")
     assert f.evaluate("document.activeElement.id") == "ov-colleague"
     page.keyboard.press(" ")
     assert r.sent() == [{"type": "colleague"}, {"type": "gate_release", "how": "colleague"}]
     toast = f.inner_text("#ov-toast")
     assert "Heads-up for IT and your manager" in toast and "Demo: not sent" in toast
     assert "Department of Justice" not in toast, "fixed wording only, nothing from the call"
-    assert f.inner_text("#priv-text").startswith("1 item left"), "the heads-up adds nothing to the egress log"
-    assert f.is_visible("#overlay") and not f.is_visible("#ov-lock")
+    assert f.inner_text("#priv-text").startswith("1 search sent"), "the heads-up adds nothing to the egress log"
+    assert f.is_visible("#overlay")
     page.close()
 
 
@@ -145,8 +117,7 @@ def test_safe_hold_3s_marks_safe(ui_server, browser):
     page = browser.new_page()
     r = locked_s1(page, ui_server)
     f = r.frame
-    # keyboard only: Tab hang up -> colleague -> input -> hold
-    page.keyboard.press("Tab")
+    # keyboard only: Tab Report scam -> input -> hold
     page.keyboard.press("Tab")
     assert f.evaluate("document.activeElement.id") == "safe-input"
     page.keyboard.type("Safe")
@@ -162,14 +133,13 @@ def test_safe_hold_3s_marks_safe(ui_server, browser):
     page.close()
 
 
-@pytest.mark.parametrize("button", ["#ov-hangup", "#ov-colleague"])
+@pytest.mark.parametrize("button", ["#ov-colleague"])
 def test_exits_work_without_a_gate(button, ui_server, browser):
     """Pure danger, no ask: every button still works."""
     page = browser.new_page()
     r = Replay(page, ui_server, "s1_government")
     r.until(is_danger)
     r.one()
-    assert not r.frame.is_visible("#ov-lock")
     r.frame.click(button)
     assert r.sent()[-1]["type"] == "gate_release"
     page.close()

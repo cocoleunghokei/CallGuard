@@ -56,7 +56,7 @@ def _tab_all(page, frame, limit=30):
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
-@pytest.mark.parametrize("beat", ["watch", "locked", "panel_danger"])
+@pytest.mark.parametrize("beat", ["watch", "locked"])
 def test_demo_path_contrast_and_focus(beat, scheme, ui_server, browser):
     page = browser.new_page(color_scheme=scheme)
     r = Replay(page, ui_server, "s1_government")
@@ -68,10 +68,7 @@ def test_demo_path_contrast_and_focus(beat, scheme, ui_server, browser):
     else:
         r.until(is_gate_locked)
         r.one()
-        start = "#ov-hangup"
-        if beat == "panel_danger":
-            r.one()  # auto-release: back to the red panel
-            start = "#show-warning"
+        start = "#ov-colleague"
     assert not f.evaluate(CONTRAST), "text below 4.5:1"
     f.focus(start)
     seen, bad = _tab_all(page, f)
@@ -88,7 +85,7 @@ def test_overlay_is_an_alert_with_a_name(ui_server, browser):
     snap = page.accessibility.snapshot(root=r.frame.query_selector("#overlay")) if hasattr(page, "accessibility") else None
     role = r.frame.get_attribute("#overlay", "role")
     name = r.frame.inner_text("#ov-h")
-    assert role == "alertdialog" and name == "Stop and verify this call"
+    assert role == "alertdialog" and name == "Scam detected"
     if snap:
         assert snap.get("role") == "alertdialog"
     page.close()

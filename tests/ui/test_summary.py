@@ -1,4 +1,4 @@
-"""T11 / UI-10: after-call summary card. No transcript, no quotes, gone when dismissed."""
+"""T11 / UI-10: after-call summary cards in the History tab. No transcript, no quotes, gone when removed."""
 import json
 import pathlib
 import re
@@ -9,7 +9,8 @@ from ui_replay import Replay, is_end, is_gate_locked
 UI = pathlib.Path(__file__).resolve().parents[2] / "ui"
 FIXTURES = UI / "dev" / "fixtures"
 
-STATE = "async () => (await import('/app.js')).state.summary"
+STATE = "async () => (await import('/app.js')).state.history"
+CARD = "#history-list > li:first-child"
 
 
 def play_to_end(r):
@@ -41,37 +42,41 @@ def test_card_copy_has_no_banned_words():
 @pytest.mark.parametrize(
     "name,kind,outcome",
     [
-        ("s1_government", "Someone posing as an official", "you hung up to call back"),
-        ("s2_vendor_bank", "Someone asking to change bank details", "you hung up to call back"),
-        ("s3_it_code", "Someone asking for a login code", "you hung up to call back"),
-        ("s4_partner_wire", "Someone pushing for a payment", "you hung up to call back"),
+        ("s1_government", "Someone posing as an official", "you reported it"),
+        ("s2_vendor_bank", "Someone asking to change bank details", "you reported it"),
+        ("s3_it_code", "Someone asking for a login code", "you reported it"),
+        ("s4_partner_wire", "Someone pushing for a payment", "you reported it"),
     ],
 )
-def test_card_after_hang_up(name, kind, outcome, ui_server, browser):
+def test_card_after_report(name, kind, outcome, ui_server, browser):
     page = browser.new_page()
     r = Replay(page, ui_server, name)
     f = r.frame
     r.until(is_gate_locked)
     r.one()
-    f.click("#ov-hangup")
+    f.click("#ov-colleague")
     play_to_end(r)
-    assert f.is_visible("#summary")
-    assert f.inner_text("#sum-kind") == kind
-    line = f.inner_text("#sum-line")
+    assert not f.is_visible("#history"), "the card waits in its own tab"
+    assert f.is_visible("#tab-history-dot")
+    f.click("#tab-history")
+    assert not f.is_visible("#tab-history-dot")
+    assert f.inner_text(f"{CARD} .sum-kind") == kind
+    line = f.inner_text(f"{CARD} .sum-line")
     assert line.startswith("Reached Danger · ") and outcome in line and re.search(r"\d+ warning signs?", line)
-    card = f.inner_text("#summary")
+    card = f.inner_text("#history")
     for words in call_words(name):
         assert words not in card, f"call content in the summary: {words[-80:]!r}"
     page.close()
 
 
-def test_pause_ran_out(ui_server, browser):
+def test_no_exit_taken(ui_server, browser):
     page = browser.new_page()
     r = Replay(page, ui_server, "s1_government")
-    play_to_end(r)  # no exit taken: the pause runs out before the call ends
-    assert "the pause ran out" in r.frame.inner_text("#sum-line")
+    play_to_end(r)  # no exit taken: the card names no outcome (the pause, and "ran out", are gone)
+    r.frame.click("#tab-history")
+    line = r.frame.inner_text(f"{CARD} .sum-line")
+    assert line.startswith("Reached Danger · ") and "pause" not in line
     page.close()
-
 
 def test_watch_only_call_and_mark_safe(ui_server, browser):
     page = browser.new_page()
@@ -81,8 +86,9 @@ def test_watch_only_call_and_mark_safe(ui_server, browser):
     r.one()
     f.click("#side-safe")
     play_to_end(r)
-    assert f.inner_text("#sum-line").startswith("Reached Watch · ")
-    assert "you marked it safe" in f.inner_text("#sum-line")
+    f.click("#tab-history")
+    assert f.inner_text(f"{CARD} .sum-line").startswith("Reached Watch · ")
+    assert "you marked it safe" in f.inner_text(f"{CARD} .sum-line")
     page.close()
 
 
@@ -91,8 +97,8 @@ def test_calm_calls_leave_no_card(name, ui_server, browser):
     page = browser.new_page()
     r = Replay(page, ui_server, name)
     play_to_end(r)
-    assert not r.frame.is_visible("#summary")
-    assert r.frame.evaluate(STATE) is None
+    assert not r.frame.is_visible("#tab-history-dot")
+    assert r.frame.evaluate(STATE) == []
     page.close()
 
 
@@ -101,10 +107,11 @@ def test_dismiss_clears_memory_and_dom(ui_server, browser):
     r = Replay(page, ui_server, "s2_vendor_bank")
     f = r.frame
     play_to_end(r)
-    assert f.evaluate(STATE)["tactics"]
-    f.click("#sum-copy")  # user's own action; must not throw without clipboard permission
-    f.click("#sum-dismiss")
-    assert f.evaluate(STATE) is None
-    assert not f.is_visible("#summary")
-    assert f.inner_text("#sum-kind") == "" and f.locator("#sum-pills > *").count() == 0
+    assert f.evaluate(STATE)[0]["tactics"]
+    f.click("#tab-history")
+    f.click(f"{CARD} [data-act=copy]")  # user's own action; must not throw without clipboard permission
+    f.click(f"{CARD} [data-act=remove]")
+    assert f.evaluate(STATE) == []
+    assert f.locator("#history-list > li").count() == 0
+    assert f.is_visible("#history-empty")
     page.close()

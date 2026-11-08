@@ -18,7 +18,8 @@ LOCKED_REASON = "Pause before sharing money, access, or personal information. Ve
 
 
 def gate_enabled() -> bool:
-    return os.environ.get("CALLGUARD_GATE", "on").strip().lower() != "off"
+    # Off by default (Coco, Sat: the pause was removed from the product). CALLGUARD_GATE=on brings it back.
+    return os.environ.get("CALLGUARD_GATE", "off").strip().lower() == "on"
 
 
 class SoftGate:
