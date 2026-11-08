@@ -8,11 +8,11 @@
 # tactics: authority, threat, inside_knowledge, secrecy, credential_request
 # rules: never_keep_calls_secret, it_never_asks_for_codes
 # claimed: Ministry of Public Security
-caller: Hello, is this Jess? This is Officer Wang from the Ministry of Public Security in Beijing.
+caller: Hello, is this Jess? I'm Officer Wang from the Ministry of Public Security in Beijing.
 you: Yes, this is Jess. Sorry, what is this about?
 caller: Thank you for taking my call. I will explain everything, it will only take a few minutes.
 you: Okay, go ahead.
-caller: Your name is linked to a money-laundering case in Shenzhen. You are a suspect and a warrant has been issued.
+caller: As a police officer, I must tell you: your name is linked to a money-laundering case in Shenzhen. You are a suspect and a warrant has been issued.
 you: That's impossible. I'm a lawyer, I work on money-laundering cases.
 caller: We know about the cases you work on. Officers can come to arrest you at any time.
 you: What? What am I supposed to do?
