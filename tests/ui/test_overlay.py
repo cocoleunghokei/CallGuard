@@ -55,7 +55,7 @@ def test_danger_opens_overlay_that_explains_itself(name, ui_server, browser):
     f = r.frame
     assert f.is_visible("#overlay")
     assert f.evaluate("document.activeElement.id") == "ov-colleague"
-    assert f.evaluate("document.getElementById('panel').inert")
+    assert f.evaluate("document.getElementById('main').inert")
 
     # Esc and Enter never close it.
     f.press("#ov-colleague", "Escape")
@@ -72,7 +72,7 @@ def test_danger_opens_overlay_that_explains_itself(name, ui_server, browser):
 
     r.one()  # call ended
     assert not f.is_visible("#overlay")
-    assert not f.evaluate("document.getElementById('panel').inert")
+    assert not f.evaluate("document.getElementById('main').inert")
     page.close()
 
 

@@ -50,7 +50,7 @@ def test_lock_line_and_countdown(ui_server, browser):
     page = browser.new_page()
     r = locked_s1(page, ui_server)
     f = r.frame
-    assert "asking for bank details" in f.inner_text("#ov-ask")
+    assert "Paused" in f.inner_text("#ov-lock"), "the banner stays one line; the pause is a small countdown in the foot"
     assert f.inner_text("#ov-count") in {"2:00", "1:59"}, "starts from gate.release_in (120 s)"
     # Ticks locally: reaches 1:58 within ~2 s (allow slack for a loaded test machine).
     f.wait_for_function("document.getElementById('ov-count').textContent === '1:58'", timeout=4000)

@@ -1,7 +1,7 @@
 // Draws `state` (see app.js) into ui/index.html. Never logs, never stores.
 // The UI follows `check` exactly as sent: no smoothing of its own (Server C10).
 
-import { plainWords, shortWords, sayThis, signsWords, askLine, mmss, HEADS_UP, callKind, OUTCOME } from "./copy.js";
+import { plainWords, shortWords, sayThis, signsWords, mmss, HEADS_UP, callKind, OUTCOME } from "./copy.js";
 import { send } from "./ws.js";
 
 /** How long the verify line says "Checking…" before it gives up and hides. */
@@ -60,10 +60,13 @@ export function bindView(state, redraw) {
     rerender();
     $("open-said").focus();
   });
-  $("end-call").addEventListener("click", () => send("end_call"));
   bindExits(state);
   bindSideButtons(state);
   bindTabs(state);
+  $("ov-full").addEventListener("click", () => {
+    state.ui.ovFull = !state.ui.ovFull;
+    rerender();
+  });
   bindSummary(state);
   $("show-warning").addEventListener("click", () => {
     state.overlay.open = true; // not a new open: no tone
@@ -363,14 +366,13 @@ function renderTail(state) {
   $("tail-empty").hidden = state.tail.length > 0;
   $("latest").hidden = !state.inCall || state.ui.view !== "panel";
   $("open-said").hidden = state.transcript.length === 0;
-  $("end-call").hidden = !state.inCall;
 }
 
 /** Call content leaves the DOM, not just the screen (UI-7, F9). */
 function clearCallDom() {
-  for (const id of ["ov-ask", "ov-toast", "ov-report"]) $(id).textContent = "";
+  for (const id of ["ov-toast", "ov-report"]) $(id).textContent = "";
   $("safe-input").value = "";
-  for (const id of ["pills", "quote", "rules-broken", "flagged", "said-latest", "tail", "ov-tactics", "ov-rules"]) $(id).replaceChildren();
+  for (const id of ["pills", "quote", "rules-broken", "flagged", "said-latest", "tail", "ov-tactics", "ov-rules", "ov-tail"]) $(id).replaceChildren();
   for (const id of ["reason", "say-text", "num-phone", "num-src", "verify-note", "next-step", "ov-claim", "ov-verify", "ov-say-text", "ov-next"]) $(id).textContent = "";
   $("reason").removeAttribute("title");
 }
@@ -511,6 +513,19 @@ function tone() {
   }
 }
 
+/** Cover the panel below its header, not the sidebar or the "Listening" line. */
+function placeOverlay() {
+  const panel = $("panel").getBoundingClientRect();
+  const top = document.querySelector(".top").getBoundingClientRect().bottom;
+  const ov = $("overlay");
+  ov.style.left = `${Math.max(0, panel.left)}px`;
+  ov.style.width = `${panel.width}px`;
+  ov.style.top = `${Math.max(0, top)}px`;
+}
+window.addEventListener("resize", () => {
+  if (!$("overlay").hidden) placeOverlay();
+});
+
 function focusables() {
   return [...$("overlay").querySelectorAll("button, [href], input, [tabindex]:not([tabindex='-1'])")].filter((el) => !el.disabled && el.offsetParent !== null);
 }
@@ -541,11 +556,14 @@ function overlayKeys(e) {
 
 function renderOverlay(state, lv) {
   const o = state.overlay;
-  const open = !!(o && o.open && state.inCall && state.check && lv === "danger");
+  // Shown on the Call tab only; the sidebar and the header stay usable around it.
+  const open = !!(o && o.open && state.inCall && state.check && lv === "danger" && state.tab === "call");
   const wasOpen = !$("overlay").hidden;
   $("overlay").hidden = !open;
-  $("panel").inert = open;
+  $("main").inert = open;
+  $("priv").inert = open;
   $("show-warning").hidden = !(lv === "danger" && !open && state.inCall);
+  if (open) placeOverlay();
   if (!o || o.opens < lastOpens) lastOpens = 0; // new call
   if (!open) return;
 
@@ -556,15 +574,23 @@ function renderOverlay(state, lv) {
   const g = state.gate;
   const locked = !!(g && g.state === "locked");
   $("ov-lock").hidden = !locked;
-  $("ov-ask").textContent = locked ? askLine(g, c.tactics) : "";
   $("ov-count").textContent = locked && g.until ? mmss((g.until - Date.now()) / 1000) : "";
-  $("ov-count").parentElement.hidden = !(locked && g.until);
+  if (locked && !g.until) $("ov-lock").hidden = true;
   $("safe-hold").disabled = !isSafe();
 
   const vi = verifyInfo(state);
-  const conf = typeof c.confidence === "number" ? c.confidence : null;
-  const segs = conf == null ? null : Math.max(0, Math.min(10, Math.round(conf * 10)));
-  $("ov-words").textContent = segs == null ? "Strong signs" : signsWords(segs);
+  // Latest lines: the same 3 as the call screen, or the whole call when expanded.
+  const full = !!state.ui.ovFull;
+  $("ov-full").setAttribute("aria-expanded", String(full));
+  $("ov-full").textContent = full ? "Show less ‹" : "View full transcript ›";
+  $("ov-full").hidden = state.transcript.length <= state.tail.length;
+  $("ov-tail-box").classList.toggle("full", full);
+  $("ov-tail").replaceChildren(
+    ...(full ? state.transcript : state.tail).map((t) => {
+      const you = t.speaker === "you";
+      return h("li", {}, h("span", { class: you ? "who you" : "who", text: you ? "You" : "Caller" }), h("span", { class: "line", text: t.text }));
+    }),
+  );
 
   $("ov-claim").hidden = !c.claimed_identity;
   $("ov-claim").replaceChildren(...(c.claimed_identity ? ["The caller claims to be: ", h("b", { text: c.claimed_identity })] : []));
@@ -602,9 +628,11 @@ function renderOverlay(state, lv) {
   if (o.opens > lastOpens) {
     lastOpens = o.opens;
     tone();
-    primary.focus();
+    primary.focus({ preventScroll: true }); // keep the banner on screen
+    $("overlay").scrollTop = 0;
   } else if (!wasOpen) {
-    primary.focus();
+    primary.focus({ preventScroll: true });
+    $("overlay").scrollTop = 0;
   }
 }
 

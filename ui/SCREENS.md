@@ -14,7 +14,7 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 | # | State | Step (time) | What to look for |
 |---|---|---|---|
 | 1 | Idle, F0 | 2 (0.5 s) | Grey ○ "Not on a call", "Listening", "How it works" link, "Nothing sent online" |
-| 2 | Call started, low, F1 | 3–7 (1.0–12 s) | Green ✓ "Low · No clear signs" + 3/10 bar, "Latest" shows the last 3 lines, "End call" in the footer |
+| 2 | Call started, low, F1 | 3–7 (1.0–12 s) | Green ✓ "Low · No clear signs", "Latest" shows the last 3 lines |
 | 3 | Watch, F2 | 8 (15.0 s) | Amber ◐ "Watch · Some signs". Fixed sections, nothing moves: Latest (3 lines, "View full transcript ›"), What to do (Say line, "Checking Department of Justice's public number…", next step, buttons "Report scam" (shows the demo-only IT + manager heads-up) and "Mark as safe" (one click, panel goes "Low · Marked safe")), Insights (reason + "Claims authority", "Threatens you"; click to see the quote) |
 | 4 | Egress entry, F6 | 9 (16.0 s) | Footer flashes once, "1 search sent: "Department of Justice"". Click it: panel "Sent online (1)", entry 19:02:11 · api.tavily.com · Sent |
 | 5 | Verified number | 10 (17.4 s) | "Public number · justice.gov (202) 514-2000" with Copy |

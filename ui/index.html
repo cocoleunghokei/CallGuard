@@ -167,7 +167,6 @@
         <button id="priv-btn" class="priv-btn" type="button" aria-expanded="false" aria-controls="egress">
           <svg id="priv-ic" class="ok" width="14" height="14"><use id="priv-icon" href="#i-low"/></svg><span id="priv-text">Nothing sent online</span><span id="priv-skipped" class="skipped"></span><span class="go" aria-hidden="true">›</span>
         </button>
-        <button id="end-call" class="link end" type="button" hidden>End call</button>
       </div>
     </footer>
   </div>
@@ -176,38 +175,46 @@
   <!-- Danger overlay (T6 / UI-4). Fills the Callguard window, never the screen. -->
   <div id="overlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="ov-h" aria-describedby="ov-next" tabindex="-1" hidden>
     <div class="ov-card">
+      <!-- Same order as the call screen: status, Latest, What to do, Insights. -->
       <section class="hero lv-danger ov-hero">
         <div class="ic"><svg width="28" height="28"><use href="#i-danger"/></svg></div>
         <h1 id="ov-h">Scam detected</h1>
-        <p id="ov-sub" class="sub"><span id="ov-words">Strong signs</span></p>
-        <!-- T7: the safe-path pause. It never blocks typing. -->
-        <div id="ov-lock" class="ov-lock" hidden>
-          <p id="ov-ask" class="ov-ask"></p>
-          <p class="ov-count">🔒 Pause ends in <time id="ov-count" aria-live="off"></time></p>
-          <p class="ov-soft">Callguard is keeping focus so you don't type it by accident.</p>
-        </div>
       </section>
-      <div id="ov-body" class="ov-body">
+
+      <section class="sec" aria-labelledby="ov-latest-h">
+        <h2><span id="ov-latest-h">Latest</span><button id="ov-full" class="link" type="button" aria-expanded="false" aria-controls="ov-tail">View full transcript ›</button></h2>
+        <div id="ov-tail-box" class="tail-box"><ol id="ov-tail" class="said"></ol></div>
+      </section>
+
+      <section class="sec" aria-labelledby="ov-todo-h">
+        <h2 id="ov-todo-h">What to do</h2>
+        <div id="ov-say" class="say" hidden><small>Say</small><q id="ov-say-text"></q></div>
+        <p id="ov-verify" class="ov-verify" hidden></p>
+        <p id="ov-next" class="ov-next"></p>
+        <!-- T7: Report scam is the easy exit. Enter and Esc never take one. -->
+        <div id="ov-exits" class="ov-exits">
+          <button id="ov-colleague" class="btn primary" type="button" data-exit="colleague">Report scam</button>
+        </div>
+        <p id="ov-toast" class="toast" role="status" hidden></p>
+      </section>
+
+      <section id="ov-body" class="sec" aria-labelledby="ov-ins-h">
+        <h2 id="ov-ins-h">Insights</h2>
         <p id="ov-claim" class="ov-claim" hidden></p>
         <ul id="ov-tactics" class="ov-tactics" aria-label="Signs in this call"></ul>
         <ul id="ov-rules" class="rules"></ul>
-        <p id="ov-verify" class="ov-verify" hidden></p>
         <p id="ov-report" class="ov-report" hidden></p>
-        <div id="ov-say" class="say" hidden><small>Say</small><q id="ov-say-text"></q></div>
-        <p id="ov-next" class="ov-next"></p>
-      </div>
-      <!-- Sticky foot: the way out and the privacy line are always on screen. -->
+      </section>
+
+      <!-- Sticky foot: the pause countdown, the "it's safe" exit and the privacy line. -->
       <div class="ov-foot">
-        <p id="ov-toast" class="toast" role="status" hidden></p>
-        <!-- T7: two exits, Report scam the easiest. Enter and Esc never take one. -->
-        <div id="ov-exits" class="ov-exits">
-          <button id="ov-colleague" class="btn primary" type="button" data-exit="colleague">Report scam</button>
-          <div class="safe">
-            <label for="safe-input">Verified it's safe? Type SAFE</label>
-            <input id="safe-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="8" aria-describedby="safe-hint">
-            <button id="safe-hold" class="hold" type="button" data-exit="mark_safe" disabled aria-describedby="safe-hint"><span id="safe-hold-text">Hold 3 s</span></button>
-            <small id="safe-hint" class="sr-only">Then press and hold the button, or hold Space on it, for 3 seconds.</small>
-          </div>
+        <!-- T7: the safe-path pause. It never blocks typing. -->
+        <p id="ov-lock" class="ov-lock" hidden>🔒 Paused · <time id="ov-count" aria-live="off"></time></p>
+        <div class="safe">
+          <label for="safe-input">Verified it's safe? Type SAFE</label>
+          <input id="safe-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="8" aria-describedby="safe-hint">
+          <button id="safe-hold" class="hold" type="button" data-exit="mark_safe" disabled aria-describedby="safe-hint"><span id="safe-hold-text">Hold 3 s</span></button>
+          <small id="safe-hint" class="sr-only">Then press and hold the button, or hold Space on it, for 3 seconds.</small>
         </div>
         <p id="ov-egress" class="ov-egress"></p>
       </div>

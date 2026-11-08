@@ -371,3 +371,22 @@ mark { color: inherit; border-radius: 3px; padding: 0 2px; background: var(--wat
 .say { min-height: 96px; }
 .act { min-height: 116px; }
 .side-btns .btn.quiet { height: 52px; min-height: 52px; padding: 6px 10px; line-height: 1.2; }
+
+/* Warning in the call-screen order (Coco, Sat): banner is just the word; sections match the panel. */
+.ov-card { gap: var(--s5); }
+.ov-hero { padding: var(--s4); }
+.ov-hero .ic { margin-bottom: var(--s2); }
+.ov-next { padding: 0 var(--s1); background: none; border-radius: 0; font-weight: 400; font-size: var(--t-meta); }
+.ov-verify { padding: 0 var(--s1); }
+#ov-tail-box.full { height: auto; max-height: 40vh; overflow-y: auto; justify-content: flex-start; }
+.ov-lock { margin: 0; display: block; font-size: var(--t-meta); color: var(--muted); }
+.ov-lock time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text); }
+.ov-foot .safe { margin-top: 0; }
+/* No cut-off text (Coco, Sat): Insights is last, so the reason can wrap without moving anything;
+   the footer shows the whole search on up to two lines. */
+.reason { white-space: normal; overflow: visible; text-overflow: clip; }
+.priv-btn #priv-text { white-space: normal; overflow: visible; text-overflow: clip; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* The warning sits inside the panel area: header and sidebar stay on screen. */
+.overlay { right: auto; bottom: 0; }
+.top { position: sticky; top: 0; z-index: 6; background: var(--bg); }

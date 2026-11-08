@@ -193,6 +193,7 @@ function wipeCall() {
   state.gate = null;
   state.ui.expanded = null;
   state.ui.view = "panel";
+  state.ui.ovFull = false;
   state.overlay = { open: false, opens: 0, seen: [], mode: "warning" };
   state.markedSafe = false;
   state.ruleHits = {};
