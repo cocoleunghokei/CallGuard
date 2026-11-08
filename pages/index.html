@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callguard demo</title>
+<meta name="description" content="Try Callguard: recorded scam calls played through the real app screen, in your browser.">
+<!--
+  Judge landing page, published to GitHub Pages by .github/workflows/pages.yml.
+  The workflow copies ui/ to app/ next to this file, so the frame below plays
+  ui/dev/fixtures through the CURRENT ui/index.html on main (no Server, no
+  Ollama, no network). Scenario ids must exist in ui/dev/replay.js FIXTURES.
+-->
+<style>
+  :root {
+    --bg: #f6f6f8; --fg: #1c1c1e; --muted: #5c5c63; --card: #ffffff; --line: #dcdce0;
+    --chip: #ffffff; --chip-on: #1c1c1e; --chip-on-fg: #ffffff; --accent: #b3261e;
+    --font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e0e10; --fg: #f2f2f4; --muted: #a8a8b0; --card: #1a1a1d; --line: #2e2e33;
+      --chip: #1a1a1d; --chip-on: #f2f2f4; --chip-on-fg: #0e0e10; --accent: #ff6b5e;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font); }
+  main { max-width: 1320px; margin: 0 auto; padding: 24px 16px 40px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { margin: 0 0 16px; color: var(--muted); max-width: 70ch; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .facts li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+  .facts b { display: block; margin-bottom: 2px; }
+  .note { border-left: 3px solid var(--accent); padding: 8px 12px; background: var(--card); border-radius: 0 8px 8px 0; font-size: 14px; margin: 0 0 20px; }
+  fieldset { border: 0; padding: 0; margin: 0 0 12px; }
+  legend { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 6px; padding: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips button { font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); color: var(--fg); cursor: pointer; }
+  .chips button[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-fg); border-color: var(--chip-on); }
+  .chips button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .look { font-size: 14px; color: var(--muted); margin: 4px 0 12px; min-height: 1.5em; }
+  .frame { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  iframe { display: block; width: 100%; height: 820px; border: 0; }
+  .narrow { display: none; }
+  @media (max-width: 760px) { .narrow { display: block; } }
+  footer { margin-top: 16px; font-size: 13px; color: var(--muted); }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Callguard</h1>
+  <p class="lede">A Mac app that listens to work calls, spots scam scripts as they happen, checks them against the firm's own rules, and warns you before you pay, share a code or change bank details.</p>
+
+  <ul class="facts">
+    <li><b>Runs on the laptop</b>Speech-to-text and the AI model run locally. No call audio or words are stored or sent anywhere.</li>
+    <li><b>One thing goes online</b>Only the name of the organization the caller claims to be (e.g. "Department of Justice") is looked up to find its real public number. Every lookup shows in the app's "Sent online" log.</li>
+    <li><b>Works offline</b>With the Wi-Fi off, everything still works except that lookup.</li>
+  </ul>
+
+  <p class="note"><b>This page is a replay.</b> It plays recorded calls through the real Callguard screen, so you can try it without a Mac or a phone call. Live listening needs the Mac app, shown in our live demo. Pick a scenario. The call plays on its own (use Pause, Step or 4× to go at your pace). On the right you can see every message the app received, and everything it sent back.</p>
+  <p class="note narrow">Best viewed on a laptop or desktop screen.</p>
+
+  <fieldset>
+    <legend>Scam calls</legend>
+    <div class="chips" id="scam"></div>
+  </fieldset>
+  <fieldset>
+    <legend>Normal calls (Callguard should stay calm)</legend>
+    <div class="chips" id="calm"></div>
+  </fieldset>
+  <fieldset>
+    <legend>When things go wrong</legend>
+    <div class="chips" id="fail"></div>
+  </fieldset>
+  <p class="look" id="look" aria-live="polite"></p>
+
+  <div class="frame">
+    <iframe id="demo" title="Callguard replay"></iframe>
+  </div>
+
+  <footer>Built for HACK1984. Source: <a href="https://github.com/cocoleunghokei/scam-call-detector">github.com/cocoleunghokei/scam-call-detector</a></footer>
+</main>
+<script>
+  const SCENARIOS = [
+    { group: "scam", id: "s1_government", label: "Fake government official",
+      look: "Watch it go from Low to Watch to Danger as the caller adds pressure. It looks up the real number for the Department of Justice, and that name is the only thing sent online (see the footer)." },
+    { group: "scam", id: "s2_vendor_bank", label: "Vendor asks to change bank details",
+      look: "A firm rule (\"We never change vendor bank details by phone\") is broken. The warning names the rule." },
+    { group: "scam", id: "s3_it_code", label: "Fake IT asks for a login code",
+      look: "Goes straight to Danger. An internal identity, so nothing is searched and nothing leaves the laptop." },
+    { group: "scam", id: "s4_partner_wire", label: "“Partner” pushes an urgent wire",
+      look: "A cloned voice asking for a payment. Danger, with the caller's own words as evidence." },
+    { group: "scam", id: "s1_report", label: "Fake official + recent scam report",
+      look: "Same call as the first one, with a recent public report of this impersonation shown on the warning." },
+    { group: "calm", id: "b1_vendor_invoice", label: "Real vendor invoice question",
+      look: "Stays Low the whole call, and nothing is sent online." },
+    { group: "calm", id: "b2_colleague", label: "Colleague with a deadline",
+      look: "Urgency on its own doesn't raise the alarm. Stays Low." },
+    { group: "calm", id: "b3_real_bank", label: "Real bank calling back",
+      look: "Mentions the bank, but the call follows a safe pattern (you called a known number), so it stays Low." },
+    { group: "calm", id: "b7_you_say_it", label: "You say the scary words",
+      look: "“Don't tell anyone” said by you, not the caller, is ignored. Stays Low." },
+    { group: "fail", id: "offline", label: "Wi-Fi off",
+      look: "The government-official call again with no internet. Detection works the same; the lookup says “Offline” and nothing is sent." },
+    { group: "fail", id: "model_down", label: "AI model not running",
+      look: "Falls back to basic phrase checks, capped at Watch, so the user still gets a warning." },
+  ];
+
+  const frame = document.getElementById("demo");
+  const look = document.getElementById("look");
+  const buttons = [];
+
+  function play(s) {
+    for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.id === s.id));
+    look.textContent = "What to look for: " + s.look;
+    frame.src = "app/dev/replay.html?f=" + encodeURIComponent(s.id) + "&speed=1";
+    try { history.replaceState(null, "", "#" + s.id); } catch (e) { /* ignore */ }
+  }
+
+  for (const s of SCENARIOS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.id = s.id;
+    b.textContent = s.label;
+    b.addEventListener("click", () => play(s));
+    document.getElementById(s.group).appendChild(b);
+    buttons.push(b);
+  }
+
+  const start = SCENARIOS.find((s) => s.id === location.hash.slice(1)) || SCENARIOS[0];
+  play(start);
+</script>
+</body>
+</html>
