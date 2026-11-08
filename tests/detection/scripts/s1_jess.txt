@@ -12,9 +12,9 @@ caller: Hello, is this Jess? This is Officer Wang from the Ministry of Public Se
 you: Yes, this is Jess. Sorry, what is this about?
 caller: Thank you for taking my call. I will explain everything, it will only take a few minutes.
 you: Okay, go ahead.
-caller: Your name is linked to a money-laundering case in Shenzhen. You are a suspect.
+caller: Your name is linked to a money-laundering case in Shenzhen. You are a suspect and a warrant has been issued.
 you: That's impossible. I'm a lawyer, I work on money-laundering cases.
-caller: We know about your cases. A warrant for your arrest has already been issued in Beijing.
+caller: We know about the cases you work on. Officers can come to arrest you at any time.
 you: What? What am I supposed to do?
 caller: This is a top secret investigation. Go to a quiet room alone. Do not tell your colleagues or your family.
 you: Okay, I'm alone now, in a hotel room.
