@@ -23,6 +23,10 @@ def test_json_only_caller_only_verbatim_verify_first():
     assert "json object and nothing else" in p
     assert "only `caller:` lines count" in p
     assert "word for word" in p and "80 characters" in p
+    # Short exact phrases: faster answers and fewer quotes dropped by parse.
+    assert "shortest exact phrase" in p and "4 to 8 words" in p
+    # Tactics come from evidence (parse.py); a separate list only costs tokens.
+    assert '"tactics":' not in p
     assert "verify first" in p
     assert "never say the call is fraud" in p
 

@@ -36,7 +36,7 @@ Signs of a normal, legitimate call. Report one only if a `caller:` line shows it
 
 ## Rules for your answer
 1. Answer with one JSON object and nothing else. No text before or after it.
-2. Every evidence `quote` is copied word for word from a single `caller:` line, at most 80 characters. Never paraphrase a quote or invent one.
+2. Every evidence `quote` is copied word for word from a single `caller:` line. Use the shortest exact phrase that shows the tactic: usually 4 to 8 words, never more than 80 characters. Keep every word inside the phrase; never skip, swap or paraphrase a word, and never invent a quote.
 3. Report each tactic at most once, with its clearest quote.
 4. If you see no tactic, return empty lists. Do not guess.
 5. `claimed_identity` is the organisation or role the caller claims to be from (for example "Department of Justice" or "Chase"), or null. Use the organisation's name, not the caller's personal name.
@@ -46,7 +46,6 @@ Signs of a normal, legitimate call. Report one only if a `caller:` line shows it
 
 ## JSON format
 {
-  "tactics": ["<tactic name>", "..."],
   "evidence": [{"tactic": "<tactic name>", "quote": "<exact words from a caller line>", "strength": "clear | hint"}],
   "claimed_identity": "<organisation>" or null,
   "safe_signals": ["<safe signal name>", "..."],
