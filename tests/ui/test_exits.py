@@ -23,7 +23,7 @@ def test_exit_buttons_in_tab_order():
 
 def test_pause_copy_never_claims_typing_is_blocked():
     """AGENTS.md 3: the safe-path pause never blocks typing."""
-    for f in [UI / "index.html", UI / "copy.js", UI / "view.js"]:
+    for f in [UI / "index.html", UI / "copy.js", UI / "view.js", UI / "DEMO.md", UI / "SCREENS.md"]:
         assert "Typing is paused" not in f.read_text(encoding="utf-8"), f.name
 
 
