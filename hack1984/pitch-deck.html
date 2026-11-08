@@ -87,7 +87,7 @@ body{
   font:400 26px/1 var(--font);color:var(--ink);cursor:pointer;display:none}
 .photo .remove{z-index:3}
 .photo.filled:hover .remove,.photo.filled:focus-within .remove{display:block}
-.sticker{position:absolute;z-index:2;font-size:170px;line-height:1;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;display:none;transform:translate(-50%,-50%)}
+.sticker{position:absolute;z-index:2;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:170px;line-height:1;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;display:none;transform:translate(-50%,-50%)}
 .photo.filled .sticker{display:block}
 .sticker:active{cursor:grabbing}
 .sticker .grip{position:absolute;right:-6px;bottom:-6px;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid var(--plum);cursor:nwse-resize;opacity:0;transition:opacity .15s}
@@ -101,6 +101,9 @@ body{
 .split-left .stack{margin-top:auto;margin-bottom:auto;display:flex;flex-direction:column;gap:34px}
 .s1 .photo{left:0;right:0;top:0;height:640px}
 .s1 .photo img{object-position:50% 30%}
+.face-emoji{position:absolute;z-index:2;transform:translate(-50%,-50%);line-height:1;pointer-events:none;display:none;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.photo.is-default .face-emoji{display:block}
 .s1 .caption{position:absolute;left:110px;right:110px;bottom:70px;display:flex;flex-direction:column;gap:12px}
 
 /* s2 full photo top */
@@ -269,6 +272,7 @@ body{
 <!-- 1 -->
 <section class="slide s1" data-name="story-1">
   <div class="photo iris" data-slot="p1b" data-default="deck-assets/slide1-friend.jpg" tabindex="0" role="button" aria-label="Add photo for slide 1">
+    <span class="face-emoji" style="left:12px;top:192px;font-size:147px">😄</span><span class="face-emoji" style="left:214px;top:212px;font-size:185px">😄</span><span class="face-emoji" style="left:524px;top:196px;font-size:193px">😄</span><span class="face-emoji" style="left:800px;top:208px;font-size:204px">🥲</span><span class="face-emoji" style="left:1132px;top:176px;font-size:208px">😄</span><span class="face-emoji" style="left:1436px;top:168px;font-size:193px">😄</span>
     <div class="hint glass">Add a photo<small>Click, drop, or paste</small></div>
     <button class="remove glass" type="button" aria-label="Remove photo">×</button>
   </div>
@@ -551,16 +555,16 @@ body{
   async function get(k){try{const d=await db();return await new Promise(r=>{const q=d.transaction('photos').objectStore('photos').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch(e){return null}}
   function setPhoto(el,blob,save){
     let img=el.querySelector('img');
-    if(!blob){if(img)img.remove();el.classList.remove('filled');if(save)put(el.dataset.slot,null);return}
+    if(!blob){if(img)img.remove();el.classList.remove('filled','is-default');if(save)put(el.dataset.slot,null);return}
     if(!img){img=document.createElement('img');img.alt='';el.prepend(img)}
     if(img.dataset.url)URL.revokeObjectURL(img.dataset.url);
     const url=URL.createObjectURL(blob);img.src=url;img.dataset.url=url;
-    el.classList.add('filled');if(save)put(el.dataset.slot,blob);
+    el.classList.add('filled');el.classList.remove('is-default');if(save)put(el.dataset.slot,blob);
   }
   const pick=document.getElementById('filePick');let target=null;
   pick.addEventListener('change',()=>{const f=pick.files&&pick.files[0];if(f&&target)setPhoto(target,f,true);pick.value=''});
   document.querySelectorAll('.photo').forEach(el=>{
-    get(el.dataset.slot).then(b=>{if(b)setPhoto(el,b,false);else if(el.dataset.default&&!el.querySelector('img')){const img=document.createElement('img');img.alt='';img.src=el.dataset.default;el.prepend(img);el.classList.add('filled')}});
+    get(el.dataset.slot).then(b=>{if(b)setPhoto(el,b,false);else if(el.dataset.default&&!el.querySelector('img')){const img=document.createElement('img');img.alt='';img.src=el.dataset.default;el.prepend(img);el.classList.add('filled','is-default')}});
     el.addEventListener('click',e=>{if(e.target.closest('.remove'))return;target=el;pick.click()});
     el.addEventListener('keydown',e=>{if(e.key==='Enter'){target=el;pick.click()}});
     el.querySelector('.remove').addEventListener('click',e=>{e.stopPropagation();setPhoto(el,null,true)});
