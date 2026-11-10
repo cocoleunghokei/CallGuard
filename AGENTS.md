@@ -125,7 +125,7 @@ python -m callguard.server --browser   # dev only: serve http://localhost:8000 f
 python -m callguard.audio.health    # are the mic and BlackHole inputs ready?
 pytest                              # all tests, offline (browser tests skip without playwright)
 ```
-Judge demo link: https://cocoleunghokei.github.io/scam-call-detector/ (`pages/index.html` + the replay of `ui/` from `main`, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `ui/`, `pages/` or `hack1984/deck-public/`; pitch deck at `/hack1984/deck-public/`; one-time setup: Settings → Pages → Source: GitHub Actions).
+Judge demo link: https://cocoleunghokei.github.io/CallGuard/ (`pages/index.html` + the replay of `ui/` from `main`, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `ui/`, `pages/` or `hack1984/deck-public/`; pitch deck at `/hack1984/deck-public/`; one-time setup: Settings → Pages → Source: GitHub Actions).
 Live audio needs `CALLGUARD_WHISPER_DIR` (local faster-whisper small model) in `.env`; optional `CALLGUARD_CALLER_DEVICE` (default "BlackHole 2ch"), `CALLGUARD_MIC_DEVICE`, `CALLGUARD_CALL_IDLE_S` (a live call ends after this much silence, default 45), `CALLGUARD_MIC_MIN_RMS` (ignore "you" mic audio quieter than this, e.g. 0.02, so caller echo from the speakers isn't transcribed as "you"; tune with `python -m callguard.audio.transcribe --check`). Full demo-machine steps: [ui/DEMO.md](ui/DEMO.md).
 Whoever first makes one of these work, or changes one, updates this section.
 
