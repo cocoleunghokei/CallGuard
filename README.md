@@ -8,8 +8,8 @@
 
 🥉 **3rd Place, Most Startup-able track at [HACK1984](https://claudeneu.com/hackathon/)** (Boston, Nov 7–8, 2026)
 
-[![Live demo](https://img.shields.io/badge/▶_Live_demo-try_it_in_your_browser-5b1a4f?style=for-the-badge)](https://cocoleunghokei.github.io/scam-call-detector/)
-[![Pitch deck](https://img.shields.io/badge/Pitch_deck-view_slides-1f1f24?style=for-the-badge)](https://cocoleunghokei.github.io/scam-call-detector/hack1984/deck-public/)
+[![Live demo](https://img.shields.io/badge/▶_Live_demo-try_it_in_your_browser-5b1a4f?style=for-the-badge)](https://cocoleunghokei.github.io/CallGuard/)
+[![Pitch deck](https://img.shields.io/badge/Pitch_deck-view_slides-1f1f24?style=for-the-badge)](https://cocoleunghokei.github.io/CallGuard/hack1984/deck-public/)
 [![Devpost](https://img.shields.io/badge/Devpost-cocoleunghokei-003E54?style=for-the-badge&logo=devpost&logoColor=white)](https://devpost.com/cocoleunghokei)
 
 ![macOS](https://img.shields.io/badge/macOS-desktop_app-000?logo=apple&logoColor=white)
