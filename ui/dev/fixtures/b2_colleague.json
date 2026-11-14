@@ -1,6 +1,6 @@
 {
   "id": "b2_colleague",
-  "description": "B2 colleague with a deadline. Urgency alone stays low (G1). Zero amber/red frames.",
+  "description": "A colleague is rushing to meet a deadline. Urgency on its own isn't a scam sign, so it stays Low and never turns amber or red.",
   "steps": [
     {
       "at": 0.0,

@@ -18,6 +18,28 @@ export const FIXTURES = [
   "model_down",
 ];
 
+// What the Scenario picker shows. The ids above stay the file names; people see these.
+export const GROUPS = [
+  { label: "Scam calls", ids: ["s1_government", "s1_report", "s2_vendor_bank", "s3_it_code", "s4_partner_wire"] },
+  { label: "Normal calls (CallGuard should stay calm)", ids: ["b1_vendor_invoice", "b2_colleague", "b3_real_bank", "b7_you_say_it"] },
+  { label: "When things go wrong", ids: ["offline", "model_down"] },
+  { label: "No call", ids: ["idle"] },
+];
+export const LABELS = {
+  idle: "App open, no call yet",
+  s1_government: "Fake government official",
+  s1_report: "Fake official + recent scam report",
+  s2_vendor_bank: "Vendor asks to change bank details",
+  s3_it_code: "Fake IT asks for a login code",
+  s4_partner_wire: "“Partner” pushes an urgent wire",
+  b1_vendor_invoice: "Real vendor invoice question",
+  b2_colleague: "Colleague with a deadline",
+  b3_real_bank: "Real bank calling back",
+  b7_you_say_it: "You say the scary words",
+  offline: "Wi-Fi off",
+  model_down: "AI model not running",
+};
+
 const TICK_MS = 50;
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -206,7 +228,12 @@ function stamp() {
 
 function init() {
   const sel = $("fixture");
-  for (const name of FIXTURES) sel.add(new Option(name, name));
+  for (const g of GROUPS) {
+    const og = document.createElement("optgroup");
+    og.label = g.label;
+    for (const id of g.ids) og.appendChild(new Option(LABELS[id] || id, id));
+    sel.appendChild(og);
+  }
   if (CLEAN) document.body.classList.add("clean");
   const start = PLAYLIST[0] || "s1_government";
   sel.value = start;

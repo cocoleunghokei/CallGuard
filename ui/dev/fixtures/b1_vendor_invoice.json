@@ -1,6 +1,6 @@
 {
   "id": "b1_vendor_invoice",
-  "description": "B1 real vendor invoice question. Low throughout, no search, nothing leaves the device.",
+  "description": "A real vendor asks about an invoice. Stays Low the whole call, nothing is looked up, and nothing leaves the laptop.",
   "steps": [
     {
       "at": 0.0,

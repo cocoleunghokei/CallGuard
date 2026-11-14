@@ -1,6 +1,6 @@
 {
   "id": "s2_vendor_bank",
-  "description": "S2 vendor bank change (Brightline). low -> danger 0.86 with rule no_bank_changes_by_phone; verify not_found (use number on file); gate locks on beat 3.",
+  "description": "A caller from a supplier (Brightline) asks to change their bank details. Goes from Low to Danger and names the firm rule it breaks. The supplier isn't found online, so CallGuard says to use the number on file.",
   "steps": [
     {
       "at": 0.0,

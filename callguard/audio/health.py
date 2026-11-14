@@ -62,11 +62,11 @@ def output_route_warning(sd: object) -> str | None:
         return None
     if any(hint in folded for hint in _BLUETOOTH_OUTPUTS):
         return (
-            f"Sound goes to {name}, which skips BlackHole, so Callguard can't hear the caller. "
+            f"Sound goes to {name}, which skips BlackHole, so CallGuard can't hear the caller. "
             "Use the Mac speakers in a Multi-Output Device with BlackHole 2ch."
         )
     return (
-        f"Sound goes to {name}, so Callguard can't hear the caller. In System Settings → Sound → Output, "
+        f"Sound goes to {name}, so CallGuard can't hear the caller. In System Settings → Sound → Output, "
         "choose the Multi-Output Device (FaceTime can switch it during a call)."
     )
 
@@ -145,7 +145,7 @@ def call_check(seconds: int, route: str) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Callguard audio readiness and call-route check")
+    parser = argparse.ArgumentParser(description="CallGuard audio readiness and call-route check")
     parser.add_argument("--call", type=int, metavar="SECONDS",
                         help="listen during a real call for SECONDS and require sound from both sides")
     parser.add_argument("--route", default="Continuity (Mac speakers)",

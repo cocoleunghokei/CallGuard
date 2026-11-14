@@ -108,7 +108,7 @@ def test_run_window_serves_in_a_thread_and_opens_on_top(monkeypatch):
     port = free_port()
     app, runtime = build_app(parse_args(["--port", str(port), "--no-audio"]))
     window.run_window(app, runtime, "127.0.0.1", port)
-    assert opened["title"] == "Callguard" and opened["on_top"] is True
+    assert opened["title"] == "CallGuard" and opened["on_top"] is True
     assert opened["width"] <= 420 and opened["main_thread"] and opened["status"] == 200
     assert any(isinstance(h, window.DangerAlert) for h in runtime.pipeline.on_check)
     runtime.pipeline.on_check[-1](danger("bank_change"), danger("bank_change"))

@@ -1,4 +1,4 @@
-# Callguard screens: where to see each state
+# CallGuard screens: where to see each state
 
 For review and for the backup video. Serve `ui/` and open the replay harness (no Server, no Ollama, no network):
 
@@ -41,7 +41,7 @@ Then open `http://localhost:8080/dev/replay.html?f=<fixture>&autoplay=0` and pre
 | Bank change, no public number | `s2_vendor_bank` | 8, 10 | Warning with "Firm rule: We never change vendor or client bank details…", "Couldn't find a public number, use the one on file." |
 | Code request | `s3_it_code` | 8, then wait 5 s | "Checking…" line, hidden after 5 s with no lookup answer |
 | Partner wire | `s4_partner_wire` | 8, 10 | "Asks you to send money", "Wants you to skip the usual approval", two-approvals rule |
-| Connecting | any | press "Drop connection" | Banner "Connecting to Callguard…", recovers in 2 s |
+| Connecting | any | press "Drop connection" | Banner "Connecting to CallGuard…", recovers in 2 s |
 | Report line (UI-16) | `s1_report` | 13 | Warning adds "Reported: Callers posing as DOJ staff asking for bank details · consumer.ftc.gov, Oct 2026" under the number |
 | Firm rules panel | `s2_vendor_bank` | 14 | "Your firm's rules (5)" at the bottom of the panel, collapsed; open it: the bank-details rule has a red "came up 1×", summary "1 came up this call". Badges clear when the call ends |
 | Wide window | `s1_government` | 13 | Window > 700 px: the panel stays 560 px wide and centred; the warning is a centred 720 px card |

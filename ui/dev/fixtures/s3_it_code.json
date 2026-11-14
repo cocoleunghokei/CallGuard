@@ -1,6 +1,6 @@
 {
   "id": "s3_it_code",
-  "description": "S3 IT support code. low 0.31 -> danger 1.00 + gate locked on the same beat. Internal identity, so no search (no egress).",
+  "description": "Fake IT support asks for your login code. Goes from Low straight to Danger. The caller claims to be inside the firm, so nothing is searched online.",
   "steps": [
     {
       "at": 0.0,

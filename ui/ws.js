@@ -1,4 +1,4 @@
-// Connection to the Callguard Server. One job: deliver {type, data} to onMessage.
+// Connection to the CallGuard Server. One job: deliver {type, data} to onMessage.
 //
 //   ?ws=fake            use the replay harness's FakeSocket (ui/dev/fake_socket.js)
 //   ?ws=ws://host/ws    connect somewhere else

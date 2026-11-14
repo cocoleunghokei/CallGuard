@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Callguard</title>
+<title>CallGuard</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -23,7 +23,7 @@
 
   <div class="shell">
   <!-- Sidebar: icons only (names are tooltips and screen-reader labels). -->
-  <nav id="rail" class="rail" aria-label="Callguard sections">
+  <nav id="rail" class="rail" aria-label="CallGuard sections">
     <div class="rail-in">
       <div role="tablist" aria-orientation="vertical" class="tabs">
         <button id="tab-call" class="rail-btn" role="tab" type="button" data-tab="call" aria-selected="true" aria-controls="main" title="Call">
@@ -53,14 +53,14 @@
       <div class="consent-body">
         <details>
           <summary>How it works</summary>
-          <p>Callguard listens to this call on your laptop and warns you when it sounds like a pressure script. Audio and words are never saved or sent, and are deleted when the call ends. The only thing ever looked up online is the name of the organization the caller claims to be.</p>
+          <p>CallGuard listens to this call on your laptop and warns you when it sounds like a pressure script. Audio and words are never saved or sent, and are deleted when the call ends. The only thing ever looked up online is the name of the organization the caller claims to be.</p>
         </details>
       </div>
       <button id="consent-x" class="icon-btn" type="button" aria-label="Dismiss this note">×</button>
     </div>
 
     <!-- B: banners -->
-    <p id="b-conn" class="banner" role="status" hidden>Connecting to Callguard…</p>
+    <p id="b-conn" class="banner" role="status" hidden>Connecting to CallGuard…</p>
     <p id="b-audio" class="banner" role="status" hidden></p>
 
     <main id="main" class="body" role="tabpanel" aria-labelledby="tab-call">
@@ -141,7 +141,7 @@
       <h2 id="history-h" class="view-h">History</h2>
       <p id="history-empty" class="note">No flagged calls yet. Calls that reach Watch or Danger show here.</p>
       <ol id="history-list" class="history"></ol>
-      <p class="note">Kept in memory until you remove a card or close Callguard. Nothing the caller said is kept.</p>
+      <p class="note">Kept in memory until you remove a card or close CallGuard. Nothing the caller said is kept.</p>
     </section>
 
     <!-- Emergency contacts tab: who to call when a call feels wrong. Set on this laptop. -->
@@ -159,7 +159,7 @@
         <h2 id="egress-h">Sent online (<span id="egress-n">0</span>)</h2>
         <div id="egress-empty" class="egress-empty">
           <svg width="40" height="40" class="ok"><use href="#i-lock-laptop"/></svg>
-          <div><b>Your call stays on this laptop</b><p>Audio and words are never sent. If Callguard looks up a company the caller names, that search shows here.</p></div>
+          <div><b>Your call stays on this laptop</b><p>Audio and words are never sent. If CallGuard looks up a company the caller names, that search shows here.</p></div>
         </div>
         <div id="egress-list"></div>
       </section>
@@ -172,7 +172,7 @@
   </div>
   </div>
 
-  <!-- Danger overlay (T6 / UI-4). Fills the Callguard window, never the screen. -->
+  <!-- Danger overlay (T6 / UI-4). Fills the CallGuard window, never the screen. -->
   <div id="overlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="ov-h" aria-describedby="ov-next" tabindex="-1" hidden>
     <div class="ov-card">
       <!-- Same order as the call screen: status, Latest, What to do, Insights. -->

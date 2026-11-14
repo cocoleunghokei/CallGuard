@@ -1,6 +1,6 @@
 {
   "id": "s1_report",
-  "description": "S1 with a recent impersonation report on the verify message (UI-16, verify.report from SRV-15 / C17).",
+  "description": "The same fake government call, with a recent public report of this impersonation shown on the warning.",
   "steps": [
     {
       "at": 0.0,

@@ -1,6 +1,6 @@
 {
   "id": "s1_government",
-  "description": "S1 government official (DOJ). low 0.31 -> watch 0.71 (verify + 1 egress) -> danger 0.99 -> danger 1.00 + gate locked.",
+  "description": "A caller claims to be from the Department of Justice. Risk climbs from Low to Watch (the real public number is looked up) to Danger, then CallGuard pauses you before you can act.",
   "steps": [
     {
       "at": 0.0,

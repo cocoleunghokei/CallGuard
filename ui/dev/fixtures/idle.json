@@ -1,6 +1,6 @@
 {
   "id": "idle",
-  "description": "F0 first open. App running, no call: not listening, then listening. Nothing has left this device.",
+  "description": "The app is open but no call has started yet. It switches to listening, and nothing has been sent online.",
   "steps": [
     {
       "at": 0.0,

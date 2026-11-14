@@ -1,6 +1,6 @@
 {
   "id": "b3_real_bank",
-  "description": "B3 real bank. Authority plus a safe signal (callback_known_number): peaks at low 0.31, settles at 0.16. No overlay.",
+  "description": "Your real bank, on a number you called yourself. It mentions the bank, but calling a known number is a safe sign, so it stays Low and no warning appears.",
   "steps": [
     {
       "at": 0.0,

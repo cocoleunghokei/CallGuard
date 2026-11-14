@@ -34,11 +34,11 @@ from callguard.shared.contracts import ScamCheck
 
 log = logging.getLogger("callguard.server.window")
 
-TITLE = "Callguard"
+TITLE = "CallGuard"
 WIDTH, HEIGHT = 400, 760
 MIN_SIZE = (340, 520)
 
-NOTIFY_TITLE = "Callguard: verify this call before you act"
+NOTIFY_TITLE = "CallGuard: verify this call before you act"
 NOTIFY_BODY = {  # fixed copy, chosen by the ask tactic (prd §9.5)
     "bank_change": "The caller is asking for bank details. Click for details.",
     "credential_request": "The caller is asking for a code or password. Click for details.",
@@ -48,8 +48,8 @@ NOTIFY_BODY = {  # fixed copy, chosen by the ask tactic (prd §9.5)
     "bypass_approval": "The caller wants you to skip the usual approval. Click for details.",
 }
 NOTIFY_DEFAULT = "This call shows signs of a scam. Click for details."
-COLLEAGUE_TITLE = "Callguard: check with a colleague"
-COLLEAGUE_BODY = "Heads-up from Callguard: a call looks suspicious, can you check in?"
+COLLEAGUE_TITLE = "CallGuard: check with a colleague"
+COLLEAGUE_BODY = "Heads-up from CallGuard: a call looks suspicious, can you check in?"
 ASK_PRIORITY = ("bank_change", "credential_request", "payment_request",
                 "remote_access", "personal_data_request", "bypass_approval")
 assert set(ASK_PRIORITY) == ASK_TACTICS
@@ -209,7 +209,7 @@ def import_webview():
         import webview  # type: ignore[import-not-found]
     except ImportError:
         raise SystemExit(
-            "The Callguard window needs pywebview: pip install -r requirements.txt\n"
+            "The CallGuard window needs pywebview: pip install -r requirements.txt\n"
             "(dev only: python -m callguard.server --browser)") from None
     return webview
 

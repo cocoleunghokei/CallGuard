@@ -114,11 +114,11 @@ export function mmss(sec) {
 
 /** "Report scam" heads-up (Coco, Sun): fixed wording only, never anything
  *  from the call. Report scam copies the message to the clipboard for the user
- *  to paste to IT and their manager; Callguard itself sends nothing, so the
+ *  to paste to IT and their manager; CallGuard itself sends nothing, so the
  *  "What left this device" log stays true. */
 export const HEADS_UP = {
   title: "Heads-up for IT and your manager",
-  message: "Callguard heads-up: a call on this laptop looks suspicious. Please check in.",
+  message: "CallGuard heads-up: a call on this laptop looks suspicious. Please check in.",
   copied: "Message copied. Paste it to your IT team and your manager.",
   notCopied: "Send this message to your IT team and your manager.",
 };

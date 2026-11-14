@@ -10,7 +10,7 @@ def test_placeholder_when_ui_missing(tmp_path):
     client = TestClient(create_app(ui_dir=tmp_path))
     r = client.get("/")
     assert r.status_code == 200
-    assert "Callguard" in r.text
+    assert "CallGuard" in r.text
 
 
 def test_serves_ui_index(tmp_path):

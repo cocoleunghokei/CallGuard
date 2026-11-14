@@ -14,13 +14,13 @@ setup(
     options={"py2app": {
         "iconfile": "Callguard.icns",
         "plist": {
-            "CFBundleName": "Callguard",
-            "CFBundleDisplayName": "Callguard",
+            "CFBundleName": "CallGuard",
+            "CFBundleDisplayName": "CallGuard",
             "CFBundleIdentifier": BUNDLE_ID,
             "CFBundleShortVersionString": "0.1",
             "NSHighResolutionCapable": True,
             "NSMicrophoneUsageDescription":
-                "Callguard listens to your call on this Mac to warn you about scams. "
+                "CallGuard listens to your call on this Mac to warn you about scams. "
                 "Audio never leaves this device.",
         },
     }},

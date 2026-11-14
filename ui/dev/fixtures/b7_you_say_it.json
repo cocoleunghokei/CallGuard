@@ -1,6 +1,6 @@
 {
   "id": "b7_you_say_it",
-  "description": "B7 you say the scary words. Secrecy said by you is ignored (G4). Low throughout, nothing flashes.",
+  "description": "You say “don't tell anyone”, not the caller. Words you say yourself are ignored, so it stays Low.",
   "steps": [
     {
       "at": 0.0,

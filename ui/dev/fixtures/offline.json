@@ -1,6 +1,6 @@
 {
   "id": "offline",
-  "description": "S1 with Wi-Fi off: status.online false, verify.status offline, egress.status offline. Detection still works.",
+  "description": "The fake government call with the Wi-Fi off. Detection works the same; only the number lookup is skipped, and nothing is sent.",
   "steps": [
     {
       "at": 0.0,

@@ -1,6 +1,6 @@
 {
   "id": "model_down",
-  "description": "S1 with the local model down: status.model degraded, phrase-only checks capped at watch, first check source fallback. No overlay, no gate.",
+  "description": "The fake government call with the AI model not running. CallGuard falls back to simple phrase checks, which can reach Watch but not Danger.",
   "steps": [
     {
       "at": 0.0,

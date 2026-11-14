@@ -1,4 +1,4 @@
-# Callguard demo: machine setup and click-by-click path
+# CallGuard demo: machine setup and click-by-click path
 
 For whoever runs the demo or records the backup video. Someone who has never seen the app should be able to follow this top to bottom.
 Screens and the fixture step that shows each one: [SCREENS.md](SCREENS.md). Flows: [hack1984/ui-flows.md](../hack1984/ui-flows.md) §5.
@@ -16,7 +16,7 @@ Screens and the fixture step that shows each one: [SCREENS.md](SCREENS.md). Flow
    python -c "from huggingface_hub import snapshot_download; print(snapshot_download('Systran/faster-whisper-small'))"
    ```
    Put the printed folder in `.env` as `CALLGUARD_WHISPER_DIR=…`.
-4. Audio route: install BlackHole 2ch. In Audio MIDI Setup make a **Multi-Output Device** = your speakers/headphones + BlackHole 2ch, and set Zoom's speaker to it (you still hear the caller; Callguard hears them through BlackHole). Your mic stays your normal mic. Device names differ? set `CALLGUARD_CALLER_DEVICE` / `CALLGUARD_MIC_DEVICE` in `.env`.
+4. Audio route: install BlackHole 2ch. In Audio MIDI Setup make a **Multi-Output Device** = your speakers/headphones + BlackHole 2ch, and set Zoom's speaker to it (you still hear the caller; CallGuard hears them through BlackHole). Your mic stays your normal mic. Device names differ? set `CALLGUARD_CALLER_DEVICE` / `CALLGUARD_MIC_DEVICE` in `.env`.
 5. `.env` (never committed): `TAVILY_API_KEY=…` (optional `EXA_API_KEY=…`), plus the two lines above.
 6. Check it all:
    ```bash
@@ -34,7 +34,7 @@ Screens and the fixture step that shows each one: [SCREENS.md](SCREENS.md). Flow
   ```bash
   python -m callguard.server                 # live: listens to the Zoom call
   ```
-  The Callguard window opens on top (400 × 760). Put it at the right edge of the screen, Zoom on the left.
+  The CallGuard window opens on top (400 × 760). Put it at the right edge of the screen, Zoom on the left.
 - Check the header: just "Listening" ("Offline" appears next to it only with the Wi-Fi off). No yellow banner. If Ollama isn't answering there is no banner, so check it first (`ollama list`); watch reasons will say "Basic checks only". An audio banner means the mic or BlackHole isn't heard.
 
 **No caller available / audio trouble?** Play a scripted call through the real pipeline instead (same window, same model, no mic):
@@ -51,7 +51,7 @@ Open `http://localhost:8080/dev/replay.html?f=s1_government&autoplay=1&speed=1`.
 
 ## 3. The demo path (3 min, ui-flows.md §5)
 
-| # | Say / do | Callguard shows |
+| # | Say / do | CallGuard shows |
 |---|---|---|
 | 1 | Show the window before the call. Click the footer "Nothing sent online" | Grey "Not on a call"; the empty "Sent online (0)" panel ("Your call stays on this laptop"). Click it again to close |
 | 2 | Caller ("David from the Department of Justice") opens politely | Call starts, green "Low · No clear signs", last 3 lines under "Latest" |
@@ -68,6 +68,6 @@ The other exit, if asked: **Type SAFE + hold 3 s** (meter back to green, "Marked
 ## 4. Backup video (due Sun 09:00, file stays off-repo)
 
 1. Wi-Fi on. `python -m callguard.server --fake tests/detection/scripts/s1_government.txt`
-2. QuickTime → New Screen Recording, select the Callguard window plus a little of the desktop. Start, then let the replay play steps 1–8 above (click the egress footer at step 4, Report scam at step 7).
+2. QuickTime → New Screen Recording, select the CallGuard window plus a little of the desktop. Start, then let the replay play steps 1–8 above (click the egress footer at step 4, Report scam at step 7).
 3. Wi-Fi off, restart the same command, record step 9.
 4. Save outside the repo.

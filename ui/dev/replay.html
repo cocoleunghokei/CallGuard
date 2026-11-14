@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Callguard replay</title>
+<title>CallGuard replay</title>
 <!--
   Dev harness (UI-8). Serve ui/ and open /dev/replay.html:
       cd ui && python3 -m http.server 8080
@@ -49,14 +49,14 @@
 </head>
 <body>
   <div class="stage">
-    <iframe id="ui" title="Callguard UI under replay"></iframe>
+    <iframe id="ui" title="CallGuard UI under replay"></iframe>
     <p id="card" class="card" role="status" hidden></p>
   </div>
   <div class="side">
-    <h1>Callguard replay</h1>
+    <h1>CallGuard replay</h1>
     <p id="desc" class="meta"></p>
     <div class="controls">
-      <label>Fixture <select id="fixture"></select></label>
+      <label>Scenario <select id="fixture"></select></label>
       <button id="play" type="button">Pause</button>
       <button id="step" type="button">Step</button>
       <button id="restart" type="button">Restart</button>

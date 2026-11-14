@@ -1,4 +1,4 @@
-// Callguard UI entry point.
+// CallGuard UI entry point.
 //
 // Every Server message goes through ONE function: onMessage({type, data}).
 // Handlers update `state`; view.js draws it. Messages come from the real

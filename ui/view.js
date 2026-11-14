@@ -144,7 +144,7 @@ function renderBanners(state) {
   // Live mode: the Server says when the mic or BlackHole input isn't working (AUD-9).
   const audioBad = !!(state.connected && state.status && state.status.audio_ok === false);
   $("b-audio").hidden = !audioBad;
-  $("b-audio").textContent = audioBad ? state.status.audio_message || "Callguard can't hear the call. Check the audio inputs." : "";
+  $("b-audio").textContent = audioBad ? state.status.audio_message || "CallGuard can't hear the call. Check the audio inputs." : "";
 }
 
 // ---------------------------------------------------------------- C status hero
@@ -823,7 +823,7 @@ function renderFirmRules(state) {
       );
     }),
   );
-  const src = state.rulesSource === "custom" ? "Set by your firm." : state.rulesSource === "default" ? "Callguard's default rules." : "";
+  const src = state.rulesSource === "custom" ? "Set by your firm." : state.rulesSource === "default" ? "CallGuard's default rules." : "";
   $("firm-rules-src").textContent = src ? `${src} Kept on this laptop, never sent.` : "Kept on this laptop, never sent.";
 }
 
@@ -963,7 +963,7 @@ function saveContactForm(state, form) {
   // The Server checks and saves them to one local file, then answers `contacts_saved`.
   state.contactsNote = send("save_contacts", { data: state.contacts })
     ? null
-    : { ok: false, text: "Not connected, so not saved. Your change lasts until you close Callguard." };
+    : { ok: false, text: "Not connected, so not saved. Your change lasts until you close CallGuard." };
   rerender();
   const edit = $("contacts-list").querySelector(`button[data-act="edit"][data-id="${CSS.escape(id)}"]`);
   if (edit) edit.focus();
@@ -977,7 +977,7 @@ function signsCount(n) {
 
 /** Plain text for "Copy summary". Same content as the card: no names, numbers or quotes. */
 export function summaryText(sum) {
-  const parts = [`Callguard call summary: ${callKind(sum.tactics)}.`, `Reached ${sum.peak === "danger" ? "Danger" : "Watch"}, ${signsCount(sum.tactics.length)}: ${sum.tactics.map(plainWords).join("; ")}.`];
+  const parts = [`CallGuard call summary: ${callKind(sum.tactics)}.`, `Reached ${sum.peak === "danger" ? "Danger" : "Watch"}, ${signsCount(sum.tactics.length)}: ${sum.tactics.map(plainWords).join("; ")}.`];
   if (sum.outcome) parts.push(`Then ${OUTCOME[sum.outcome]}.`);
   if (sum.rules.length) parts.push(`Firm rules that came up: ${sum.rules.join(" ")}`);
   parts.push("Nothing the caller said was kept.");

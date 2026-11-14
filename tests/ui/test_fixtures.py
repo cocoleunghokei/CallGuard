@@ -51,6 +51,17 @@ def test_replay_picker_lists_every_fixture():
     assert set(re.findall(r'"([\w]+)"', block)) == {p.stem for p in FIXTURE_FILES}
 
 
+def test_replay_picker_labels_every_fixture_in_plain_words():
+    js = (ROOT / "ui" / "dev" / "replay.js").read_text(encoding="utf-8")
+    stems = {p.stem for p in FIXTURE_FILES}
+    labels = dict(re.findall(r'^  (\w+): "([^"]+)",$', re.search(r"LABELS = \{(.*?)\n\};", js, re.S).group(1), re.M))
+    assert set(labels) == stems
+    grouped = re.findall(r'"(\w+)"', "".join(re.findall(r"ids: \[(.*?)\]", js)))
+    assert sorted(grouped) == sorted(stems)  # each fixture in exactly one group
+    for stem, label in labels.items():
+        assert stem not in label and "_" not in label, label
+
+
 @pytest.mark.parametrize("path", FIXTURE_FILES, ids=lambda p: p.stem)
 def test_shape_and_order(path):
     doc = load(path)  # valid JSON

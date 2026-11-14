@@ -123,7 +123,7 @@ def attach(hub) -> None:
             try:
                 save(contacts)
             except OSError:
-                errors = ["Couldn't save on this laptop. Your changes last until you close Callguard."]
+                errors = ["Couldn't save on this laptop. Your changes last until you close CallGuard."]
         if errors:
             await hub.broadcast("contacts", load())  # the UI goes back to what is really saved
             await hub.broadcast("contacts_saved", {"ok": False, "errors": errors})

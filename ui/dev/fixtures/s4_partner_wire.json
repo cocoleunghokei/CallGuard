@@ -1,6 +1,6 @@
 {
   "id": "s4_partner_wire",
-  "description": "S4 cloned partner wire (David). low -> danger 1.00 -> danger + gate locked. Internal identity, so no search (no egress).",
+  "description": "A cloned voice of a partner (David) pushes an urgent wire transfer. Goes from Low to Danger. The caller claims to be inside the firm, so nothing is searched online.",
   "steps": [
     {
       "at": 0.0,

@@ -26,9 +26,9 @@ SERVER_TYPES: frozenset[str] = frozenset(MessageType.__args__)  # type: ignore[a
 CLIENT_TYPES: frozenset[str] = frozenset(ClientMessageType.__args__)  # type: ignore[attr-defined]
 
 PLACEHOLDER_HTML = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Callguard</title></head>
+<html><head><meta charset="utf-8"><title>CallGuard</title></head>
 <body style="font-family:-apple-system,sans-serif;padding:16px">
-<h1>Callguard</h1>
+<h1>CallGuard</h1>
 <p>The server is running. The UI (<code>ui/index.html</code>) is not in place yet.</p>
 <p>WebSocket: <code>ws://localhost:8000/ws</code></p>
 </body></html>"""
@@ -121,7 +121,7 @@ def create_app(hub: Hub | None = None, ui_dir: Path = UI_DIR,
                 t.cancel()
             await asyncio.gather(*running, return_exceptions=True)
 
-    app = FastAPI(title="Callguard", docs_url=None, redoc_url=None, openapi_url=None,
+    app = FastAPI(title="CallGuard", docs_url=None, redoc_url=None, openapi_url=None,
                   lifespan=lifespan)
     app.state.hub = hub
 
