@@ -33,7 +33,6 @@
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
   .facts li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
   .facts b { display: block; margin-bottom: 2px; }
-  .note { border-left: 3px solid var(--accent); padding: 8px 12px; background: var(--card); border-radius: 0 8px 8px 0; font-size: 14px; margin: 0 0 20px; }
   fieldset { border: 0; padding: 0; margin: 0 0 12px; }
   legend { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 6px; padding: 0; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -43,8 +42,6 @@
   .look { font-size: 14px; color: var(--muted); margin: 4px 0 12px; min-height: 1.5em; }
   .frame { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   iframe { display: block; width: 100%; height: 820px; border: 0; }
-  .narrow { display: none; }
-  @media (max-width: 760px) { .narrow { display: block; } }
   footer { margin-top: 16px; font-size: 13px; color: var(--muted); }
   a { color: inherit; }
 </style>
@@ -59,9 +56,6 @@
     <li><b>One thing goes online</b>Only the name of the organization the caller claims to be (e.g. "Department of Justice") is looked up to find its real public number. Every lookup shows in the app's "Sent online" log.</li>
     <li><b>Works offline</b>With the Wi-Fi off, everything still works except that lookup.</li>
   </ul>
-
-  <p class="note"><b>This page is a replay.</b> It plays recorded calls through the real Callguard screen, so you can try it without a Mac or a phone call. Live listening needs the Mac app, shown in our live demo. Pick a scenario. The call plays on its own (use Pause, Step or 4× to go at your pace). On the right you can see every message the app received, and everything it sent back.</p>
-  <p class="note narrow">Best viewed on a laptop or desktop screen.</p>
 
   <fieldset>
     <legend>Scam calls</legend>
@@ -116,7 +110,7 @@
   function play(s) {
     for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.id === s.id));
     look.textContent = "What to look for: " + s.look;
-    frame.src = "ui/dev/replay.html?f=" + encodeURIComponent(s.id) + "&speed=1";
+    frame.src = "ui/dev/replay.html?f=" + encodeURIComponent(s.id) + "&speed=1&public=1";
     try { history.replaceState(null, "", "#" + s.id); } catch (e) { /* ignore */ }
   }
 
