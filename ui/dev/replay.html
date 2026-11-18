@@ -11,6 +11,7 @@
   Optional query: ?f=s1_government&speed=4&autoplay=0
   Recording mode (backup video, ui/DEMO.md):
       ?clean=1&f=s1_government,offline&exit=colleague
+  public=1 hides the test notes and the fixture picker (judge demo page);
   clean=1 hides these controls; f= plays a comma list back to back (gap=4 s,
   with a title card); exit=colleague clicks that exit exit_after=4 s
   after the pause locks.
@@ -40,6 +41,8 @@
   .sent li { font-weight: 600; }
   .stage { position: relative; }
   .card { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); margin: 0; padding: 12px 20px; border-radius: 12px; background: rgba(0,0,0,.82); color: #fff; font-size: 17px; font-weight: 600; white-space: nowrap; }
+  /* public=1 (judge demo page): hide the test notes and file-name picker; the page has its own scenario buttons. */
+  body.public #desc, body.public .pick { display: none; }
   body.clean { background: #e9e9ec; }
   body.clean .side { display: none; }
   body.clean .stage { flex: 1; background: transparent; align-items: flex-start; padding-top: 24px; }
@@ -56,7 +59,7 @@
     <h1>Callguard replay</h1>
     <p id="desc" class="meta"></p>
     <div class="controls">
-      <label>Fixture <select id="fixture"></select></label>
+      <label class="pick">Fixture <select id="fixture"></select></label>
       <button id="play" type="button">Pause</button>
       <button id="step" type="button">Step</button>
       <button id="restart" type="button">Restart</button>

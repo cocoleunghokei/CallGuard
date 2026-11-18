@@ -26,6 +26,8 @@ const params = new URLSearchParams(location.search);
 // comma list played back to back with a title card between; exit=colleague
 // clicks that exit `exit_after` seconds after the pause locks (hands-free take).
 const CLEAN = params.get("clean") === "1";
+// Judge demo page (pages/index.html): hide the test notes and the fixture picker.
+const PUBLIC = params.get("public") === "1";
 const PLAYLIST = (params.get("f") || "").split(",").filter((n) => FIXTURES.includes(n));
 const GAP_S = Number(params.get("gap")) || 4;
 const AUTO_EXIT = { colleague: "ov-colleague" }[params.get("exit")] || null;
@@ -208,6 +210,7 @@ function init() {
   const sel = $("fixture");
   for (const name of FIXTURES) sel.add(new Option(name, name));
   if (CLEAN) document.body.classList.add("clean");
+  if (PUBLIC) document.body.classList.add("public");
   const start = PLAYLIST[0] || "s1_government";
   sel.value = start;
   sel.onchange = () => load(sel.value);
